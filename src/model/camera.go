@@ -1,60 +1,33 @@
 package model
 
+import "math"
+
 type Camera struct {
 	Ray
-	ViewDistance float64
-	View         View
-	Image        Image
+	FieldOfView float64
+	Image       Image
 }
 
-func NewCamera(o, d Vector, vd float64, w, h uint) Camera {
+func NewCamera(w, h uint) Camera {
 	img := newImage(w, h)
-	r := NewRay(o, d)
+	r := NewRay(Vector{0, 0, 0}, Vector{0, 0, -1})
 	return Camera{
-		Ray:          r,
-		ViewDistance: vd,
-		View:         newView(r, vd, h, w),
-		Image:        img,
-	}
-}
-
-type View struct {
-	ulhc    Vector // upper left hand corner
-	xVector Vector // unit vector from ULHC to URHC
-	yVector Vector // unit vector from ULHC to LLHC
-}
-
-func newView(r Ray, vd float64, h, w uint) View {
-
-	n := r.Direction
-	c := r.Origin.Add(n.Times(vd))
-
-	// TODO: waarom de fuq kan ik y zo kiezen?
-	// wat zijn randgevallen en wanneer gaat dit mis?
-	y := Vector{0, 1, 0}
-	xv := y.Cross(n).Normalize()
-	yv := xv.Cross(n).Normalize()
-
-	// if len(H)=1 then len(W)=aspectRatio
-	aspectRatio := float64(w) / float64(h)
-
-	ulhc := c.Add(xv.Times(-aspectRatio / 2.0)).Add(yv.Times(-0.5))
-
-	return View{
-		ulhc:    ulhc,
-		xVector: xv,
-		yVector: yv,
+		Ray:         r,
+		FieldOfView: 0.5 * math.Pi,
+		Image:       img,
 	}
 }
 
 // 3d translation of 2d point on view
-// TODO: use midpoint of pixel instead of ULHC
-// TODO: aspectRatio meenemen, circel vervormt nu
-func (c Camera) PixelVector(x, y int) Vector {
-	v := c.View
-	xlen := float64(x) / float64(c.Image.width) * v.xVector.Length()
-	ylen := float64(y) / float64(c.Image.height) * v.yVector.Length()
-	xDisplacement := v.xVector.Times(xlen)
-	yDisplacement := v.yVector.Times(ylen)
-	return v.ulhc.Add(xDisplacement).Add(yDisplacement)
+// assumes width >= height
+// view size is 2x2 in world, from -1,1 to 1,-1
+func (c Camera) PixelRay(x, y int) Ray {
+	w, h := float64(c.Image.width), float64(c.Image.height)
+	tan := math.Tan(c.FieldOfView / 2)
+	px := (w / h) * (2*((float64(x)+0.5)/w) - 1) * tan
+	py := (1 - 2*((float64(y)+0.5)/h)) * tan
+
+	pixel := Vector{px, py, -1}
+	direction := VectorFromTo(c.Origin, pixel)
+	return NewRay(pixel, direction)
 }

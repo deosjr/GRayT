@@ -27,11 +27,12 @@ type answer struct {
 
 func main() {
 
-	camera := model.NewCamera(model.Vector{0, 0, 0}, ez, 1, WIDTH, HEIGHT)
+	camera := model.NewCamera(WIDTH, HEIGHT)
 
 	scene = model.NewScene(camera)
 	scene.AddLight(0, 5, 0)
 	scene.Add(model.Sphere{model.Vector{0, 0, 5}, 1.0})
+	scene.Add(model.Sphere{model.Vector{5, 0, 5}, 2.0})
 	//scene.Add(model.NewPlane(ex, ey, model.Vector{0, 0, 6}))
 
 	ch := make(chan question, NUMWORKERS)
@@ -66,10 +67,7 @@ func main() {
 
 func worker(ch chan question, ans chan answer) {
 	for q := range ch {
-
-		origin := scene.Camera.PixelVector(q.x, q.y)
-		direction := model.VectorFromTo(scene.Camera.Origin, origin)
-		ray := model.NewRay(origin, direction)
+		ray := scene.Camera.PixelRay(q.x, q.y)
 
 		var color uint8 = 50
 		for _, o := range scene.Objects {
