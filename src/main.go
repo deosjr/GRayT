@@ -16,15 +16,6 @@ var (
 	ez = model.Vector{0, 0, 1}
 )
 
-type question struct {
-	x, y int
-}
-
-type answer struct {
-	x, y  int
-	color uint8
-}
-
 func main() {
 
 	camera := model.NewCamera(WIDTH, HEIGHT)
@@ -32,20 +23,21 @@ func main() {
 	scene = model.NewScene(camera)
 	scene.AddLight(0, 5, 0)
 	scene.Add(model.Sphere{model.Vector{0, 0, 5}, 1.0})
-	scene.Add(model.Sphere{model.Vector{5, 0, 5}, 2.0})
-	//scene.Add(model.NewPlane(ex, ey, model.Vector{0, 0, 6}))
+	scene.Add(model.Sphere{model.Vector{5, 0, 5}, 1.0})
+	scene.Add(model.NewPlane(ex, ey, model.Vector{0, 0, 6}))
+	scene.Add(model.NewPlane(ex, ez, model.Vector{0, -2, 0}))
 
-	ch := make(chan question, NUMWORKERS)
-	ans := make(chan answer, NUMWORKERS)
+	ch := make(chan model.Question, NUMWORKERS)
+	ans := make(chan model.Answer, NUMWORKERS)
 
 	for i := 0; i < NUMWORKERS; i++ {
-		go worker(ch, ans)
+		go model.Worker(ch, ans)
 	}
 
 	go func() {
 		for y := 0; y < int(HEIGHT); y++ {
 			for x := 0; x < int(WIDTH); x++ {
-				ch <- question{x, y}
+				ch <- model.Question{scene, x, y}
 			}
 		}
 		close(ch)
@@ -57,41 +49,10 @@ func main() {
 			break
 		}
 		a := <-ans
-		camera.Image.Set(a.x, a.y, a.color)
+		camera.Image.Set(a.X, a.Y, a.Color)
 		numPixels--
 	}
 
 	camera.Image.Save()
 
-}
-
-func worker(ch chan question, ans chan answer) {
-	for q := range ch {
-		ray := scene.Camera.PixelRay(q.x, q.y)
-
-		var color uint8 = 50
-		for _, o := range scene.Objects {
-			if intersection, ok, _ := o.Intersect(ray); ok {
-
-			Lights:
-				for _, l := range scene.Lights {
-					segment := model.VectorFromTo(intersection, l.Origin)
-					shadow := model.NewRay(intersection, segment)
-					segmentLength := segment.Length()
-					for _, oo := range scene.Objects {
-						if oo == o {
-							continue
-						}
-						if _, ok, distance := oo.Intersect(shadow); ok && distance < segmentLength {
-							continue Lights
-						}
-					}
-					// Nothing blocking intersection point from getting light!
-					color = uint8(-segmentLength * 100)
-				}
-
-			}
-		}
-		ans <- answer{q.x, q.y, color}
-	}
 }
