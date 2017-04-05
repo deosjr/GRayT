@@ -23,3 +23,8 @@ func (p Plane) Intersect(r Ray) (Vector, bool, float64) {
 	intersection := r.Origin.Add(r.Direction.Times(d))
 	return intersection, true, d
 }
+
+func (p Plane) SurfaceNormal(Vector) Vector {
+	// TODO: determine direction?!
+	return p.Normal.Times(-1)
+}

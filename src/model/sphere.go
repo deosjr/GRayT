@@ -2,10 +2,6 @@ package model
 
 import "math"
 
-type Object interface {
-	Intersect(Ray) (intersection Vector, ok bool, distance float64)
-}
-
 type Sphere struct {
 	Center Vector
 	Radius float64
@@ -25,4 +21,8 @@ func (s Sphere) Intersect(r Ray) (Vector, bool, float64) {
 	// only return closest intersection point
 	d := -loc - math.Sqrt(det)
 	return r.Origin.Add(r.Direction.Times(d)), true, d
+}
+
+func (s Sphere) SurfaceNormal(p Vector) Vector {
+	return VectorFromTo(s.Center, p).Normalize()
 }

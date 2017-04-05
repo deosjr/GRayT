@@ -4,6 +4,8 @@ import (
 	"math"
 )
 
+var BACKGROUND_COLOR = Color{Vector{10, 10, 10}}
+
 type Question struct {
 	Scene *Scene
 	X, Y  int
@@ -11,27 +13,30 @@ type Question struct {
 
 type Answer struct {
 	X, Y  int
-	Color uint8
+	Color Color
 }
 
 func Worker(ch chan Question, ans chan Answer) {
 	for q := range ch {
 		ray := q.Scene.Camera.PixelRay(q.X, q.Y)
 
-		var color uint8 = 50
+		var objectHit Object
 		var intersection *Vector
 		var minDistance = math.MaxFloat64
 		for _, o := range q.Scene.Objects {
 			if i, ok, distance := o.Intersect(ray); ok && distance >= 0 && distance < minDistance {
 				minDistance = distance
 				intersection = &i
+				objectHit = o
 			}
 		}
 
 		if intersection == nil {
-			ans <- Answer{q.X, q.Y, color}
+			ans <- Answer{q.X, q.Y, BACKGROUND_COLOR}
 			continue
 		}
+
+		color := Color{Vector{0, 0, 0}}
 
 	Lights:
 		for _, l := range q.Scene.Lights {
@@ -50,8 +55,11 @@ func Worker(ch chan Question, ans chan Answer) {
 					continue Lights
 				}
 			}
-			// Nothing blocking intersection point from getting light!
-			color = uint8(-segmentLength * 100)
+			facingRatio := objectHit.SurfaceNormal(*intersection).Dot(segment)
+			if facingRatio <= 0 {
+				continue Lights
+			}
+			color = Color{color.Add(l.Color.Times(STANDARD_ALBEDO * l.Intensity * facingRatio))}
 		}
 
 		ans <- Answer{q.X, q.Y, color}
