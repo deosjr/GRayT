@@ -21,6 +21,8 @@ func main() {
 	camera := model.NewCamera(WIDTH, HEIGHT)
 
 	scene = model.NewScene(camera)
+	scene.AddLight(model.Vector{5, 5, 0}, model.NewColor(0, 0, 255), 1000)
+	scene.AddLight(model.Vector{-5, 5, 0}, model.NewColor(255, 0, 0), 1000)
 	scene.Add(model.Sphere{model.Vector{0, 0, 5}, 1.0})
 	scene.Add(model.Sphere{model.Vector{5, 0, 5}, 1.0})
 	scene.Add(model.NewPlane(ex, ey, model.Vector{0, 0, 6}))

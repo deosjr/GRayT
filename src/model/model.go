@@ -1,5 +1,7 @@
 package model
 
+import "math"
+
 var STANDARD_ALBEDO = 0.18
 
 type Object interface {
@@ -7,10 +9,28 @@ type Object interface {
 	SurfaceNormal(point Vector) Vector
 }
 
-type Light struct {
-	Origin    Vector
-	Color     Color
-	Intensity float64
+type Light interface {
+	Intensity(distance float64) float64
+	Color() Color
+	Origin() Vector
+}
+
+type PointLight struct {
+	origin    Vector
+	color     Color
+	intensity float64
+}
+
+func (l PointLight) Intensity(r float64) float64 {
+	return l.intensity / (4 * math.Pi * r * r)
+}
+
+func (l PointLight) Color() Color {
+	return l.color
+}
+
+func (l PointLight) Origin() Vector {
+	return l.origin
 }
 
 type Scene struct {
@@ -32,5 +52,5 @@ func (s *Scene) Add(o Object) {
 }
 
 func (s *Scene) AddLight(o Vector, c Color, i float64) {
-	s.Lights = append(s.Lights, Light{o, c, i})
+	s.Lights = append(s.Lights, PointLight{o, c, i})
 }

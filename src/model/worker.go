@@ -4,7 +4,7 @@ import (
 	"math"
 )
 
-var BACKGROUND_COLOR = Color{Vector{10, 10, 10}}
+var BACKGROUND_COLOR = NewColor(10, 10, 10)
 
 type Question struct {
 	Scene *Scene
@@ -36,32 +36,37 @@ func Worker(ch chan Question, ans chan Answer) {
 			continue
 		}
 
-		color := Color{Vector{0, 0, 0}}
+		color := NewColor(0, 0, 0)
 
-	Lights:
 		for _, l := range q.Scene.Lights {
-			segment := VectorFromTo(*intersection, l.Origin)
-			shadow := NewRay(*intersection, segment)
+			segment := VectorFromTo(*intersection, l.Origin())
+			shadowRay := NewRay(*intersection, segment)
 			segmentLength := segment.Length()
-
-			// floating point error margin
-			// TODO: setting too small drops shadows completely?
-			// setting to 0.1 or 0.5 shows shadows; setting too big gives weirdness
-			// see https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-shading/ligth-and-shadows
-			// on shadow bias
-			e := 1E10
-			for _, o := range q.Scene.Objects {
-				if _, ok, dis := o.Intersect(shadow); ok && dis > e && dis < segmentLength {
-					continue Lights
-				}
+			if pointInShadow(shadowRay, q.Scene.Objects, segmentLength) {
+				continue
 			}
 			facingRatio := objectHit.SurfaceNormal(*intersection).Dot(segment)
 			if facingRatio <= 0 {
-				continue Lights
+				continue
 			}
-			color = Color{color.Add(l.Color.Times(STANDARD_ALBEDO * l.Intensity * facingRatio))}
+			color = color.Add(l.Color().Times(STANDARD_ALBEDO / math.Pi * l.Intensity(segmentLength) * facingRatio))
 		}
 
 		ans <- Answer{q.X, q.Y, color}
 	}
+}
+
+func pointInShadow(shadowRay Ray, objects []Object, maxDistance float64) bool {
+	// floating point error margin
+	// TODO: setting too small drops shadows completely?
+	// setting to 0.1 or 0.5 shows shadows; setting too big gives weirdness
+	// see https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-shading/ligth-and-shadows
+	// on shadow bias
+	e := 1E10
+	for _, o := range objects {
+		if _, ok, distance := o.Intersect(shadowRay); ok && distance > e && distance < maxDistance {
+			return true
+		}
+	}
+	return false
 }
