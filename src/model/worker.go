@@ -6,24 +6,24 @@ import (
 
 var BACKGROUND_COLOR = NewColor(10, 10, 10)
 
-type Question struct {
-	Scene *Scene
-	X, Y  int
+type question struct {
+	scene *Scene
+	x, y  int
 }
 
-type Answer struct {
-	X, Y  int
-	Color Color
+type answer struct {
+	x, y  int
+	color Color
 }
 
-func Worker(ch chan Question, ans chan Answer) {
+func worker(ch chan question, ans chan answer) {
 	for q := range ch {
-		ray := q.Scene.Camera.PixelRay(q.X, q.Y)
+		ray := q.scene.Camera.PixelRay(q.x, q.y)
 
 		var objectHit Object
 		var intersection *Vector
 		var minDistance = math.MaxFloat64
-		for _, o := range q.Scene.Objects {
+		for _, o := range q.scene.Objects {
 			if i, ok, distance := o.Intersect(ray); ok && distance >= 0 && distance < minDistance {
 				minDistance = distance
 				intersection = &i
@@ -32,17 +32,17 @@ func Worker(ch chan Question, ans chan Answer) {
 		}
 
 		if intersection == nil {
-			ans <- Answer{q.X, q.Y, BACKGROUND_COLOR}
+			ans <- answer{q.x, q.y, BACKGROUND_COLOR}
 			continue
 		}
 
 		color := NewColor(0, 0, 0)
 
-		for _, l := range q.Scene.Lights {
+		for _, l := range q.scene.Lights {
 			segment := VectorFromTo(*intersection, l.Origin())
 			shadowRay := NewRay(*intersection, segment)
 			segmentLength := segment.Length()
-			if pointInShadow(shadowRay, q.Scene.Objects, segmentLength) {
+			if pointInShadow(shadowRay, q.scene.Objects, segmentLength) {
 				continue
 			}
 			facingRatio := objectHit.SurfaceNormal(*intersection).Dot(segment)
@@ -52,7 +52,7 @@ func Worker(ch chan Question, ans chan Answer) {
 			color = color.Add(l.Color().Times(STANDARD_ALBEDO / math.Pi * l.Intensity(segmentLength) * facingRatio))
 		}
 
-		ans <- Answer{q.X, q.Y, color}
+		ans <- answer{q.x, q.y, color}
 	}
 }
 
@@ -62,7 +62,7 @@ func pointInShadow(shadowRay Ray, objects []Object, maxDistance float64) bool {
 	// setting to 0.1 or 0.5 shows shadows; setting too big gives weirdness
 	// see https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-shading/ligth-and-shadows
 	// on shadow bias
-	e := 1E10
+	e := 1E-10
 	for _, o := range objects {
 		if _, ok, distance := o.Intersect(shadowRay); ok && distance > e && distance < maxDistance {
 			return true

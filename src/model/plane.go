@@ -26,5 +26,8 @@ func (p Plane) Intersect(r Ray) (Vector, bool, float64) {
 
 func (p Plane) SurfaceNormal(Vector) Vector {
 	// TODO: determine direction?!
-	return p.Normal.Times(-1)
+	// solution: I think 2d faces have only one side that can be lit;
+	// related to direction of surface normal.
+	// with facingRatio this means other side is always pure black
+	return p.Normal.Times(1)
 }
