@@ -13,15 +13,14 @@ func NewPlane(u, v Vector, p Vector) Plane {
 	}
 }
 
-func (p Plane) Intersect(r Ray) (Vector, bool, float64) {
+func (p Plane) Intersect(r Ray) (float64, bool) {
 	ln := r.Direction.Dot(p.Normal)
 	if ln == 0 {
 		// line and plane parallel
-		return Vector{}, false, 0
+		return 0, false
 	}
 	d := p.Point.Sub(r.Origin).Dot(p.Normal) / ln
-	intersection := r.Origin.Add(r.Direction.Times(d))
-	return intersection, true, d
+	return d, true
 }
 
 func (p Plane) SurfaceNormal(Vector) Vector {

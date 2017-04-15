@@ -7,8 +7,7 @@ import (
 var BACKGROUND_COLOR = NewColor(10, 10, 10)
 
 type question struct {
-	scene *Scene
-	x, y  int
+	x, y int
 }
 
 type answer struct {
@@ -16,36 +15,25 @@ type answer struct {
 	color Color
 }
 
-func worker(ch chan question, ans chan answer) {
+func worker(scene *Scene, ch chan question, ans chan answer) {
 	for q := range ch {
-		ray := q.scene.Camera.PixelRay(q.x, q.y)
-
-		var objectHit Object
-		var intersection *Vector
-		var minDistance = math.MaxFloat64
-		for _, o := range q.scene.Objects {
-			if i, ok, distance := o.Intersect(ray); ok && distance >= 0 && distance < minDistance {
-				minDistance = distance
-				intersection = &i
-				objectHit = o
-			}
-		}
-
-		if intersection == nil {
+		ray := scene.Camera.PixelRay(q.x, q.y)
+		hit := closestIntersection(ray, scene.Objects)
+		if hit == nil {
 			ans <- answer{q.x, q.y, BACKGROUND_COLOR}
 			continue
 		}
 
 		color := NewColor(0, 0, 0)
 
-		for _, l := range q.scene.Lights {
-			segment := VectorFromTo(*intersection, l.Origin())
-			shadowRay := NewRay(*intersection, segment)
+		for _, l := range scene.Lights {
+			segment := VectorFromTo(hit.point, l.Origin())
+			shadowRay := NewRay(hit.point, segment)
 			segmentLength := segment.Length()
-			if pointInShadow(shadowRay, q.scene.Objects, segmentLength) {
+			if pointInShadow(shadowRay, scene.Objects, segmentLength) {
 				continue
 			}
-			facingRatio := objectHit.SurfaceNormal(*intersection).Dot(segment)
+			facingRatio := hit.object.SurfaceNormal(hit.point).Dot(segment)
 			if facingRatio <= 0 {
 				continue
 			}
@@ -53,6 +41,29 @@ func worker(ch chan question, ans chan answer) {
 		}
 
 		ans <- answer{q.x, q.y, color}
+	}
+}
+
+type hit struct {
+	object Object
+	point  Vector
+}
+
+func closestIntersection(ray Ray, objects []Object) *hit {
+	var objectHit Object
+	d := math.MaxFloat64
+	for _, o := range objects {
+		if distance, ok := o.Intersect(ray); ok && distance >= 0 && distance < d {
+			d = distance
+			objectHit = o
+		}
+	}
+	if d == math.MaxFloat64 {
+		return nil
+	}
+	return &hit{
+		object: objectHit,
+		point:  ray.Origin.Add(ray.Direction.Times(d)),
 	}
 }
 
@@ -64,7 +75,7 @@ func pointInShadow(shadowRay Ray, objects []Object, maxDistance float64) bool {
 	// on shadow bias
 	e := 1E-10
 	for _, o := range objects {
-		if _, ok, distance := o.Intersect(shadowRay); ok && distance > e && distance < maxDistance {
+		if distance, ok := o.Intersect(shadowRay); ok && distance > e && distance < maxDistance {
 			return true
 		}
 	}

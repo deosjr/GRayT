@@ -41,7 +41,7 @@ func (i Image) Set(x, y int, c Color) {
 	i.pixels[y][x] = c
 }
 
-func (i Image) Save() {
+func (i Image) Save(filename string) {
 	m := image.NewRGBA(image.Rect(0, 0, i.width, i.height))
 	for x := 0; x < i.width; x++ {
 		for y := 0; y < i.height; y++ {
@@ -51,7 +51,7 @@ func (i Image) Save() {
 		}
 	}
 
-	f, err := os.OpenFile("out.png", os.O_WRONLY|os.O_CREATE, 0600)
+	f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
 		fmt.Println(err)
 		return

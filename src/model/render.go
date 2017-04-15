@@ -1,25 +1,21 @@
 package model
 
-var (
-	NUMWORKERS = 10
-)
-
-func Render(scene *Scene) {
+func Render(scene *Scene, numWorkers int) Image {
 
 	h := int(scene.Camera.Image.height)
 	w := int(scene.Camera.Image.width)
 
-	ch := make(chan question, NUMWORKERS)
-	ans := make(chan answer, NUMWORKERS)
+	ch := make(chan question, numWorkers)
+	ans := make(chan answer, numWorkers)
 
-	for i := 0; i < NUMWORKERS; i++ {
-		go worker(ch, ans)
+	for i := 0; i < numWorkers; i++ {
+		go worker(scene, ch, ans)
 	}
 
 	go func() {
 		for y := 0; y < h; y++ {
 			for x := 0; x < w; x++ {
-				ch <- question{scene, x, y}
+				ch <- question{x, y}
 			}
 		}
 		close(ch)
@@ -35,5 +31,5 @@ func Render(scene *Scene) {
 		numPixels--
 	}
 
-	scene.Camera.Image.Save()
+	return scene.Camera.Image
 }

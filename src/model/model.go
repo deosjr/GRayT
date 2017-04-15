@@ -5,7 +5,7 @@ import "math"
 var STANDARD_ALBEDO = 0.18
 
 type Object interface {
-	Intersect(Ray) (intersection Vector, ok bool, distance float64)
+	Intersect(Ray) (distance float64, ok bool)
 	SurfaceNormal(point Vector) Vector
 }
 
