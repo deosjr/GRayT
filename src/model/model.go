@@ -7,6 +7,7 @@ var STANDARD_ALBEDO = 0.18
 type Object interface {
 	Intersect(Ray) (distance float64, ok bool)
 	SurfaceNormal(point Vector) Vector
+	GetColor() Color
 }
 
 type Light interface {

@@ -76,6 +76,14 @@ func (c Color) Times(f float64) Color {
 	}
 }
 
+func (c Color) Product(d Color) Color {
+	return Color{
+		r: c.r * d.r,
+		g: c.g * d.g,
+		b: c.b * d.b,
+	}
+}
+
 func float64touint8(f float64) uint8 {
 	if f < 0 {
 		return 0

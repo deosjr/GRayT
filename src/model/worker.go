@@ -37,7 +37,8 @@ func worker(scene *Scene, ch chan question, ans chan answer) {
 			if facingRatio <= 0 {
 				continue
 			}
-			color = color.Add(l.Color().Times(STANDARD_ALBEDO / math.Pi * l.Intensity(segmentLength) * facingRatio))
+			lightColor := color.Add(l.Color().Times(STANDARD_ALBEDO / math.Pi * l.Intensity(segmentLength) * facingRatio))
+			color = hit.object.GetColor().Product(lightColor)
 		}
 
 		ans <- answer{q.x, q.y, color}

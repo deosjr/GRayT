@@ -5,6 +5,11 @@ import "math"
 type Sphere struct {
 	Center Vector
 	Radius float64
+	Color  Color
+}
+
+func (s Sphere) GetColor() Color {
+	return s.Color
 }
 
 func (s Sphere) Intersect(r Ray) (float64, bool) {
