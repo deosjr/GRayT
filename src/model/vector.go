@@ -43,6 +43,11 @@ func (u Vector) Length() float64 {
 }
 
 func (u Vector) Normalize() Vector {
+	l := u.Length()
+	// dealing with degenerate case
+	if l == 0 {
+		return Vector{0, 0, 0}
+	}
 	return u.Times(1.0 / u.Length())
 }
 

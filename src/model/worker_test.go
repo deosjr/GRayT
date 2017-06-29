@@ -6,9 +6,10 @@ import (
 )
 
 var (
-	ex = Vector{1, 0, 0}
-	ey = Vector{0, 1, 0}
-	ez = Vector{0, 0, 1}
+	ex    = Vector{1, 0, 0}
+	ey    = Vector{0, 1, 0}
+	ez    = Vector{0, 0, 1}
+	white = NewColor(255, 255, 255)
 )
 
 func sampleScene() *Scene {
@@ -16,10 +17,10 @@ func sampleScene() *Scene {
 	scene := NewScene(camera)
 	scene.AddLight(Vector{0, 4, 0}, NewColor(0, 0, 255), 1500)
 	scene.AddLight(Vector{-5, 5, 0}, NewColor(255, 0, 0), 1000)
-	scene.Add(Sphere{Vector{0, 0, -5}, 1.0})
-	scene.Add(Sphere{Vector{5, 0, -5}, 1.0})
-	scene.Add(NewPlane(ex, ey, Vector{0, 0, -10}))
-	scene.Add(NewPlane(ez, ex, Vector{0, -2, 0}))
+	scene.Add(Sphere{Vector{0, 0, -5}, 1.0, white})
+	scene.Add(Sphere{Vector{5, 0, -5}, 1.0, white})
+	scene.Add(NewPlane(ex, ey, Vector{0, 0, -10}, white))
+	scene.Add(NewPlane(ez, ex, Vector{0, -2, 0}, white))
 	return scene
 }
 
