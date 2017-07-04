@@ -6,7 +6,7 @@ type Plane struct {
 	Color  Color
 }
 
-func NewPlane(u, v Vector, p Vector, c Color) Plane {
+func NewPlane(p Vector, u, v Vector, c Color) Plane {
 	n := u.Cross(v).Normalize()
 	return Plane{
 		Point:  p,

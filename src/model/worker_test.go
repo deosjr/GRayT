@@ -19,8 +19,8 @@ func sampleScene() *Scene {
 	scene.AddLight(Vector{-5, 5, 0}, NewColor(255, 0, 0), 1000)
 	scene.Add(Sphere{Vector{0, 0, -5}, 1.0, white})
 	scene.Add(Sphere{Vector{5, 0, -5}, 1.0, white})
-	scene.Add(NewPlane(ex, ey, Vector{0, 0, -10}, white))
-	scene.Add(NewPlane(ez, ex, Vector{0, -2, 0}, white))
+	scene.Add(NewPlane(Vector{0, 0, -10}, ex, ey, white))
+	scene.Add(NewPlane(Vector{0, -2, 0}, ez, ex, white))
 	return scene
 }
 

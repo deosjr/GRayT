@@ -24,8 +24,8 @@ func main() {
 	scene.Add(model.Sphere{model.Vector{0, -1, -5}, 1.0, model.NewColor(255, 0, 0)})
 	scene.Add(model.Sphere{model.Vector{3, 0, -5}, 1.0, model.NewColor(100, 100, 100)})
 	scene.Add(model.Sphere{model.Vector{-3, 1, -5}, 1.0, model.NewColor(0, 0, 255)})
-	scene.Add(model.NewPlane(ex, ey, model.Vector{0, 0, -10}, model.NewColor(50, 200, 240)))
-	scene.Add(model.NewPlane(ez, ex, model.Vector{0, -2, 0}, model.NewColor(45, 200, 45)))
+	scene.Add(model.NewPlane(model.Vector{0, 0, -10}, ex, ey, model.NewColor(50, 200, 240)))
+	scene.Add(model.NewPlane(model.Vector{0, -2, 0}, ez, ex, model.NewColor(45, 200, 45)))
 
 	img := model.Render(scene, NUMWORKERS)
 	img.Save("out.png")

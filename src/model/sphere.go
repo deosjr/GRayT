@@ -8,6 +8,14 @@ type Sphere struct {
 	Color  Color
 }
 
+func NewSphere(o Vector, r float64, c Color) Sphere {
+	return Sphere{
+		Center: o,
+		Radius: r,
+		Color:  c,
+	}
+}
+
 func (s Sphere) GetColor() Color {
 	return s.Color
 }
