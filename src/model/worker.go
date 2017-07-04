@@ -54,7 +54,7 @@ func closestIntersection(ray Ray, objects []Object) *hit {
 	var objectHit Object
 	d := math.MaxFloat64
 	for _, o := range objects {
-		if distance, ok := o.Intersect(ray); ok && distance >= 0 && distance < d {
+		if distance, ok := o.Intersect(ray); ok && distance < d {
 			d = distance
 			objectHit = o
 		}
@@ -64,7 +64,7 @@ func closestIntersection(ray Ray, objects []Object) *hit {
 	}
 	return &hit{
 		object: objectHit,
-		point:  ray.Origin.Add(ray.Direction.Times(d)),
+		point:  PointFromRay(ray, d),
 	}
 }
 

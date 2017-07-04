@@ -26,6 +26,9 @@ func (p Plane) Intersect(r Ray) (float64, bool) {
 		return 0, false
 	}
 	d := p.Point.Sub(r.Origin).Dot(p.Normal) / ln
+	if d <= 0 {
+		return 0, false
+	}
 	return d, true
 }
 

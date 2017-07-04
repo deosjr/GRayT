@@ -33,6 +33,9 @@ func (s Sphere) Intersect(r Ray) (float64, bool) {
 
 	// only return closest intersection point
 	d := -loc - math.Sqrt(det)
+	if d <= 0 {
+		return 0, false
+	}
 	return d, true
 }
 

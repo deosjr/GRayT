@@ -70,3 +70,7 @@ func NewRay(o, d Vector) Ray {
 		Direction: d.Normalize(),
 	}
 }
+
+func PointFromRay(r Ray, d float64) Vector {
+	return r.Origin.Add(r.Direction.Times(d))
+}

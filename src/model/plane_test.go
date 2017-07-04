@@ -23,14 +23,14 @@ func TestPlaneIntersect(t *testing.T) {
 		},
 		{
 			p: Plane{
-				Point:  Vector{1, 1, -5},
+				Point:  Vector{1, 1, 5},
 				Normal: Vector{1, 1, 1}.Normalize(),
 			},
 			r: Ray{
 				Origin:    Vector{0, 0, 0},
 				Direction: Vector{6, 1, 4}.Normalize(),
 			},
-			want:      -1.985484515258323,
+			want:      4.63279720226942,
 			wantTruth: true,
 		},
 	} {

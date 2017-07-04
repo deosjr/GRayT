@@ -26,6 +26,7 @@ func main() {
 	scene.Add(model.Sphere{model.Vector{-3, 1, -5}, 1.0, model.NewColor(0, 0, 255)})
 	scene.Add(model.NewPlane(model.Vector{0, 0, -10}, ex, ey, model.NewColor(50, 200, 240)))
 	scene.Add(model.NewPlane(model.Vector{0, -2, 0}, ez, ex, model.NewColor(45, 200, 45)))
+	scene.Add(model.Triangle{model.Vector{3, 0, -4}, model.Vector{4, 1, -4}, model.Vector{3, 1, -4}, model.NewColor(0, 255, 0)})
 
 	img := model.Render(scene, NUMWORKERS)
 	img.Save("out.png")
