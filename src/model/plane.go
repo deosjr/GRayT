@@ -25,7 +25,7 @@ func (p Plane) Intersect(r Ray) (float64, bool) {
 		// line and plane parallel
 		return 0, false
 	}
-	d := p.Point.Sub(r.Origin).Dot(p.Normal) / ln
+	d := VectorFromTo(r.Origin, p.Point).Dot(p.Normal) / ln
 	if d <= 0 {
 		return 0, false
 	}

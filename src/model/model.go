@@ -48,8 +48,8 @@ func NewScene(camera Camera) *Scene {
 	}
 }
 
-func (s *Scene) Add(o Object) {
-	s.Objects = append(s.Objects, o)
+func (s *Scene) Add(o ...Object) {
+	s.Objects = append(s.Objects, o...)
 }
 
 func (s *Scene) AddLight(o Vector, c Color, i float64) {

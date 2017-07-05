@@ -1,8 +1,6 @@
 package model
 
-import (
-	"math"
-)
+import "math"
 
 var BACKGROUND_COLOR = NewColor(10, 10, 10)
 
