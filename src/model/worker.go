@@ -23,22 +23,13 @@ func worker(scene *Scene, ch chan question, ans chan answer) {
 		}
 
 		color := NewColor(0, 0, 0)
-
 		for _, l := range scene.Lights {
-			segment := VectorFromTo(hit.point, l.Origin())
-			shadowRay := NewRay(hit.point, segment)
-			segmentLength := segment.Length()
-			if pointInShadow(shadowRay, scene.Objects, segmentLength) {
+			c, ok := lightContribution(ray, hit, color, l, scene.Objects)
+			if !ok {
 				continue
 			}
-			facingRatio := hit.object.SurfaceNormal(hit.point).Dot(segment)
-			if facingRatio <= 0 {
-				continue
-			}
-			lightColor := color.Add(l.Color().Times(STANDARD_ALBEDO / math.Pi * l.Intensity(segmentLength) * facingRatio))
-			color = hit.object.GetColor().Product(lightColor)
+			color = c
 		}
-
 		ans <- answer{q.x, q.y, color}
 	}
 }
@@ -64,6 +55,24 @@ func closestIntersection(ray Ray, objects []Object) *hit {
 		object: objectHit,
 		point:  PointFromRay(ray, d),
 	}
+}
+
+func lightContribution(ray Ray, hit *hit, color Color, l Light, objects []Object) (Color, bool) {
+	segment := VectorFromTo(hit.point, l.Origin())
+	shadowRay := NewRay(hit.point, segment)
+	segmentLength := segment.Length()
+	if pointInShadow(shadowRay, objects, segmentLength) {
+		return Color{}, false
+	}
+	facingRatio := hit.object.SurfaceNormal(hit.point).Dot(VectorFromTo(hit.point, ray.Origin))
+	if facingRatio <= 0 {
+		return Color{}, false
+	}
+	lightRatio := hit.object.SurfaceNormal(hit.point).Dot(segment)
+	// TODO: this seems fishy. First light will contribute more color than second one?
+	factors := STANDARD_ALBEDO / math.Pi * l.Intensity(segmentLength) * facingRatio * lightRatio
+	lightColor := color.Add(l.Color().Times(factors))
+	return hit.object.GetColor().Product(lightColor), true
 }
 
 func pointInShadow(shadowRay Ray, objects []Object, maxDistance float64) bool {
