@@ -2,36 +2,12 @@ package model
 
 import "math"
 
-var BACKGROUND_COLOR = NewColor(10, 10, 10)
+var STANDARD_ALBEDO = 0.18
 
-type question struct {
-	x, y int
-}
-
-type answer struct {
-	x, y  int
-	color Color
-}
-
-func worker(scene *Scene, ch chan question, ans chan answer) {
-	for q := range ch {
-		ray := scene.Camera.PixelRay(q.x, q.y)
-		hit := closestIntersection(ray, scene.Objects)
-		if hit == nil {
-			ans <- answer{q.x, q.y, BACKGROUND_COLOR}
-			continue
-		}
-
-		color := NewColor(0, 0, 0)
-		for _, l := range scene.Lights {
-			c, ok := lightContribution(ray, hit, color, l, scene.Objects)
-			if !ok {
-				continue
-			}
-			color = c
-		}
-		ans <- answer{q.x, q.y, color}
-	}
+type Object interface {
+	Intersect(Ray) (distance float64, ok bool)
+	SurfaceNormal(point Vector) Vector
+	GetColor() Color
 }
 
 type hit struct {
@@ -39,7 +15,7 @@ type hit struct {
 	point  Vector
 }
 
-func closestIntersection(ray Ray, objects []Object) *hit {
+func ClosestIntersection(ray Ray, objects []Object) *hit {
 	var objectHit Object
 	d := math.MaxFloat64
 	for _, o := range objects {
@@ -57,7 +33,7 @@ func closestIntersection(ray Ray, objects []Object) *hit {
 	}
 }
 
-func lightContribution(ray Ray, hit *hit, color Color, l Light, objects []Object) (Color, bool) {
+func LightContribution(ray Ray, hit *hit, color Color, l Light, objects []Object) (Color, bool) {
 	segment := VectorFromTo(hit.point, l.Origin())
 	shadowRay := NewRay(hit.point, segment)
 	segmentLength := segment.Length()

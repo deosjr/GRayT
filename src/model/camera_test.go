@@ -1,6 +1,8 @@
 package model
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestCameraPixelRay(t *testing.T) {
 	for i, tt := range []struct {

@@ -47,7 +47,7 @@ func TestTriangleSurfaceNormal(t *testing.T) {
 				P2: Vector{0, 0, 1},
 			},
 			v:    Vector{1, 1, 1},
-			want: Vector{1, 1, 1},
+			want: Vector{0.5773502691896258, 0.5773502691896258, 0.5773502691896258},
 		},
 	} {
 		got := tt.t.SurfaceNormal(tt.v)

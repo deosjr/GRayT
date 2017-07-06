@@ -3,6 +3,7 @@ package main
 import (
 	m "model"
 	"projects"
+	"render"
 )
 
 var (
@@ -19,9 +20,10 @@ func main() {
 
 	camera := m.NewCamera(WIDTH, HEIGHT)
 
-	scene := m.NewScene(camera)
-	scene.AddLight(m.Vector{2, 2, 0}, m.NewColor(255, 255, 255), 300)
-	scene.AddLight(m.Vector{-5, 5, -3}, m.NewColor(255, 255, 255), 300)
+	scene := render.NewScene(camera)
+	l1 := m.NewPointLight(m.Vector{2, 2, 0}, m.NewColor(255, 255, 255), 300)
+	l2 := m.NewPointLight(m.Vector{-5, 5, -3}, m.NewColor(255, 255, 255), 300)
+	scene.AddLights(l1, l2)
 	// background
 	scene.Add(m.NewPlane(m.Vector{0, 0, -10}, ex, ey, m.NewColor(50, 200, 240)))
 	// floor
@@ -50,9 +52,8 @@ func main() {
 		m.Vector{-1, -1, -2},
 		m.NewColor(255, 0, 0)}
 
-	//scene.Add(r.Tesselate()...)
-	scene.Add(projects.GridToTriangles(projects.ToPointGrid(r, 0.5))...)
+	scene.Add(projects.GridToTriangles(projects.ToPointGrid(r, 0.2))...)
 
-	img := m.Render(scene, NUMWORKERS)
+	img := render.Render(scene, NUMWORKERS)
 	img.Save("out.png")
 }
