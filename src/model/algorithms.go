@@ -33,7 +33,7 @@ func ClosestIntersection(ray Ray, objects []Object) *hit {
 	}
 }
 
-func LightContribution(ray Ray, hit *hit, color Color, l Light, objects []Object) (Color, bool) {
+func LightContribution(ray Ray, hit *hit, l Light, objects []Object) (Color, bool) {
 	segment := VectorFromTo(hit.point, l.Origin())
 	shadowRay := NewRay(hit.point, segment)
 	segmentLength := segment.Length()
@@ -45,9 +45,8 @@ func LightContribution(ray Ray, hit *hit, color Color, l Light, objects []Object
 		return Color{}, false
 	}
 	lightRatio := hit.object.SurfaceNormal(hit.point).Dot(segment)
-	// TODO: this seems fishy. First light will contribute more color than second one?
 	factors := STANDARD_ALBEDO / math.Pi * l.Intensity(segmentLength) * facingRatio * lightRatio
-	lightColor := color.Add(l.Color().Times(factors))
+	lightColor := l.Color().Times(factors)
 	return hit.object.GetColor().Product(lightColor), true
 }
 

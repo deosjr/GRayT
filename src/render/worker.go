@@ -24,11 +24,11 @@ func worker(scene *Scene, ch chan question, ans chan answer) {
 
 		color := model.NewColor(0, 0, 0)
 		for _, l := range scene.Lights {
-			c, ok := model.LightContribution(ray, hit, color, l, scene.Objects)
+			c, ok := model.LightContribution(ray, hit, l, scene.Objects)
 			if !ok {
 				continue
 			}
-			color = c
+			color = color.Add(c)
 		}
 		ans <- answer{q.x, q.y, color}
 	}

@@ -2,6 +2,12 @@ package render
 
 import "model"
 
+// TODO: optimizations
+// - speed: bounding volume hierarchy
+//   - backface culling? only for opaque objects?
+// - scaling: communicate over the wire
+//   - memory: use protobuff ?
+
 func Render(scene *Scene, numWorkers int) Image {
 
 	w, h := int(scene.Camera.Width), int(scene.Camera.Height)
