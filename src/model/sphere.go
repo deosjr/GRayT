@@ -3,21 +3,17 @@ package model
 import "math"
 
 type Sphere struct {
+	object
 	Center Vector
 	Radius float64
-	Color  Color
 }
 
 func NewSphere(o Vector, r float64, c Color) Sphere {
 	return Sphere{
+		object: object{c},
 		Center: o,
 		Radius: r,
-		Color:  c,
 	}
-}
-
-func (s Sphere) GetColor() Color {
-	return s.Color
 }
 
 func (s Sphere) Intersect(r Ray) (float64, bool) {

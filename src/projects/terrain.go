@@ -42,8 +42,8 @@ func GridToTriangles(grid [][]model.Vector) []model.Object {
 			p2 := grid[y][x+1]
 			p3 := grid[y+1][x+1]
 			p4 := grid[y+1][x]
-			t1 := model.Triangle{p1, p4, p2, model.NewColor(255, 0, 0)}
-			t2 := model.Triangle{p4, p3, p2, model.NewColor(0, 0, 255)}
+			t1 := model.NewTriangle(p1, p4, p2, model.NewColor(255, 0, 0))
+			t2 := model.NewTriangle(p4, p3, p2, model.NewColor(0, 0, 255))
 			triangles = append(triangles, t1, t2)
 		}
 	}

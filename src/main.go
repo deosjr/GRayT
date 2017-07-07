@@ -29,8 +29,8 @@ func main() {
 	// floor
 	scene.Add(m.NewPlane(m.Vector{0, -2, 0}, ez, ex, m.NewColor(45, 200, 45)))
 
-	scene.Add(m.Sphere{m.Vector{-2, 1, -4}, 1.0, m.NewColor(0, 0, 255)})
-	scene.Add(m.Sphere{m.Vector{2, 0, -2}, 1.0, m.NewColor(255, 255, 0)})
+	scene.Add(m.NewSphere(m.Vector{-2, 1, -4}, 1.0, m.NewColor(0, 0, 255)))
+	scene.Add(m.NewSphere(m.Vector{2, 0, -2}, 1.0, m.NewColor(255, 255, 0)))
 
 	c := m.Cuboid{
 		m.Vector{1.5, 1, -4},

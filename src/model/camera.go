@@ -64,26 +64,3 @@ func (c Camera) PixelRay(x, y int) Ray {
 	direction := VectorFromTo(c.Origin, pixel)
 	return NewRay(pixel, direction)
 }
-
-// TODO: currently unused!
-// METHOD 2
-// NDC = percentage of total width/height on (0,0) (1,1) screen
-// with (0,0) as lower left hand corner (LLHC)
-// Screen = that scaled to (-1,1) (1,-1) screen with (-1,1) as ULHC
-func (c Camera) pixelRay(x, y int) Ray {
-	xNDC := (float64(x) + 0.5) / c.Width
-	yNDC := (float64(y) + 0.5) / c.Height
-
-	xScreen := 2*xNDC - 1
-	yScreen := 1 - 2*yNDC
-
-	tanx := math.Tan(c.FieldOfView / 2)
-	tany := math.Tan((c.Height / c.Width) * c.FieldOfView / 2)
-
-	px := xScreen * tanx
-	py := yScreen * tany
-	pixel := Vector{px, py, -1}
-
-	direction := VectorFromTo(c.Origin, pixel)
-	return NewRay(pixel, direction)
-}

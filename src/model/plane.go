@@ -1,22 +1,18 @@
 package model
 
 type Plane struct {
+	object
 	Point  Vector
 	Normal Vector
-	Color  Color
 }
 
 func NewPlane(p Vector, u, v Vector, c Color) Plane {
 	n := u.Cross(v).Normalize()
 	return Plane{
+		object: object{c},
 		Point:  p,
 		Normal: n,
-		Color:  c,
 	}
-}
-
-func (p Plane) GetColor() Color {
-	return p.Color
 }
 
 func (p Plane) Intersect(r Ray) (float64, bool) {

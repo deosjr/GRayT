@@ -20,8 +20,8 @@ func sampleScene() *Scene {
 	l1 := model.NewPointLight(model.Vector{0, 4, 0}, model.NewColor(0, 0, 255), 1500)
 	l2 := model.NewPointLight(model.Vector{-5, 5, 0}, model.NewColor(255, 0, 0), 1000)
 	scene.AddLights(l1, l2)
-	scene.Add(model.Sphere{model.Vector{0, 0, -5}, 1.0, white})
-	scene.Add(model.Sphere{model.Vector{5, 0, -5}, 1.0, white})
+	scene.Add(model.NewSphere(model.Vector{0, 0, -5}, 1.0, white))
+	scene.Add(model.NewSphere(model.Vector{5, 0, -5}, 1.0, white))
 	scene.Add(model.NewPlane(model.Vector{0, 0, -10}, ex, ey, white))
 	scene.Add(model.NewPlane(model.Vector{0, -2, 0}, ez, ex, white))
 	return scene

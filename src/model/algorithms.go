@@ -10,6 +10,14 @@ type Object interface {
 	GetColor() Color
 }
 
+type object struct {
+	Color Color
+}
+
+func (o object) GetColor() Color {
+	return o.Color
+}
+
 type hit struct {
 	object Object
 	point  Vector
