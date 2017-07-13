@@ -1,5 +1,8 @@
 package model
 
+// NOTE: planes will not work with BVH
+// since their bounding box is infinite
+
 type Plane struct {
 	object
 	Point  Vector

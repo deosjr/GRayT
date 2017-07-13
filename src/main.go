@@ -17,7 +17,6 @@ var (
 )
 
 func main() {
-
 	camera := m.NewCamera(WIDTH, HEIGHT)
 
 	scene := render.NewScene(camera)
@@ -53,7 +52,7 @@ func main() {
 		m.Vector{-1, -1, -2},
 		m.NewColor(255, 0, 0)}
 
-	scene.Add(projects.GridToTriangles(projects.ToPointGrid(r, 0.1))...)
+	scene.Add(projects.GridToTriangles(projects.ToPointGrid(r, 1))...)
 
 	img := render.Render(scene, NUMWORKERS)
 	img.Save("out.png")

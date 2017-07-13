@@ -6,7 +6,7 @@ import (
 
 func TestCameraPixelRay(t *testing.T) {
 	for i, tt := range []struct {
-		c             Camera
+		c             *Camera
 		x, y          int
 		wantOrigin    *Vector
 		wantDirection *Vector
@@ -29,6 +29,7 @@ func TestCameraPixelRay(t *testing.T) {
 			wantOrigin: &Vector{-0.99, 0.99, -1},
 		},
 	} {
+		tt.c.Precompute()
 		got := tt.c.PixelRay(tt.x, tt.y)
 		if tt.wantOrigin != nil && got.Origin != *tt.wantOrigin {
 			t.Errorf("%d) got origin %v want %v", i, got.Origin, *tt.wantOrigin)

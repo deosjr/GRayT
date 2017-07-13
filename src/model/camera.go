@@ -14,49 +14,52 @@ type Camera struct {
 	pixelWidth, pixelHeight float64
 }
 
-func NewCamera(w, h uint) Camera {
+func NewCamera(w, h uint) *Camera {
 	r := NewRay(Vector{0, 0, 0}, Vector{0, 0, -1})
 	wf := float64(w)
 	hf := float64(h)
 	fov := 0.5 * math.Pi
-	ulhc, u, v, pw, ph := precompute(r, wf, hf, fov)
-	return Camera{
+	return &Camera{
 		Ray:         r,
 		FieldOfView: fov,
 		Width:       wf,
 		Height:      hf,
-		ulhc:        ulhc,
-		u:           u,
-		v:           v,
-		pixelWidth:  pw,
-		pixelHeight: ph,
 	}
 }
 
-func precompute(r Ray, xres, yres, fov float64) (Vector, Vector, Vector, float64, float64) {
-	w := r.Direction
+// TODO: move and rotate are WIP (and never called right now)
+
+func (c *Camera) Move(v Vector) {
+	newOrigin := c.Ray.Origin.Add(v)
+	c.Ray = NewRay(newOrigin, c.Ray.Direction)
+}
+
+func (c *Camera) Rotate() {
+	newDirection := Vector{} // TODO: funky rotation stuff
+	c.Ray = NewRay(c.Ray.Origin, newDirection)
+}
+
+func (c *Camera) Precompute() {
+	w := c.Ray.Direction
 	up := Vector{0, 1, 0}
-	u := w.Cross(up)
-	v := u.Cross(w)
+	c.u = w.Cross(up)
+	c.v = c.u.Cross(w)
 
-	tanx := math.Tan(fov / 2)
-	tany := math.Tan((yres / xres) * fov / 2)
+	tanx := math.Tan(c.FieldOfView / 2)
+	tany := math.Tan((c.Height / c.Width) * c.FieldOfView / 2)
 
-	pixelWidth := tanx / (xres / 2)
-	pixelHeight := tany / (yres / 2)
-	ULHC := r.Origin.Add(w).Sub(u.Times((xres / 2) * pixelWidth)).Add(v.Times((yres / 2) * pixelHeight))
-	ULHCmid := ULHC.Add(u.Times(pixelWidth / 2)).Sub(v.Times(pixelHeight / 2))
-	return ULHCmid, u, v, pixelWidth, pixelHeight
+	c.pixelWidth = tanx / (c.Width / 2)
+	c.pixelHeight = tany / (c.Height / 2)
+	ULHC := c.Ray.Origin.Add(w).Sub(c.u.Times((c.Width / 2) * c.pixelWidth)).Add(c.v.Times((c.Height / 2) * c.pixelHeight))
+	c.ulhc = ULHC.Add(c.u.Times(c.pixelWidth / 2)).Sub(c.v.Times(c.pixelHeight / 2))
 }
 
 // 3d translation of 2d point on view
 // assumes width >= height
 // view size is 2x2 in world, from -1,1 to 1,-1
 // viewing window lives in ex x ey plane (z = -1)
-
-// METHOD 1
 // viewport coordinate system (u,v,w)
-func (c Camera) PixelRay(x, y int) Ray {
+func (c *Camera) PixelRay(x, y int) Ray {
 	xfactor := c.pixelWidth * float64(x)
 	yfactor := c.pixelHeight * float64(y)
 	pixel := c.ulhc.Add(c.u.Times(xfactor)).Sub(c.v.Times(yfactor))

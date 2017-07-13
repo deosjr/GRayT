@@ -9,6 +9,7 @@ import "model"
 //   - memory: use protobuff ?
 
 func Render(scene *Scene, numWorkers int) Image {
+	scene.Camera.Precompute()
 
 	w, h := int(scene.Camera.Width), int(scene.Camera.Height)
 	img := newImage(w, h)
@@ -45,10 +46,10 @@ func Render(scene *Scene, numWorkers int) Image {
 type Scene struct {
 	Objects []model.Object
 	Lights  []model.Light
-	Camera  model.Camera
+	Camera  *model.Camera
 }
 
-func NewScene(camera model.Camera) *Scene {
+func NewScene(camera *model.Camera) *Scene {
 	return &Scene{
 		Objects: []model.Object{},
 		Lights:  []model.Light{},
