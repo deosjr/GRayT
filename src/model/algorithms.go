@@ -2,7 +2,7 @@ package model
 
 import "math"
 
-var STANDARD_ALBEDO = 0.18
+const standardAlbedo = 0.18
 
 type Object interface {
 	Intersect(Ray) (distance float64, ok bool)
@@ -53,7 +53,7 @@ func LightContribution(ray Ray, hit *hit, l Light, objects []Object) (Color, boo
 		return Color{}, false
 	}
 	lightRatio := hit.object.SurfaceNormal(hit.point).Dot(segment)
-	factors := STANDARD_ALBEDO / math.Pi * l.Intensity(segmentLength) * facingRatio * lightRatio
+	factors := standardAlbedo / math.Pi * l.Intensity(segmentLength) * facingRatio * lightRatio
 	lightColor := l.Color().Times(factors)
 	return hit.object.GetColor().Product(lightColor), true
 }

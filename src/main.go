@@ -7,9 +7,9 @@ import (
 )
 
 var (
-	WIDTH      uint = 1600
-	HEIGHT     uint = 1200
-	NUMWORKERS      = 10
+	width      uint = 1600
+	height     uint = 1200
+	numWorkers      = 10
 
 	ex = m.Vector{1, 0, 0}
 	ey = m.Vector{0, 1, 0}
@@ -17,7 +17,7 @@ var (
 )
 
 func main() {
-	camera := m.NewCamera(WIDTH, HEIGHT)
+	camera := m.NewCamera(width, height)
 
 	scene := render.NewScene(camera)
 	l1 := m.NewPointLight(m.Vector{2, 2, 0}, m.NewColor(255, 255, 255), 300)
@@ -54,6 +54,6 @@ func main() {
 
 	scene.Add(projects.GridToTriangles(projects.ToPointGrid(r, 1))...)
 
-	img := render.Render(scene, NUMWORKERS)
+	img := render.Render(scene, numWorkers)
 	img.Save("out.png")
 }
