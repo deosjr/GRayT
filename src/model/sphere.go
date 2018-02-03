@@ -16,6 +16,21 @@ func NewSphere(o Vector, r float64, c Color) Sphere {
 	}
 }
 
+func (s Sphere) Bound() AABB {
+	return NewAABB(
+		Vector{
+			s.Center.X - s.Radius,
+			s.Center.Y - s.Radius,
+			s.Center.Z - s.Radius,
+		},
+		Vector{
+			s.Center.X + s.Radius,
+			s.Center.Y + s.Radius,
+			s.Center.Z + s.Radius,
+		},
+	)
+}
+
 func (s Sphere) Intersect(r Ray) (float64, bool) {
 
 	oc := VectorFromTo(s.Center, r.Origin)

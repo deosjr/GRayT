@@ -1,9 +1,57 @@
 package model
 
+import "math"
+
+// Axis-aligned bounding box
+type AABB struct {
+	Pmin, Pmax Vector
+}
+
+func NewAABB(p1, p2 Vector) AABB {
+	return AABB{
+		Pmin: Vector{
+			math.Min(p1.X, p2.X),
+			math.Min(p1.Y, p2.Y),
+			math.Min(p1.Z, p2.Z)},
+		Pmax: Vector{
+			math.Max(p1.X, p2.X),
+			math.Max(p1.Y, p2.Y),
+			math.Max(p1.Z, p2.Z)},
+	}
+}
+
+func (b AABB) AddPoint(p Vector) AABB {
+	return AABB{
+		Pmin: Vector{
+			math.Min(b.Pmin.X, p.X),
+			math.Min(b.Pmin.Y, p.Y),
+			math.Min(b.Pmin.Z, p.Z)},
+		Pmax: Vector{
+			math.Max(b.Pmax.X, p.X),
+			math.Max(b.Pmax.Y, p.Y),
+			math.Max(b.Pmax.Z, p.Z)},
+	}
+}
+
+func (b AABB) AddAABB(b2 AABB) AABB {
+	return AABB{
+		Pmin: Vector{
+			math.Min(b.Pmin.X, b2.Pmin.X),
+			math.Min(b.Pmin.Y, b2.Pmin.Y),
+			math.Min(b.Pmin.Z, b2.Pmin.Z)},
+		Pmax: Vector{
+			math.Max(b.Pmax.X, b2.Pmax.X),
+			math.Max(b.Pmax.Y, b2.Pmax.Y),
+			math.Max(b.Pmax.Z, b2.Pmax.Z)},
+	}
+}
+
 // Builds on quadrilateral definition:
 // Let P1 - P4 be the top and
 // let P5 - P8 be the bottom quadrilateral
 // P1 corresponding to P5 etc
+
+// TODO: Can be represented with only 2 points, like AABB
 
 type Cuboid struct {
 	P1, P2, P3, P4, P5, P6, P7, P8 Vector
@@ -28,6 +76,8 @@ func (c Cuboid) Tesselate() []Object {
 //    |           |
 //    . --------- .
 //   P4           P3
+
+// cant represent in 2 points due to sidedness?
 
 type Quadrilateral struct {
 	P1, P2, P3, P4 Vector

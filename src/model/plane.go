@@ -1,7 +1,6 @@
 package model
 
-// NOTE: planes will not work with BVH
-// since their bounding box is infinite
+import "math"
 
 type Plane struct {
 	object
@@ -16,6 +15,23 @@ func NewPlane(p Vector, u, v Vector, c Color) Plane {
 		Point:  p,
 		Normal: n,
 	}
+}
+
+// NOTE: planes will not work with BVH
+// since their bounding box is infinite
+// Although maybe we can use -Inf/Inf box?
+
+func (p Plane) Bound() AABB {
+	return NewAABB(
+		Vector{
+			-math.MaxFloat64,
+			-math.MaxFloat64,
+			-math.MaxFloat64},
+		Vector{
+			math.MaxFloat64,
+			math.MaxFloat64,
+			math.MaxFloat64},
+	)
 }
 
 func (p Plane) Intersect(r Ray) (float64, bool) {

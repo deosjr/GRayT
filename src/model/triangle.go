@@ -1,7 +1,7 @@
 package model
 
 // TODO: optimizations
-// - memory: vertex sharing
+// - memory: vertex sharing (triangle mesh)
 // - speed: SIMD instructions
 
 type Triangle struct {
@@ -18,6 +18,10 @@ func NewTriangle(p0, p1, p2 Vector, c Color) Triangle {
 		P1:     p1,
 		P2:     p2,
 	}
+}
+
+func (t Triangle) Bound() AABB {
+	return NewAABB(t.P0, t.P1).AddPoint(t.P2)
 }
 
 // Moller-Trumbore intersection algorithm

@@ -4,10 +4,15 @@ import "math"
 
 const standardAlbedo = 0.18
 
+// TODO: world to object coordinates and vice versa
+// I think its only needed when caching common ray-object intersections?
+// But I dont understand transformations well enough yet
+
 type Object interface {
 	Intersect(Ray) (distance float64, ok bool)
 	SurfaceNormal(point Vector) Vector
 	GetColor() Color
+	Bound() AABB
 }
 
 type object struct {
