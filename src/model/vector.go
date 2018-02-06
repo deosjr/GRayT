@@ -2,6 +2,14 @@ package model
 
 import "math"
 
+type Dimension int
+
+const (
+	X = iota
+	Y
+	Z
+)
+
 type Vector struct {
 	X, Y, Z float64
 }
@@ -57,6 +65,17 @@ func (u Vector) Cross(v Vector) Vector {
 		Y: u.Z*v.X - u.X*v.Z,
 		Z: u.X*v.Y - u.Y*v.X,
 	}
+}
+
+func (u Vector) Get(i Dimension) float64 {
+	switch i {
+	case X:
+		return u.X
+	case Y:
+		return u.Y
+	}
+	// case Z:
+	return u.Z
 }
 
 type Ray struct {

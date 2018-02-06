@@ -23,29 +23,6 @@ func (o object) GetColor() Color {
 	return o.Color
 }
 
-type hit struct {
-	object Object
-	point  Vector
-}
-
-func ClosestIntersection(ray Ray, objects []Object) *hit {
-	var objectHit Object
-	d := math.MaxFloat64
-	for _, o := range objects {
-		if distance, ok := o.Intersect(ray); ok && distance < d {
-			d = distance
-			objectHit = o
-		}
-	}
-	if d == math.MaxFloat64 {
-		return nil
-	}
-	return &hit{
-		object: objectHit,
-		point:  PointFromRay(ray, d),
-	}
-}
-
 func LightContribution(ray Ray, hit *hit, l Light, objects []Object) (Color, bool) {
 	segment := VectorFromTo(hit.point, l.Origin())
 	shadowRay := NewRay(hit.point, segment)

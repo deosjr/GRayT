@@ -16,7 +16,7 @@ type answer struct {
 func worker(scene *Scene, ch chan question, ans chan answer) {
 	for q := range ch {
 		ray := scene.Camera.PixelRay(q.x, q.y)
-		hit := model.ClosestIntersection(ray, scene.Objects)
+		hit := scene.AccelerationStructure.ClosestIntersection(ray)
 		if hit == nil {
 			ans <- answer{q.x, q.y, BACKGROUND_COLOR}
 			continue

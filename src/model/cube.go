@@ -46,12 +46,31 @@ func (b AABB) AddAABB(b2 AABB) AABB {
 	}
 }
 
+func (b AABB) Centroid() Vector {
+	return b.Pmin.Add(b.Pmax).Times(0.5)
+}
+
+// TODO: check efficiency
+func (b AABB) MaximumExtent() Dimension {
+	xExtent := b.Pmax.X - b.Pmin.X
+	yExtent := b.Pmax.Y - b.Pmin.Y
+	zExtent := b.Pmax.Z - b.Pmin.Z
+	switch {
+	case xExtent >= yExtent && xExtent >= zExtent:
+		return X
+	case yExtent >= xExtent && yExtent >= zExtent:
+		return Y
+	}
+	return Z
+}
+
 // Builds on quadrilateral definition:
 // Let P1 - P4 be the top and
 // let P5 - P8 be the bottom quadrilateral
 // P1 corresponding to P5 etc
 
 // TODO: Can be represented with only 2 points, like AABB
+// This is actually a crude start at a mesh, come to think of it
 
 type Cuboid struct {
 	P1, P2, P3, P4, P5, P6, P7, P8 Vector

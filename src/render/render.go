@@ -9,7 +9,7 @@ import "model"
 //   - memory: use protobuff ?
 
 func Render(scene *Scene, numWorkers int) Image {
-	scene.Camera.Precompute()
+	scene.Precompute()
 
 	w, h := int(scene.Camera.Width), int(scene.Camera.Height)
 	img := newImage(w, h)
@@ -44,9 +44,11 @@ func Render(scene *Scene, numWorkers int) Image {
 }
 
 type Scene struct {
-	Objects []model.Object
+	Objects []model.Object // TODO: resolve duplication of objects list in AccelerationStructure (pointer?)
 	Lights  []model.Light
 	Camera  *model.Camera
+
+	AccelerationStructure model.AccelerationStructure
 }
 
 func NewScene(camera *model.Camera) *Scene {
@@ -63,4 +65,9 @@ func (s *Scene) Add(o ...model.Object) {
 
 func (s *Scene) AddLights(l ...model.Light) {
 	s.Lights = append(s.Lights, l...)
+}
+
+func (s *Scene) Precompute() {
+	s.Camera.Precompute()
+	s.AccelerationStructure = model.NewNaiveAcceleration(s.Objects) //model.NewBVH(s.Objects, model.SplitTODO)
 }
