@@ -20,39 +20,25 @@ func main() {
 	camera := m.NewCamera(width, height)
 
 	scene := render.NewScene(camera)
-	l1 := m.NewPointLight(m.Vector{2, 2, 0}, m.NewColor(255, 255, 255), 300)
-	l2 := m.NewPointLight(m.Vector{-5, 5, -3}, m.NewColor(255, 255, 255), 300)
+	l1 := m.NewPointLight(m.Vector{-2, 2, 0}, m.NewColor(255, 255, 255), 300)
+	l2 := m.NewPointLight(m.Vector{-5, 5, -3}, m.NewColor(255, 255, 255), 600)
 	scene.AddLights(l1, l2)
 	// background
 	scene.Add(m.NewPlane(m.Vector{0, 0, -10}, ex, ey, m.NewColor(50, 200, 240)))
 	// floor
 	scene.Add(m.NewPlane(m.Vector{0, -2, 0}, ez, ex, m.NewColor(45, 200, 45)))
 
-	scene.Add(m.NewSphere(m.Vector{-2, 1, -4}, 1.0, m.NewColor(0, 0, 255)))
-	scene.Add(m.NewSphere(m.Vector{2, 0, -2}, 1.0, m.NewColor(255, 255, 0)))
-
-	c := m.Cuboid{
-		m.Vector{1.5, 1, -4},
-		m.Vector{2, 1, -4},
-		m.Vector{2, 1, -3.5},
-		m.Vector{1.5, 1, -3.5},
-		m.Vector{1.5, 0.5, -4},
-		m.Vector{2, 0.5, -4},
-		m.Vector{2, 0.5, -3.5},
-		m.Vector{1.5, 0.5, -3.5},
-		m.NewColor(255, 0, 0),
-	}
-	scene.Add(c.Tesselate()...)
+	scene.Add(m.NewSphere(m.Vector{3, 1, -5}, 0.5, m.NewColor(255, 0, 0)))
 
 	// triangles
 	r := m.Quadrilateral{
-		m.Vector{-1, -1, -4},
-		m.Vector{1, -1, -4},
-		m.Vector{1, -1, -2},
-		m.Vector{-1, -1, -2},
+		m.Vector{0, -1, -6},
+		m.Vector{4, -1, -3},
+		m.Vector{0, -1, 0},
+		m.Vector{-4, -1, -3},
 		m.NewColor(255, 0, 0)}
 
-	scene.Add(projects.GridToTriangles(projects.ToPointGrid(r, 0.1))...)
+	scene.Add(projects.GridToTriangles(projects.PerlinHeightMap(projects.ToPointGrid(r, 0.1)))...)
 
 	img := render.Render(scene, numWorkers)
 	img.Save("out.png")

@@ -1,11 +1,5 @@
 package model
 
-// NOTE:
-// multiple places in this code where I pass slices
-// which could be optimised by using pointers?
-// need to investigate further
-// (mostly in recursiveBuildBVH and flattenBVHTree)
-
 // Bounded Volume Hierarchy
 type BVH struct {
 	objects []Object
