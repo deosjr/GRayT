@@ -1,7 +1,5 @@
 package model
 
-import "math"
-
 // NOTE:
 // multiple places in this code where I pass slices
 // which could be optimised by using pointers?
@@ -207,9 +205,9 @@ func flattenBVHTree(node bvhNode, nodes []optimisedBVHNode, offset *int) int {
 }
 
 // Actual traversal of the BVH
-func (bvh BVH) ClosestIntersection(ray Ray) *hit {
+func (bvh BVH) ClosestIntersection(ray Ray, maxDistance float64) *hit {
 	var toVisitOffset, currentNodeIndex int
-	d := math.MaxFloat64
+	d := maxDistance
 	var objectHit Object
 	nodesToVisit := make([]int, 64)
 	for {
@@ -222,7 +220,7 @@ func (bvh BVH) ClosestIntersection(ray Ray) *hit {
 				newD := d
 				for i := 0; i < node.numPrimitives; i++ {
 					o := bvh.objects[node.offset+i]
-					if distance, ok := o.Intersect(ray); ok && distance < newD {
+					if distance, ok := o.Intersect(ray); ok && distance < newD && distance > ERROR_MARGIN {
 						newD = distance
 						objectHit = o
 					}
@@ -249,7 +247,7 @@ func (bvh BVH) ClosestIntersection(ray Ray) *hit {
 			currentNodeIndex = nodesToVisit[toVisitOffset]
 		}
 	}
-	if d == math.MaxFloat64 {
+	if d == maxDistance {
 		return nil
 	}
 	return &hit{

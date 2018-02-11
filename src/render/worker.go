@@ -1,8 +1,12 @@
 package render
 
-import "model"
+import (
+	"math"
+	"model"
+)
 
 var BACKGROUND_COLOR = model.NewColor(10, 10, 10)
+var MAX_RAY_DISTANCE = math.MaxFloat64
 
 type question struct {
 	x, y int
@@ -16,7 +20,7 @@ type answer struct {
 func worker(scene *Scene, ch chan question, ans chan answer) {
 	for q := range ch {
 		ray := scene.Camera.PixelRay(q.x, q.y)
-		hit := scene.AccelerationStructure.ClosestIntersection(ray)
+		hit := scene.AccelerationStructure.ClosestIntersection(ray, MAX_RAY_DISTANCE)
 		if hit == nil {
 			ans <- answer{q.x, q.y, BACKGROUND_COLOR}
 			continue
@@ -24,7 +28,7 @@ func worker(scene *Scene, ch chan question, ans chan answer) {
 
 		color := model.NewColor(0, 0, 0)
 		for _, l := range scene.Lights {
-			c, ok := model.LightContribution(ray, hit, l, scene.Objects)
+			c, ok := model.LightContribution(ray, hit, l, scene.AccelerationStructure)
 			if !ok {
 				continue
 			}
