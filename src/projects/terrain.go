@@ -31,7 +31,7 @@ func PerlinHeightMap(grid [][]model.Vector) [][]model.Vector {
 			// map from [-1,1] to [0,1]
 			noise = (noise + 1) / 2
 			noise = math.Pow(noise, 3.75)
-			//TODO: -1 manually for camera position, remove once transformations are in
+			//TODO: *2 -1 manually for camera position, remove once transformations are in
 			grid[y][x].Y = noise*2 - 1
 		}
 	}
@@ -62,22 +62,4 @@ func ToPointGrid(r model.Quadrilateral, roughSize float64) [][]model.Vector {
 	}
 
 	return grid
-}
-
-func GridToTriangles(grid [][]model.Vector) []model.Object {
-	ylen := len(grid)
-	xlen := len(grid[0])
-	triangles := []model.Object{}
-	for y := 0; y < ylen-1; y++ {
-		for x := 0; x < xlen-1; x++ {
-			p1 := grid[y][x]
-			p2 := grid[y][x+1]
-			p3 := grid[y+1][x+1]
-			p4 := grid[y+1][x]
-			t1 := model.NewTriangle(p1, p4, p2, model.NewColor(255, 0, 0))
-			t2 := model.NewTriangle(p4, p3, p2, model.NewColor(0, 0, 255))
-			triangles = append(triangles, t1, t2)
-		}
-	}
-	return triangles
 }

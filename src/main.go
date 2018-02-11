@@ -24,11 +24,11 @@ func main() {
 	l2 := m.NewPointLight(m.Vector{-5, 5, -3}, m.NewColor(255, 255, 255), 600)
 	scene.AddLights(l1, l2)
 	// background
-	scene.Add(m.NewPlane(m.Vector{0, 0, -10}, ex, ey, m.NewColor(50, 200, 240)))
+	// scene.Add(m.NewPlane(m.Vector{0, 0, -1000}, ex, ey, m.NewColor(10, 10, 10)))
 	// floor
-	scene.Add(m.NewPlane(m.Vector{0, -2, 0}, ez, ex, m.NewColor(45, 200, 45)))
+	// scene.Add(m.NewPlane(m.Vector{0, -2, 0}, ez, ex, m.NewColor(45, 200, 45)))
 
-	scene.Add(m.NewSphere(m.Vector{3, 1, -5}, 0.5, m.NewColor(255, 0, 0)))
+	scene.Add(m.NewSphere(m.Vector{3, 1, -5}, 0.5, m.NewColor(255, 100, 0)))
 
 	// triangles
 	r := m.Quadrilateral{
@@ -38,7 +38,10 @@ func main() {
 		m.Vector{-4, -1, -3},
 		m.NewColor(255, 0, 0)}
 
-	scene.Add(projects.GridToTriangles(projects.PerlinHeightMap(projects.ToPointGrid(r, 0.1)))...)
+	grid := projects.ToPointGrid(r, 0.1)
+	grid = projects.PerlinHeightMap(grid)
+	triangles := m.NewTriangleMesh(grid)
+	scene.Add(triangles...)
 
 	img := render.Render(scene, numWorkers)
 	img.Save("out.png")
