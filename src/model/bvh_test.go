@@ -1,6 +1,7 @@
 package model
 
 import (
+	"math"
 	"reflect"
 	"testing"
 )
@@ -226,7 +227,7 @@ func TestBVHTraversal(t *testing.T) {
 			},
 		},
 	} {
-		hit := tt.bvh.ClosestIntersection(tt.ray)
+		hit := tt.bvh.ClosestIntersection(tt.ray, math.MaxFloat64)
 		if hit == nil {
 			t.Errorf("%d) got nil want %#v", i, tt.want)
 			continue
