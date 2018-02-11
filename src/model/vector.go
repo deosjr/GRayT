@@ -10,6 +10,8 @@ const (
 	Z
 )
 
+var Dimensions = []Dimension{X, Y, Z}
+
 type Vector struct {
 	X, Y, Z float64
 }

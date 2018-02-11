@@ -50,6 +50,32 @@ func (b AABB) Centroid() Vector {
 	return b.Pmin.Add(b.Pmax).Times(0.5)
 }
 
+// Unoptimised, analytic solution for now
+// TODO: either optimise or check assumptions on NaN / divide by zero (inf) logic
+func (b AABB) Intersect(ray Ray) bool {
+	t0, t1 := 0.0, math.MaxFloat64
+	for _, dim := range Dimensions {
+		// TODO: divide by zero?
+		invRayDir := 1 / ray.Direction.Get(dim)
+		tNear := (b.Pmin.Get(dim) - ray.Origin.Get(dim)) * invRayDir
+		tFar := (b.Pmax.Get(dim) - ray.Origin.Get(dim)) * invRayDir
+		if tNear > tFar {
+			tNear, tFar = tFar, tNear
+		}
+		// TODO: correct for error margin in tFar
+		if tNear > t0 {
+			t0 = tNear
+		}
+		if tFar < t1 {
+			t1 = tFar
+		}
+		if t0 > t1 {
+			return false
+		}
+	}
+	return true
+}
+
 // TODO: check efficiency
 func (b AABB) MaximumExtent() Dimension {
 	xExtent := b.Pmax.X - b.Pmin.X

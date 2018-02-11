@@ -52,7 +52,7 @@ func main() {
 		m.Vector{-1, -1, -2},
 		m.NewColor(255, 0, 0)}
 
-	scene.Add(projects.GridToTriangles(projects.ToPointGrid(r, 1))...)
+	scene.Add(projects.GridToTriangles(projects.ToPointGrid(r, 0.1))...)
 
 	img := render.Render(scene, numWorkers)
 	img.Save("out.png")

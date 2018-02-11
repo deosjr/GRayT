@@ -3,7 +3,6 @@ package render
 import "model"
 
 // TODO: optimizations
-// - speed: bounding volume hierarchy
 //   - backface culling? only for opaque objects?
 // - scaling: communicate over the wire
 //   - memory: use protobuff ?
@@ -69,5 +68,5 @@ func (s *Scene) AddLights(l ...model.Light) {
 
 func (s *Scene) Precompute() {
 	s.Camera.Precompute()
-	s.AccelerationStructure = model.NewNaiveAcceleration(s.Objects) //model.NewBVH(s.Objects, model.SplitTODO)
+	s.AccelerationStructure = model.NewBVH(s.Objects, model.SplitMiddle) //model.NewNaiveAcceleration(s.Objects)
 }

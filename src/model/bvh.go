@@ -1,5 +1,7 @@
 package model
 
+import "math"
+
 // NOTE:
 // multiple places in this code where I pass slices
 // which could be optimised by using pointers?
@@ -14,7 +16,9 @@ type BVH struct {
 
 // A split function reorders the objects in the primitives list
 // between [start, end) and returns a split index called mid
-type splitFunc func(primitives []primitiveInfo, start, end int) ([]primitiveInfo, int)
+// additional parameters are the axis dimension to split on
+// and the bounding box of centroids of all objects between start-end
+type splitFunc func(primitives []primitiveInfo, start, end int, axis Dimension, bounds AABB) int
 
 type bvhNode interface {
 	getBounds() AABB
@@ -81,14 +85,17 @@ func NewBVH(objects []Object, splitFunc splitFunc) BVH {
 			centroid: aabb.Centroid(),
 		}
 	}
-	root, primitiveOrder, total := recursiveBuildBVH(primitives, 0, len(primitives), 0, []int{}, splitFunc)
+	primitiveOrder := make([]int, len(objects))
+	total, numPrimitives := 0, 0
+	root := recursiveBuildBVH(primitives, 0, len(primitives), &numPrimitives, &total, primitiveOrder, splitFunc)
 	orderedObjects := make([]Object, len(objects))
 	for i, p := range primitiveOrder {
 		orderedObjects[i] = objects[p]
 	}
 
 	nodes := make([]optimisedBVHNode, total)
-	nodes, _ = flattenBVHTree(root, nodes, 0)
+	offset := 0
+	flattenBVHTree(root, nodes, &offset)
 
 	return BVH{
 		objects: orderedObjects,
@@ -99,9 +106,9 @@ func NewBVH(objects []Object, splitFunc splitFunc) BVH {
 // recursiveBuildBVH takes the list of primitives, a start and end index,
 // the total so far of nodes created, the list of object indices to order
 // and a function to split on, and returns the node that represents the
-// range [start, end), updated order list and updated total
-func recursiveBuildBVH(primitives []primitiveInfo, start, end, total int, primitiveOrder []int, splitFunc splitFunc) (bvhNode, []int, int) {
-	total++
+// range [start, end) and updated total
+func recursiveBuildBVH(primitives []primitiveInfo, start, end int, prims, total *int, primitiveOrder []int, splitFunc splitFunc) bvhNode {
+	*total++
 	bounds := primitives[start].bounds
 	for i := start + 1; i < end; i++ {
 		bounds.AddAABB(primitives[i].bounds)
@@ -110,39 +117,63 @@ func recursiveBuildBVH(primitives []primitiveInfo, start, end, total int, primit
 
 	// Only one primitive remaining, return a leaf node
 	if numPrimitives == 1 {
-		for i := start; i < end; i++ {
-			primNum := primitives[i].index
-			primitiveOrder = append(primitiveOrder, primNum)
-		}
-		return newBVHLeaf(len(primitiveOrder), numPrimitives, bounds), primitiveOrder, total
+		offset := updateWithPrimitives(primitives, start, end, prims, primitiveOrder)
+		return newBVHLeaf(offset, numPrimitives, bounds)
 	}
 
 	// Otherwise split in two sets and recurse
 	centroidBounds := NewAABB(primitives[start].centroid, primitives[start+1].centroid)
 	for i := start + 2; i < end; i++ {
-		centroidBounds.AddPoint(primitives[i].centroid)
+		centroidBounds = centroidBounds.AddPoint(primitives[i].centroid)
 	}
 	dim := centroidBounds.MaximumExtent()
 
 	// This case means all centroids are at the same position
 	// further splitting would be ineffective
 	if centroidBounds.Pmax.Get(dim) == centroidBounds.Pmin.Get(dim) {
-		for i := start; i < end; i++ {
-			primNum := primitives[i].index
-			primitiveOrder = append(primitiveOrder, primNum)
-		}
-		return newBVHLeaf(len(primitiveOrder), numPrimitives, bounds), primitiveOrder, total
+		offset := updateWithPrimitives(primitives, start, end, prims, primitiveOrder)
+		return newBVHLeaf(offset, numPrimitives, bounds)
 	}
 
-	primitives, mid := splitFunc(primitives, start, end)
-	c1, primitiveOrder, total := recursiveBuildBVH(primitives, start, mid, total, primitiveOrder, splitFunc)
-	c2, primitiveOrder, total := recursiveBuildBVH(primitives, mid, end, total, primitiveOrder, splitFunc)
-	return newBVHInterior(dim, c1, c2), primitiveOrder, total
+	mid := splitFunc(primitives, start, end, dim, centroidBounds)
+	c1 := recursiveBuildBVH(primitives, start, mid, prims, total, primitiveOrder, splitFunc)
+	c2 := recursiveBuildBVH(primitives, mid, end, prims, total, primitiveOrder, splitFunc)
+	return newBVHInterior(dim, c1, c2)
 }
 
-func SplitTODO(primitives []primitiveInfo, start, end int) ([]primitiveInfo, int) {
-	mid := (start + end) / 2
-	return primitives, mid
+func updateWithPrimitives(primitives []primitiveInfo, start, end int, prims *int, order []int) int {
+	firstOffset := *prims
+	for i := start; i < end; i++ {
+		primNum := primitives[i].index
+		order[*prims] = primNum
+		*prims++
+	}
+	return firstOffset
+}
+
+// Find middle of bounding box along the axis
+// order primitives by everything less than middle along the axis
+// followed by everything greater than the middle along the axis.
+// Return index of smallest node greater than middle
+func SplitMiddle(primitives []primitiveInfo, start, end int, dim Dimension, centroidBounds AABB) int {
+	axisMid := (centroidBounds.Pmin.Get(dim) + centroidBounds.Pmax.Get(dim)) / 2
+	// partition with pivot = axisMid
+	i, j := start-1, end
+	for {
+		i++
+		for primitives[i].centroid.Get(dim) < axisMid {
+			i++
+		}
+		j--
+		for primitives[j].centroid.Get(dim) > axisMid {
+			j--
+		}
+		if i >= j {
+			break
+		}
+		primitives[i], primitives[j] = primitives[j], primitives[i]
+	}
+	return i
 }
 
 type optimisedBVHNode struct {
@@ -154,27 +185,75 @@ type optimisedBVHNode struct {
 }
 
 // flattenBVHTree takes a rootnode of the (sub)tree, the nodeslist to fill,
-// and an offset, and returns the (more) filled nodeslist and updated offset
-func flattenBVHTree(node bvhNode, nodes []optimisedBVHNode, offset int) ([]optimisedBVHNode, int) {
-	offset++
-	var optimisedNode optimisedBVHNode
+// and an offset, and returns the updated offset
+func flattenBVHTree(node bvhNode, nodes []optimisedBVHNode, offset *int) int {
+	optimisedNode := optimisedBVHNode{
+		bounds:        node.getBounds(),
+		numPrimitives: node.getNumPrimitives(),
+	}
+	myOffset := *offset
+	*offset++
 	switch n := node.(type) {
 	case bvhLeaf:
 		optimisedNode.offset = n.firstPrimOffset
-		optimisedNode.numPrimitives = n.getNumPrimitives()
 	case bvhInterior:
-		nodes, offset = flattenBVHTree(n.children[0], nodes, offset)
-		nodes, offset = flattenBVHTree(n.children[1], nodes, offset)
+		flattenBVHTree(n.children[0], nodes, offset)
+		secondChildOffset := flattenBVHTree(n.children[1], nodes, offset)
 		optimisedNode.axis = n.splitDimension
-		optimisedNode.offset = offset
-		optimisedNode.numPrimitives = 0
+		optimisedNode.offset = secondChildOffset
 	}
-	return nodes, offset
+	nodes[myOffset] = optimisedNode
+	return myOffset
 }
 
+// Actual traversal of the BVH
 func (bvh BVH) ClosestIntersection(ray Ray) *hit {
-	// TODO:
-	// - ray-AABB intersection
-	// - actual traversal
-	return nil
+	var toVisitOffset, currentNodeIndex int
+	d := math.MaxFloat64
+	var objectHit Object
+	nodesToVisit := make([]int, 64)
+	for {
+		node := bvh.nodes[currentNodeIndex]
+		// TODO: disregard box intersection with distance of tMin
+		// farther than current closest intersection distance d
+		if node.bounds.Intersect(ray) {
+			if node.numPrimitives > 0 {
+				// this is a leaf node
+				newD := d
+				for i := 0; i < node.numPrimitives; i++ {
+					o := bvh.objects[node.offset+i]
+					if distance, ok := o.Intersect(ray); ok && distance < newD {
+						newD = distance
+						objectHit = o
+					}
+				}
+				d = newD
+				if toVisitOffset == 0 {
+					break
+				}
+				toVisitOffset--
+				currentNodeIndex = nodesToVisit[toVisitOffset]
+			} else {
+				// this is an interior node
+				// TODO: optimisation regarding direction of ray and child visit order
+				nodesToVisit[toVisitOffset] = currentNodeIndex + 1
+				toVisitOffset++
+				currentNodeIndex = node.offset
+
+			}
+		} else {
+			if toVisitOffset == 0 {
+				break
+			}
+			toVisitOffset--
+			currentNodeIndex = nodesToVisit[toVisitOffset]
+		}
+	}
+	if d == math.MaxFloat64 {
+		return nil
+	}
+	return &hit{
+		object: objectHit,
+		point:  PointFromRay(ray, d),
+	}
 }

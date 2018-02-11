@@ -8,6 +8,10 @@ const standardAlbedo = 0.18
 // I think its only needed when caching common ray-object intersections?
 // But I dont understand transformations well enough yet
 
+// TODO: The term Object is conflated with Primitive right now
+// Objects should be complex (recognisable) objects, which
+// can be split or tesselated to their primitives
+
 type Object interface {
 	Intersect(Ray) (distance float64, ok bool)
 	SurfaceNormal(point Vector) Vector
@@ -40,6 +44,7 @@ func LightContribution(ray Ray, hit *hit, l Light, objects []Object) (Color, boo
 	return hit.object.GetColor().Product(lightColor), true
 }
 
+// TODO: use BVH here too
 func pointInShadow(shadowRay Ray, objects []Object, maxDistance float64) bool {
 	// floating point error margin
 	// TODO: setting too small drops shadows completely?

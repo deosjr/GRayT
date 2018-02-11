@@ -17,9 +17,8 @@ func NewPlane(p Vector, u, v Vector, c Color) Plane {
 	}
 }
 
-// NOTE: planes will not work with BVH
-// since their bounding box is infinite
-// Although maybe we can use -Inf/Inf box?
+// NOTE: planes dont work nicely with BVH since their bounding box is infinite
+// They force a lot more intersection tests, slowing everything down
 
 func (p Plane) Bound() AABB {
 	return NewAABB(

@@ -109,3 +109,33 @@ func TestAABBAddBox(t *testing.T) {
 		}
 	}
 }
+
+func TestAABBRayIntersect(t *testing.T) {
+	for i, tt := range []struct {
+		aabb AABB
+		ray  Ray
+		want bool
+	}{
+		{
+			aabb: AABB{
+				Pmin: Vector{2, 2, 2},
+				Pmax: Vector{3, 3, 3},
+			},
+			ray:  NewRay(Vector{0, 0, 0}, Vector{1, 1, 1}),
+			want: true,
+		},
+		{
+			aabb: AABB{
+				Pmin: Vector{2, 2, 2},
+				Pmax: Vector{3, 3, 3},
+			},
+			ray:  NewRay(Vector{0, 0, 0}, Vector{1, 0, 0}),
+			want: false,
+		},
+	} {
+		got := tt.aabb.Intersect(tt.ray)
+		if got != tt.want {
+			t.Errorf("%d) got %v want %v", i, got, tt.want)
+		}
+	}
+}
