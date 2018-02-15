@@ -1,6 +1,7 @@
 package render
 
 import (
+	"math"
 	"runtime"
 	"testing"
 
@@ -15,7 +16,7 @@ var (
 )
 
 func sampleScene() *Scene {
-	camera := model.NewCamera(160, 120)
+	camera := model.NewPerspectiveCamera(160, 120, 0.5*math.Pi)
 	scene := NewScene(camera)
 	l1 := model.NewPointLight(model.Vector{0, 4, 0}, model.NewColor(0, 0, 255), 1500)
 	l2 := model.NewPointLight(model.Vector{-5, 5, 0}, model.NewColor(255, 0, 0), 1000)

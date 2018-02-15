@@ -1,41 +1,50 @@
 package model
 
 import (
+	"math"
 	"testing"
 )
 
 func TestCameraPixelRay(t *testing.T) {
 	for i, tt := range []struct {
-		c             *Camera
+		c             Camera
 		x, y          int
-		wantOrigin    *Vector
-		wantDirection *Vector
+		from, to, up  Vector
+		wantOrigin    Vector
+		wantDirection Vector
 	}{
 		{
 			// For uneven resolution, we can point at the exact mid pixel
-			// and expect (0,0,-1) (0,0,-1) as per camera specs
-			c:             NewCamera(101, 101),
+			// and expect direction (to - from) normalized
+			c:             NewPerspectiveCamera(101, 101, 0.5*math.Pi),
+			from:          Vector{0, 0, 0},
+			to:            Vector{0, 0, 1},
+			up:            Vector{0, 1, 0},
 			x:             50,
 			y:             50,
-			wantOrigin:    &Vector{0, 0, -1},
-			wantDirection: &Vector{0, 0, -1},
+			wantOrigin:    Vector{0, 0, 0},
+			wantDirection: Vector{0, 0, 1},
 		},
 		{
-			// ULHC should be at (-1, 1, -1),
-			// but moved 0.5 * pixelwidth/height to the center
-			c:          NewCamera(100, 100),
-			x:          0,
-			y:          0,
-			wantOrigin: &Vector{-0.99, 0.99, -1},
+			// For uneven resolution, we can point at the exact mid pixel
+			// and expect direction (to - from) normalized
+			c:             NewPerspectiveCamera(101, 101, 0.5*math.Pi),
+			from:          Vector{2, 2, 2},
+			to:            Vector{3, 3, 3},
+			up:            Vector{0, 1, 0},
+			x:             50,
+			y:             50,
+			wantOrigin:    Vector{2, 2, 2},
+			wantDirection: Vector{3, 3, 3}.Sub(Vector{2, 2, 2}).Normalize(),
 		},
 	} {
-		tt.c.Precompute()
+		tt.c.LookAt(tt.from, tt.to, tt.up)
 		got := tt.c.PixelRay(tt.x, tt.y)
-		if tt.wantOrigin != nil && got.Origin != *tt.wantOrigin {
-			t.Errorf("%d) got origin %v want %v", i, got.Origin, *tt.wantOrigin)
+		if got.Origin != tt.wantOrigin {
+			t.Errorf("%d) got origin %v want %v", i, got.Origin, tt.wantOrigin)
 		}
-		if tt.wantDirection != nil && got.Direction != *tt.wantDirection {
-			t.Errorf("%d) got direction %v want %v", i, got.Direction, *tt.wantDirection)
+		if got.Direction != tt.wantDirection {
+			t.Errorf("%d) got direction %v want %v", i, got.Direction, tt.wantDirection)
 		}
 	}
 }

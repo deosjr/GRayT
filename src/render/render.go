@@ -10,7 +10,7 @@ import "model"
 func Render(scene *Scene, numWorkers int) Image {
 	scene.Precompute()
 
-	w, h := int(scene.Camera.Width), int(scene.Camera.Height)
+	w, h := scene.Camera.Width(), scene.Camera.Height()
 	img := newImage(w, h)
 
 	ch := make(chan question, numWorkers)
@@ -45,12 +45,12 @@ func Render(scene *Scene, numWorkers int) Image {
 type Scene struct {
 	Objects []model.Object // TODO: resolve duplication of objects list in AccelerationStructure (pointer?)
 	Lights  []model.Light
-	Camera  *model.Camera
+	Camera  model.Camera
 
 	AccelerationStructure model.AccelerationStructure
 }
 
-func NewScene(camera *model.Camera) *Scene {
+func NewScene(camera model.Camera) *Scene {
 	return &Scene{
 		Objects: []model.Object{},
 		Lights:  []model.Light{},
@@ -67,6 +67,5 @@ func (s *Scene) AddLights(l ...model.Light) {
 }
 
 func (s *Scene) Precompute() {
-	s.Camera.Precompute()
 	s.AccelerationStructure = model.NewBVH(s.Objects, model.SplitMiddle) //model.NewNaiveAcceleration(s.Objects)
 }
