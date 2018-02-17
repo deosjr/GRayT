@@ -7,11 +7,9 @@ import "model"
 // - scaling: communicate over the wire
 //   - memory: use protobuff ?
 
-func Render(scene *Scene, numWorkers int) Image {
-	scene.Precompute()
-
+func Render(scene *Scene, numWorkers int) Film {
 	w, h := scene.Camera.Width(), scene.Camera.Height()
-	img := newImage(w, h)
+	img := newFilm(w, h)
 
 	ch := make(chan question, numWorkers)
 	ans := make(chan answer, numWorkers)
@@ -43,7 +41,7 @@ func Render(scene *Scene, numWorkers int) Image {
 }
 
 type Scene struct {
-	Objects []model.Object // TODO: resolve duplication of objects list in AccelerationStructure (pointer?)
+	Objects []model.Object
 	Lights  []model.Light
 	Camera  model.Camera
 
@@ -67,5 +65,5 @@ func (s *Scene) AddLights(l ...model.Light) {
 }
 
 func (s *Scene) Precompute() {
-	s.AccelerationStructure = model.NewBVH(s.Objects, model.SplitMiddle) //model.NewNaiveAcceleration(s.Objects)
+	s.AccelerationStructure = model.NewBVH(s.Objects, model.SplitMiddle)
 }

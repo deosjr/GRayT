@@ -10,6 +10,9 @@ import (
 	"model"
 )
 
+// NOTE: this folder will not be part of this project
+// should move to its own project using this one as a library
+
 func init() {
 	rand.Seed(time.Now().UnixNano())
 }

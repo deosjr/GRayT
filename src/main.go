@@ -42,15 +42,15 @@ func main() {
 	triangles := m.NewTriangleMesh(grid)
 	scene.Add(triangles...)
 
-	camera.LookAt(m.Vector{0, 0, 0}, m.Vector{0, 0, 10}, ey)
-	img := render.Render(scene, numWorkers)
-	img.Save("out.png")
+	scene.Precompute()
 
-	camera.LookAt(m.Vector{0.1, 0, 0.1}, m.Vector{0, 0, 10}, ey)
-	img = render.Render(scene, numWorkers)
-	img.Save("out2.png")
-
-	camera.LookAt(m.Vector{0.2, 0, 0.2}, m.Vector{0, 0, 10}, ey)
-	img = render.Render(scene, numWorkers)
-	img.Save("out3.png")
+	aw := render.NewAVI("out.avi", width, height)
+	from, to := m.Vector{0, 0, 0}, m.Vector{0, 0, 10}
+	for i := 0; i < 15; i++ {
+		camera.LookAt(from, to, ey)
+		film := render.Render(scene, numWorkers)
+		render.AddToAVI(aw, film)
+		from = from.Add(m.Vector{0.1, 0, 0.1})
+	}
+	render.SaveAVI(aw)
 }
