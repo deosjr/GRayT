@@ -2,29 +2,29 @@ package render
 
 import (
 	"math"
-	"runtime"
 	"testing"
 
 	"model"
 )
 
-var (
-	ex    = model.Vector{1, 0, 0}
-	ey    = model.Vector{0, 1, 0}
-	ez    = model.Vector{0, 0, 1}
-	white = model.NewColor(255, 255, 255)
-)
-
-func sampleScene() *Scene {
-	camera := model.NewPerspectiveCamera(160, 120, 0.5*math.Pi)
+func sampleScene(b *testing.B) *Scene {
+	camera := model.NewPerspectiveCamera(1600, 1200, 0.5*math.Pi)
 	scene := NewScene(camera)
-	l1 := model.NewPointLight(model.Vector{0, 4, 0}, model.NewColor(0, 0, 255), 1500)
-	l2 := model.NewPointLight(model.Vector{-5, 5, 0}, model.NewColor(255, 0, 0), 1000)
+	l1 := model.NewPointLight(model.Vector{-2, 2, 0}, model.NewColor(255, 255, 255), 300)
+	l2 := model.NewPointLight(model.Vector{-0.1, 1, 0.1}, model.NewColor(255, 255, 255), 400)
 	scene.AddLights(l1, l2)
-	scene.Add(model.NewSphere(model.Vector{0, 0, -5}, 1.0, white))
-	scene.Add(model.NewSphere(model.Vector{5, 0, -5}, 1.0, white))
-	scene.Add(model.NewPlane(model.Vector{0, 0, -10}, ex, ey, white))
-	scene.Add(model.NewPlane(model.Vector{0, -2, 0}, ez, ex, white))
+	scene.Add(model.NewSphere(model.Vector{3, 1, 5}, 0.5, model.NewColor(255, 100, 0)))
+
+	triangles, err := LoadObj("../bunny.obj", model.NewColor(255, 0, 0))
+	if err != nil {
+		b.Fatalf("Error in benchmark: %s", err.Error())
+	}
+	scene.Add(triangles...)
+
+	scene.Precompute()
+
+	from, to := model.Vector{0, 0, 0}, model.Vector{0, 0, 10}
+	camera.LookAt(from, to, model.Vector{0, 1, 0})
 	return scene
 }
 
@@ -34,14 +34,20 @@ func benchmarkScene(scene *Scene, numWorkers int, b *testing.B) {
 	}
 }
 
+// Numbers slightly exaggerated by order of tests
+
 func BenchmarkNumWorkers1(b *testing.B) {
-	benchmarkScene(sampleScene(), 1, b)
+	benchmarkScene(sampleScene(b), 1, b)
 }
 
 func BenchmarkNumWorkers10(b *testing.B) {
-	benchmarkScene(sampleScene(), 10, b)
+	benchmarkScene(sampleScene(b), 10, b)
 }
 
-func BenchmarkNumWorkersNumCPU(b *testing.B) {
-	benchmarkScene(sampleScene(), runtime.NumCPU(), b)
+func BenchmarkNumWorkers50(b *testing.B) {
+	benchmarkScene(sampleScene(b), 50, b)
+}
+
+func BenchmarkNumWorkers100(b *testing.B) {
+	benchmarkScene(sampleScene(b), 100, b)
 }
