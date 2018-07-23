@@ -8,14 +8,14 @@ import (
 
 func TestRecursiveBuild(t *testing.T) {
 	for i, tt := range []struct {
-		primitives []primitiveInfo
-		splitFunc  splitFunc
-		wantTotal  int
-		wantOrder  []int
-		wantTree   bvhNode
+		objects   []objectInfo
+		splitFunc splitFunc
+		wantTotal int
+		wantOrder []int
+		wantTree  bvhNode
 	}{
 		{
-			primitives: []primitiveInfo{
+			objects: []objectInfo{
 				{
 					index:    0,
 					bounds:   NewAABB(Vector{-1, -1, -1}, Vector{1, 1, 1}),
@@ -26,13 +26,13 @@ func TestRecursiveBuild(t *testing.T) {
 			wantTotal: 1,
 			wantOrder: []int{0},
 			wantTree: bvhLeaf{
-				firstPrimOffset: 0,
-				numPrimitives:   1,
-				bounds:          NewAABB(Vector{-1, -1, -1}, Vector{1, 1, 1}),
+				firstOffset: 0,
+				numObjects:  1,
+				bounds:      NewAABB(Vector{-1, -1, -1}, Vector{1, 1, 1}),
 			},
 		},
 		{
-			primitives: []primitiveInfo{
+			objects: []objectInfo{
 				{
 					index:    0,
 					bounds:   NewAABB(Vector{-3, 0, -5}, Vector{-1, 2, -3}),
@@ -50,14 +50,14 @@ func TestRecursiveBuild(t *testing.T) {
 			wantTree: bvhInterior{
 				children: [2]bvhNode{
 					bvhLeaf{
-						firstPrimOffset: 0,
-						numPrimitives:   1,
-						bounds:          NewAABB(Vector{-3, 0, -5}, Vector{-1, 2, -3}),
+						firstOffset: 0,
+						numObjects:  1,
+						bounds:      NewAABB(Vector{-3, 0, -5}, Vector{-1, 2, -3}),
 					},
 					bvhLeaf{
-						firstPrimOffset: 1,
-						numPrimitives:   1,
-						bounds:          NewAABB(Vector{1, -1, -3}, Vector{3, 1, -1}),
+						firstOffset: 1,
+						numObjects:  1,
+						bounds:      NewAABB(Vector{1, -1, -3}, Vector{3, 1, -1}),
 					},
 				},
 				bounds:         NewAABB(Vector{-3, -1, -5}, Vector{3, 2, -1}),
@@ -66,8 +66,8 @@ func TestRecursiveBuild(t *testing.T) {
 		},
 	} {
 		gotTotal, prims := 0, 0
-		gotOrder := make([]int, len(tt.primitives))
-		gotTree := recursiveBuildBVH(tt.primitives, 0, len(tt.primitives), &prims, &gotTotal, gotOrder, tt.splitFunc)
+		gotOrder := make([]int, len(tt.objects))
+		gotTree := recursiveBuildBVH(tt.objects, 0, len(tt.objects), &prims, &gotTotal, gotOrder, tt.splitFunc)
 		if gotTotal != tt.wantTotal {
 			t.Errorf("%d) TOTAL: got %#v want %#v", i, gotTotal, tt.wantTotal)
 		}
@@ -97,13 +97,13 @@ func TestFlattenBVHTree(t *testing.T) {
 					bvhInterior{
 						children: [2]bvhNode{
 							bvhLeaf{
-								firstPrimOffset: 0,
-								numPrimitives:   1,
-								bounds:          NewAABB(Vector{1, 1, 1}, Vector{2, 2, 2}),
+								firstOffset: 0,
+								numObjects:  1,
+								bounds:      NewAABB(Vector{1, 1, 1}, Vector{2, 2, 2}),
 							}, bvhLeaf{
-								firstPrimOffset: 1,
-								numPrimitives:   1,
-								bounds:          NewAABB(Vector{3, 3, 3}, Vector{4, 4, 4}),
+								firstOffset: 1,
+								numObjects:  1,
+								bounds:      NewAABB(Vector{3, 3, 3}, Vector{4, 4, 4}),
 							},
 						},
 						bounds:         NewAABB(Vector{1, 1, 1}, Vector{4, 4, 4}),
@@ -112,13 +112,13 @@ func TestFlattenBVHTree(t *testing.T) {
 					bvhInterior{
 						children: [2]bvhNode{
 							bvhLeaf{
-								firstPrimOffset: 2,
-								numPrimitives:   1,
-								bounds:          NewAABB(Vector{5, 5, 5}, Vector{6, 6, 6}),
+								firstOffset: 2,
+								numObjects:  1,
+								bounds:      NewAABB(Vector{5, 5, 5}, Vector{6, 6, 6}),
 							}, bvhLeaf{
-								firstPrimOffset: 3,
-								numPrimitives:   1,
-								bounds:          NewAABB(Vector{7, 7, 7}, Vector{8, 8, 8}),
+								firstOffset: 3,
+								numObjects:  1,
+								bounds:      NewAABB(Vector{7, 7, 7}, Vector{8, 8, 8}),
 							},
 						},
 						bounds:         NewAABB(Vector{5, 5, 5}, Vector{8, 8, 8}),
@@ -130,26 +130,26 @@ func TestFlattenBVHTree(t *testing.T) {
 			},
 			numNodes: 7,
 			want: []optimisedBVHNode{
-				{bounds: NewAABB(Vector{1, 1, 1}, Vector{8, 8, 8}), offset: 4, numPrimitives: 0, axis: Z},
-				{bounds: NewAABB(Vector{1, 1, 1}, Vector{4, 4, 4}), offset: 3, numPrimitives: 0, axis: Y},
-				{bounds: NewAABB(Vector{1, 1, 1}, Vector{2, 2, 2}), offset: 0, numPrimitives: 1},
-				{bounds: NewAABB(Vector{3, 3, 3}, Vector{4, 4, 4}), offset: 1, numPrimitives: 1},
-				{bounds: NewAABB(Vector{5, 5, 5}, Vector{8, 8, 8}), offset: 6, numPrimitives: 0, axis: Z},
-				{bounds: NewAABB(Vector{5, 5, 5}, Vector{6, 6, 6}), offset: 2, numPrimitives: 1},
-				{bounds: NewAABB(Vector{7, 7, 7}, Vector{8, 8, 8}), offset: 3, numPrimitives: 1}},
+				{bounds: NewAABB(Vector{1, 1, 1}, Vector{8, 8, 8}), offset: 4, numObjects: 0, axis: Z},
+				{bounds: NewAABB(Vector{1, 1, 1}, Vector{4, 4, 4}), offset: 3, numObjects: 0, axis: Y},
+				{bounds: NewAABB(Vector{1, 1, 1}, Vector{2, 2, 2}), offset: 0, numObjects: 1},
+				{bounds: NewAABB(Vector{3, 3, 3}, Vector{4, 4, 4}), offset: 1, numObjects: 1},
+				{bounds: NewAABB(Vector{5, 5, 5}, Vector{8, 8, 8}), offset: 6, numObjects: 0, axis: Z},
+				{bounds: NewAABB(Vector{5, 5, 5}, Vector{6, 6, 6}), offset: 2, numObjects: 1},
+				{bounds: NewAABB(Vector{7, 7, 7}, Vector{8, 8, 8}), offset: 3, numObjects: 1}},
 		},
 		{
 			tree: bvhInterior{
 				children: [2]bvhNode{
 					bvhLeaf{
-						firstPrimOffset: 0,
-						numPrimitives:   1,
-						bounds:          NewAABB(Vector{-3, 0, -5}, Vector{-1, 2, -3}),
+						firstOffset: 0,
+						numObjects:  1,
+						bounds:      NewAABB(Vector{-3, 0, -5}, Vector{-1, 2, -3}),
 					},
 					bvhLeaf{
-						firstPrimOffset: 1,
-						numPrimitives:   1,
-						bounds:          NewAABB(Vector{1, -1, -3}, Vector{3, 1, -1}),
+						firstOffset: 1,
+						numObjects:  1,
+						bounds:      NewAABB(Vector{1, -1, -3}, Vector{3, 1, -1}),
 					},
 				},
 				bounds:         NewAABB(Vector{-3, -1, -5}, Vector{3, 2, -1}),
@@ -157,9 +157,9 @@ func TestFlattenBVHTree(t *testing.T) {
 			},
 			numNodes: 3,
 			want: []optimisedBVHNode{
-				{bounds: NewAABB(Vector{-3, -1, -5}, Vector{3, 2, -1}), offset: 2, numPrimitives: 0, axis: X},
-				{bounds: NewAABB(Vector{-3, 0, -5}, Vector{-1, 2, -3}), offset: 0, numPrimitives: 1},
-				{bounds: NewAABB(Vector{1, -1, -3}, Vector{3, 1, -1}), offset: 1, numPrimitives: 1}},
+				{bounds: NewAABB(Vector{-3, -1, -5}, Vector{3, 2, -1}), offset: 2, numObjects: 0, axis: X},
+				{bounds: NewAABB(Vector{-3, 0, -5}, Vector{-1, 2, -3}), offset: 0, numObjects: 1},
+				{bounds: NewAABB(Vector{1, -1, -3}, Vector{3, 1, -1}), offset: 1, numObjects: 1}},
 		},
 	} {
 		got := make([]optimisedBVHNode, tt.numNodes)
@@ -187,7 +187,7 @@ func TestBVHTraversal(t *testing.T) {
 					},
 				},
 				nodes: []optimisedBVHNode{
-					{bounds: AABB{Pmin: Vector{X: -1, Y: 0, Z: -1}, Pmax: Vector{X: 1, Y: 1, Z: -1}}, offset: 0, numPrimitives: 1},
+					{bounds: AABB{Pmin: Vector{X: -1, Y: 0, Z: -1}, Pmax: Vector{X: 1, Y: 1, Z: -1}}, offset: 0, numObjects: 1},
 				},
 			},
 			ray: NewRay(Vector{0, 0, 0}, Vector{0, 0, -1}),
@@ -213,9 +213,9 @@ func TestBVHTraversal(t *testing.T) {
 					},
 				},
 				nodes: []optimisedBVHNode{
-					{bounds: NewAABB(Vector{-3, -1, -5}, Vector{3, 2, -1}), offset: 2, numPrimitives: 0, axis: X},
-					{bounds: NewAABB(Vector{-3, 0, -5}, Vector{-1, 2, -3}), offset: 0, numPrimitives: 1},
-					{bounds: NewAABB(Vector{1, -1, -3}, Vector{3, 1, -1}), offset: 1, numPrimitives: 1}},
+					{bounds: NewAABB(Vector{-3, -1, -5}, Vector{3, 2, -1}), offset: 2, numObjects: 0, axis: X},
+					{bounds: NewAABB(Vector{-3, 0, -5}, Vector{-1, 2, -3}), offset: 0, numObjects: 1},
+					{bounds: NewAABB(Vector{1, -1, -3}, Vector{3, 1, -1}), offset: 1, numObjects: 1}},
 			},
 			ray: NewRay(Vector{0, 0, 0}, Vector{1, 0, -1}),
 			want: hit{

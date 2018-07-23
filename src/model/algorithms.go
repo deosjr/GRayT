@@ -8,9 +8,12 @@ const standardAlbedo = 0.18
 // I think its only needed when caching common ray-object intersections?
 // But I dont understand transformations well enough yet
 
-// TODO: The term Object is conflated with Primitive right now
-// Objects should be complex (recognisable) objects, which
-// can be split or tesselated to their primitives
+// So PBR uses 'primitive' for geometric primitives and complex objects both
+// For me a primitive is always a geometric primitive, otherwise we'll talk about objects
+// Primitives on their own can be objects, these are simple objects
+// Complex objects consist of other objects. This includes meshes.
+// Shared objects are objects referenced by multiple instances, and therefore need
+// transformations from object space to world space (?)
 
 type Object interface {
 	Intersect(Ray) (distance float64, ok bool)
