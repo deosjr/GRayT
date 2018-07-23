@@ -31,11 +31,11 @@ func main() {
 	scene.Add(m.NewPlane(m.Vector{0, 0, 0}, ez, ex, m.NewColor(40, 200, 40)))
 	scene.Add(m.NewPlane(m.Vector{-1, 0, -1}, ex, ey, m.NewColor(0, 40, 100)))
 
-	triangles, err := render.LoadObj("bunny.obj", m.NewColor(160, 80, 0))
+	object, err := render.LoadObj("bunny.obj", m.NewColor(160, 80, 0))
 	if err != nil {
 		fmt.Printf("Error reading file: %s \n", err.Error())
 	}
-	scene.Add(triangles...)
+	scene.Add(object)
 
 	fmt.Println("Building BVH...")
 	scene.Precompute()
@@ -44,6 +44,7 @@ func main() {
 
 	// aw := render.NewAVI("out.avi", width, height)
 	from, to := m.Vector{-0.2, 0.2, 0.2}, m.Vector{-0.08813016500000001, 0.14181918999999998, 0.011103720000000001}
+	//from, to := m.Vector{-2, 2, 2}, m.Vector{-1, 2, 2}
 	camera.LookAt(from, to, ey)
 	film := render.Render(scene, numWorkers)
 	film.SaveAsPNG("out.png")

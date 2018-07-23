@@ -103,7 +103,7 @@ func recursiveBuildBVH(objectInfos []objectInfo, start, end int, objs, total *in
 	*total++
 	bounds := objectInfos[start].bounds
 	for i := start + 1; i < end; i++ {
-		bounds.AddAABB(objectInfos[i].bounds)
+		bounds = bounds.AddAABB(objectInfos[i].bounds)
 	}
 	numObjects := end - start
 
@@ -201,8 +201,10 @@ func flattenBVHTree(node bvhNode, nodes []optimisedBVHNode, offset *int) int {
 // Actual traversal of the BVH
 func (bvh BVH) ClosestIntersection(ray Ray, maxDistance float64) *hit {
 	var toVisitOffset, currentNodeIndex int
-	d := maxDistance
-	var objectHit Object
+	hit := &hit{
+		ray:      ray,
+		distance: maxDistance,
+	}
 	nodesToVisit := make([]int, 64)
 	for {
 		node := bvh.nodes[currentNodeIndex]
@@ -211,15 +213,12 @@ func (bvh BVH) ClosestIntersection(ray Ray, maxDistance float64) *hit {
 		if node.bounds.Intersect(ray) {
 			if node.numObjects > 0 {
 				// this is a leaf node
-				newD := d
 				for i := 0; i < node.numObjects; i++ {
 					o := bvh.objects[node.offset+i]
-					if distance, ok := o.Intersect(ray); ok && distance < newD && distance > ERROR_MARGIN {
-						newD = distance
-						objectHit = o
+					if h := o.Intersect(ray); h != nil && h.distance < hit.distance && h.distance > ERROR_MARGIN {
+						hit = h
 					}
 				}
-				d = newD
 				if toVisitOffset == 0 {
 					break
 				}
@@ -241,11 +240,8 @@ func (bvh BVH) ClosestIntersection(ray Ray, maxDistance float64) *hit {
 			currentNodeIndex = nodesToVisit[toVisitOffset]
 		}
 	}
-	if d == maxDistance {
+	if hit.distance == maxDistance {
 		return nil
 	}
-	return &hit{
-		object: objectHit,
-		point:  PointFromRay(ray, d),
-	}
+	return hit
 }

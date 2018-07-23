@@ -197,7 +197,9 @@ func TestBVHTraversal(t *testing.T) {
 					P1: Vector{1, 0, -1},
 					P2: Vector{1, 1, -1},
 				},
-				point: Vector{0, 0, -1},
+				distance: 1,
+				ray:      NewRay(Vector{0, 0, 0}, Vector{0, 0, -1}),
+				//point: Vector{0, 0, -1},
 			},
 		},
 		{
@@ -223,7 +225,9 @@ func TestBVHTraversal(t *testing.T) {
 					Center: Vector{2, 0, -2},
 					Radius: 1.0,
 				},
-				point: Vector{1.2928932188134528, 0, -1.2928932188134528},
+				distance: 1.8284271247461907,
+				ray:      NewRay(Vector{0, 0, 0}, Vector{1, 0, -1}),
+				//point: Vector{1.2928932188134528, 0, -1.2928932188134528},
 			},
 		},
 	} {

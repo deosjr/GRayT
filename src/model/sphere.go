@@ -31,7 +31,7 @@ func (s Sphere) Bound() AABB {
 	)
 }
 
-func (s Sphere) Intersect(r Ray) (float64, bool) {
+func (s Sphere) Intersect(r Ray) *hit {
 
 	oc := VectorFromTo(s.Center, r.Origin)
 	loc := r.Direction.Dot(oc)
@@ -39,15 +39,19 @@ func (s Sphere) Intersect(r Ray) (float64, bool) {
 
 	// Ray skims the sphere at det==0; ignored
 	if det <= 0 {
-		return 0, false
+		return nil
 	}
 
 	// only return closest intersection point
 	d := -loc - math.Sqrt(det)
 	if d <= 0 {
-		return 0, false
+		return nil
 	}
-	return d, true
+	return &hit{
+		object:   s,
+		ray:      r,
+		distance: d,
+	}
 }
 
 func (s Sphere) SurfaceNormal(p Vector) Vector {

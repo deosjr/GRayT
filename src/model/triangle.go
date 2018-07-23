@@ -1,6 +1,8 @@
 package model
 
 // TODO: optimizations
+// - mesh is not a mesh at all atm,
+// just a collection of triangles.
 // - speed: SIMD instructions
 
 type TriangleMesh struct {
@@ -26,29 +28,32 @@ func triangleBound(p0, p1, p2 Vector) AABB {
 }
 
 // Moller-Trumbore intersection algorithm
-func triangleIntersect(p0, p1, p2 Vector, ray Ray) (float64, bool) {
+func triangleIntersect(p0, p1, p2 Vector, ray Ray) *hit {
 	e1 := p1.Sub(p0)
 	e2 := p2.Sub(p0)
 	pvec := ray.Direction.Cross(e2)
 	det := e1.Dot(pvec)
 
 	if det < 1e-8 && det > -1e-8 {
-		return 0, false
+		return nil
 	}
 	inv_det := 1.0 / det
 
 	tvec := ray.Origin.Sub(p0)
 	u := tvec.Dot(pvec) * inv_det
 	if u < 0 || u > 1 {
-		return 0, false
+		return nil
 	}
 
 	qvec := tvec.Cross(e1)
 	v := ray.Direction.Dot(qvec) * inv_det
 	if v < 0 || u+v > 1 {
-		return 0, false
+		return nil
 	}
-	return e2.Dot(qvec) * inv_det, true
+	return &hit{
+		ray:      ray,
+		distance: e2.Dot(qvec) * inv_det,
+	}
 }
 
 func triangleSurfaceNormal(p0, p1, p2 Vector) Vector {
@@ -62,7 +67,7 @@ func (t TriangleInMesh) Bound() AABB {
 	p0, p1, p2 := t.points()
 	return triangleBound(p0, p1, p2)
 }
-func (t TriangleInMesh) Intersect(r Ray) (float64, bool) {
+func (t TriangleInMesh) Intersect(r Ray) *hit {
 	p0, p1, p2 := t.points()
 	return triangleIntersect(p0, p1, p2, r)
 }
@@ -135,8 +140,12 @@ func NewTriangle(p0, p1, p2 Vector, c Color) Triangle {
 func (t Triangle) Bound() AABB {
 	return triangleBound(t.P0, t.P1, t.P2)
 }
-func (t Triangle) Intersect(r Ray) (float64, bool) {
-	return triangleIntersect(t.P0, t.P1, t.P2, r)
+func (t Triangle) Intersect(r Ray) *hit {
+	h := triangleIntersect(t.P0, t.P1, t.P2, r)
+	if h != nil {
+		h.object = t
+	}
+	return h
 }
 func (t Triangle) SurfaceNormal(Vector) Vector {
 	return triangleSurfaceNormal(t.P0, t.P1, t.P2)

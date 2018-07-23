@@ -15,11 +15,11 @@ func sampleScene(b *testing.B) *Scene {
 	scene.AddLights(l1, l2)
 	scene.Add(model.NewSphere(model.Vector{3, 1, 5}, 0.5, model.NewColor(255, 100, 0)))
 
-	triangles, err := LoadObj("../bunny.obj", model.NewColor(255, 0, 0))
+	obj, err := LoadObj("../bunny.obj", model.NewColor(255, 0, 0))
 	if err != nil {
 		b.Fatalf("Error in benchmark: %s", err.Error())
 	}
-	scene.Add(triangles...)
+	scene.Add(obj)
 
 	scene.Precompute()
 

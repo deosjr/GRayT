@@ -11,11 +11,6 @@ type AccelerationStructure interface {
 	ClosestIntersection(ray Ray, maxDistance float64) *hit
 }
 
-type hit struct {
-	object Object
-	point  Vector
-}
-
 type NaiveAcceleration struct {
 	objects []Object
 }
@@ -26,19 +21,17 @@ func NewNaiveAcceleration(objects []Object) NaiveAcceleration {
 
 // Try and hit ALL objects EVERY time
 func (na NaiveAcceleration) ClosestIntersection(ray Ray, maxDistance float64) *hit {
-	var objectHit Object
-	d := maxDistance
+	hit := &hit{
+		ray:      ray,
+		distance: maxDistance,
+	}
 	for _, o := range na.objects {
-		if distance, ok := o.Intersect(ray); ok && distance < d && distance > ERROR_MARGIN {
-			d = distance
-			objectHit = o
+		if h := o.Intersect(ray); h != nil && h.distance < hit.distance && h.distance > ERROR_MARGIN {
+			hit = h
 		}
 	}
-	if d == maxDistance {
+	if hit.distance == maxDistance {
 		return nil
 	}
-	return &hit{
-		object: objectHit,
-		point:  PointFromRay(ray, d),
-	}
+	return hit
 }

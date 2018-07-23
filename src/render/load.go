@@ -2,6 +2,7 @@ package render
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -10,7 +11,8 @@ import (
 	"model"
 )
 
-func LoadObj(filename string, c model.Color) ([]model.Object, error) {
+// LoadObj assumes filename contains one triangle mesh object
+func LoadObj(filename string, c model.Color) (model.Object, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -21,7 +23,7 @@ func LoadObj(filename string, c model.Color) ([]model.Object, error) {
 	return loadObj(scanner, c)
 }
 
-func loadObj(scanner *bufio.Scanner, c model.Color) ([]model.Object, error) {
+func loadObj(scanner *bufio.Scanner, c model.Color) (model.Object, error) {
 	var vertices []model.Vector
 	var triangles []model.Object
 	for scanner.Scan() {
@@ -50,7 +52,7 @@ func loadObj(scanner *bufio.Scanner, c model.Color) ([]model.Object, error) {
 			fmt.Printf("Unexpected line: %s", line)
 		}
 	}
-	return triangles, nil
+	return toObject(triangles)
 }
 
 func readVertex(coordinates []string) (model.Vector, error) {
@@ -101,4 +103,11 @@ func readTriangle(indices []string, vertices []model.Vector, c model.Color) (mod
 	}
 	// TODO: coordinate handedness!
 	return model.NewTriangle(vertices[i3-1], vertices[i2-1], vertices[i1-1], c), nil
+}
+
+func toObject(triangles []model.Object) (model.Object, error) {
+	if len(triangles) == 0 {
+		return nil, errors.New("Object list empty")
+	}
+	return model.NewComplexObject(triangles), nil
 }
