@@ -109,5 +109,16 @@ func toObject(triangles []model.Object) (model.Object, error) {
 	if len(triangles) == 0 {
 		return nil, errors.New("Object list empty")
 	}
+	b := model.ObjectsBound(triangles)
+	objectToOrigin := model.Translate(b.Centroid()).Inverse()
+
+	for i, tobj := range triangles {
+		t := tobj.(model.Triangle)
+		triangles[i] = model.NewTriangle(
+			objectToOrigin.Point(t.P0),
+			objectToOrigin.Point(t.P1),
+			objectToOrigin.Point(t.P2),
+			t.Color)
+	}
 	return model.NewComplexObject(triangles), nil
 }
