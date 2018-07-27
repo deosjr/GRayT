@@ -109,6 +109,11 @@ func toObject(triangles []model.Object) (model.Object, error) {
 	if len(triangles) == 0 {
 		return nil, errors.New("Object list empty")
 	}
+	centerTrianglesOnOrigin(triangles)
+	return model.NewComplexObject(triangles), nil
+}
+
+func centerTrianglesOnOrigin(triangles []model.Object) {
 	b := model.ObjectsBound(triangles)
 	objectToOrigin := model.Translate(b.Centroid()).Inverse()
 
@@ -120,5 +125,4 @@ func toObject(triangles []model.Object) (model.Object, error) {
 			objectToOrigin.Point(t.P2),
 			t.Color)
 	}
-	return model.NewComplexObject(triangles), nil
 }

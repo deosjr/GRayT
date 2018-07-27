@@ -201,10 +201,7 @@ func flattenBVHTree(node bvhNode, nodes []optimisedBVHNode, offset *int) int {
 // Actual traversal of the BVH
 func (bvh BVH) ClosestIntersection(ray Ray, maxDistance float64) *hit {
 	var toVisitOffset, currentNodeIndex int
-	hit := &hit{
-		ray:      ray,
-		distance: maxDistance,
-	}
+	var hit *hit
 	nodesToVisit := make([]int, 64)
 	for {
 		node := bvh.nodes[currentNodeIndex]
@@ -215,7 +212,8 @@ func (bvh BVH) ClosestIntersection(ray Ray, maxDistance float64) *hit {
 				// this is a leaf node
 				for i := 0; i < node.numObjects; i++ {
 					o := bvh.objects[node.offset+i]
-					if h := o.Intersect(ray); h != nil && h.distance < hit.distance && h.distance > ERROR_MARGIN {
+					if h := o.Intersect(ray); h != nil && h.distance < maxDistance && h.distance > ERROR_MARGIN {
+						maxDistance = h.distance
 						hit = h
 					}
 				}
@@ -239,9 +237,6 @@ func (bvh BVH) ClosestIntersection(ray Ray, maxDistance float64) *hit {
 			toVisitOffset--
 			currentNodeIndex = nodesToVisit[toVisitOffset]
 		}
-	}
-	if hit.distance == maxDistance {
-		return nil
 	}
 	return hit
 }

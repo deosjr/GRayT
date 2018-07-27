@@ -12,7 +12,7 @@ import (
 func TestLoadObj(t *testing.T) {
 	for i, tt := range []struct {
 		obj  string
-		want model.Object
+		want []model.Object
 	}{
 		{
 			obj:  `# empty file`,
@@ -24,13 +24,13 @@ func TestLoadObj(t *testing.T) {
 			v 2 3 4
 			v 4 5 6.0
 			f 1 2 3`,
-			want: model.NewComplexObject([]model.Object{
+			want: []model.Object{
 				model.NewTriangle(
 					model.Vector{4, 5, 6},
 					model.Vector{2, 3, 4},
 					model.Vector{1.0, -0.02, 2.1754370e-002},
 					model.NewColor(255, 0, 0)),
-			}),
+			},
 		},
 	} {
 		reader := strings.NewReader(tt.obj)
@@ -43,8 +43,14 @@ func TestLoadObj(t *testing.T) {
 			t.Errorf("%d): error in load: %s", i, err.Error())
 			continue
 		}
-		if !reflect.DeepEqual(got, tt.want) {
-			t.Errorf("%d): got %v want %v", i, got, tt.want)
+		if tt.want == nil && got != nil {
+			t.Errorf("%d): expected nil, got: %s", i, got)
+			continue
+		}
+		centerTrianglesOnOrigin(tt.want)
+		want := model.NewComplexObject(tt.want)
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("%d): got %v want %v", i, got, want)
 		}
 	}
 }

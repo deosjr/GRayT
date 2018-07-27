@@ -28,32 +28,29 @@ func triangleBound(p0, p1, p2 Vector) AABB {
 }
 
 // Moller-Trumbore intersection algorithm
-func triangleIntersect(p0, p1, p2 Vector, ray Ray) *hit {
+func triangleIntersect(p0, p1, p2 Vector, ray Ray) (float64, bool) {
 	e1 := p1.Sub(p0)
 	e2 := p2.Sub(p0)
 	pvec := ray.Direction.Cross(e2)
 	det := e1.Dot(pvec)
 
 	if det < 1e-8 && det > -1e-8 {
-		return nil
+		return 0, false
 	}
 	inv_det := 1.0 / det
 
 	tvec := ray.Origin.Sub(p0)
 	u := tvec.Dot(pvec) * inv_det
 	if u < 0 || u > 1 {
-		return nil
+		return 0, false
 	}
 
 	qvec := tvec.Cross(e1)
 	v := ray.Direction.Dot(qvec) * inv_det
 	if v < 0 || u+v > 1 {
-		return nil
+		return 0, false
 	}
-	return &hit{
-		ray:      ray,
-		distance: e2.Dot(qvec) * inv_det,
-	}
+	return e2.Dot(qvec) * inv_det, true
 }
 
 func triangleSurfaceNormal(p0, p1, p2 Vector) Vector {
@@ -69,7 +66,11 @@ func (t TriangleInMesh) Bound() AABB {
 }
 func (t TriangleInMesh) Intersect(r Ray) *hit {
 	p0, p1, p2 := t.points()
-	return triangleIntersect(p0, p1, p2, r)
+	d, ok := triangleIntersect(p0, p1, p2, r)
+	if !ok {
+		return nil
+	}
+	return NewHit(t, r, d)
 }
 func (t TriangleInMesh) SurfaceNormal(Vector) Vector {
 	p0, p1, p2 := t.points()
@@ -141,11 +142,11 @@ func (t Triangle) Bound() AABB {
 	return triangleBound(t.P0, t.P1, t.P2)
 }
 func (t Triangle) Intersect(r Ray) *hit {
-	h := triangleIntersect(t.P0, t.P1, t.P2, r)
-	if h != nil {
-		h.object = t
+	d, ok := triangleIntersect(t.P0, t.P1, t.P2, r)
+	if !ok {
+		return nil
 	}
-	return h
+	return NewHit(t, r, d)
 }
 func (t Triangle) SurfaceNormal(Vector) Vector {
 	return triangleSurfaceNormal(t.P0, t.P1, t.P2)

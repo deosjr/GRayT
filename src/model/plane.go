@@ -43,11 +43,7 @@ func (p Plane) Intersect(r Ray) *hit {
 	if d <= 0 {
 		return nil
 	}
-	return &hit{
-		object:   p,
-		ray:      r,
-		distance: d,
-	}
+	return NewHit(p, r, d)
 }
 
 func (p Plane) SurfaceNormal(Vector) Vector {

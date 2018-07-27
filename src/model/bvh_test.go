@@ -173,9 +173,10 @@ func TestFlattenBVHTree(t *testing.T) {
 
 func TestBVHTraversal(t *testing.T) {
 	for i, tt := range []struct {
-		bvh  BVH
-		ray  Ray
-		want hit
+		bvh             BVH
+		ray             Ray
+		want            hit
+		wantObjectIndex int
 	}{
 		{
 			bvh: BVH{
@@ -192,15 +193,11 @@ func TestBVHTraversal(t *testing.T) {
 			},
 			ray: NewRay(Vector{0, 0, 0}, Vector{0, 0, -1}),
 			want: hit{
-				object: Triangle{
-					P0: Vector{-1, 0, -1},
-					P1: Vector{1, 0, -1},
-					P2: Vector{1, 1, -1},
-				},
 				distance: 1,
 				ray:      NewRay(Vector{0, 0, 0}, Vector{0, 0, -1}),
 				//point: Vector{0, 0, -1},
 			},
+			wantObjectIndex: 0,
 		},
 		{
 			bvh: BVH{
@@ -221,23 +218,21 @@ func TestBVHTraversal(t *testing.T) {
 			},
 			ray: NewRay(Vector{0, 0, 0}, Vector{1, 0, -1}),
 			want: hit{
-				object: Sphere{
-					Center: Vector{2, 0, -2},
-					Radius: 1.0,
-				},
 				distance: 1.8284271247461907,
 				ray:      NewRay(Vector{0, 0, 0}, Vector{1, 0, -1}),
 				//point: Vector{1.2928932188134528, 0, -1.2928932188134528},
 			},
+			wantObjectIndex: 1,
 		},
 	} {
+		tt.want.object = &tt.bvh.objects[tt.wantObjectIndex]
 		hit := tt.bvh.ClosestIntersection(tt.ray, math.MaxFloat64)
 		if hit == nil {
 			t.Errorf("%d) got nil want %#v", i, tt.want)
 			continue
 		}
 		got := *hit
-		if got != tt.want {
+		if !reflect.DeepEqual(got, tt.want) {
 			t.Errorf("%d) got %#v want %#v", i, got, tt.want)
 		}
 	}

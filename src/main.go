@@ -18,6 +18,8 @@ var (
 )
 
 func main() {
+
+	fmt.Println("Creating scene...")
 	camera := m.NewPerspectiveCamera(width, height, 0.5*math.Pi)
 	//camera := m.NewOrthographicCamera(width, height)
 
@@ -28,6 +30,12 @@ func main() {
 
 	scene.Add(m.NewSphere(m.Vector{3, 1, 5}, 0.5, m.NewColor(0, 100, 255)))
 
+	// TODO: investigate why removing planes leads to black image
+	// --> something is really wrong..
+	// Only removing BOTH planes leads to problems. Something in BVH?
+
+	// Planes as background resulting in a LOT of extra allocations (hits)
+	// should use a background color/texture for this instead
 	scene.Add(m.NewPlane(m.Vector{0, 0, 0}, ez, ex, m.NewColor(40, 200, 40)))
 	scene.Add(m.NewPlane(m.Vector{-1, 0, -5}, ex, ey, m.NewColor(0, 40, 100)))
 
