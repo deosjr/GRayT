@@ -49,7 +49,7 @@ type ComplexObject struct {
 	bound AABB
 }
 
-func NewComplexObject(objects []Object) ComplexObject {
+func NewComplexObject(objects []Object) Object {
 	if len(objects) == 0 {
 		panic("invalid object, cant be empty")
 	}

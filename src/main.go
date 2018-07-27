@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math"
+	"math/rand"
 	m "model"
 	"render"
 )
@@ -39,13 +40,25 @@ func main() {
 	scene.Add(m.NewPlane(m.Vector{0, 0, 0}, ez, ex, m.NewColor(40, 200, 40)))
 	scene.Add(m.NewPlane(m.Vector{-1, 0, -5}, ex, ey, m.NewColor(0, 40, 100)))
 
-	object, err := render.LoadObj("bunny.obj", m.NewColor(160, 80, 0))
-	if err != nil {
-		fmt.Printf("Error reading file: %s \n", err.Error())
+	c := m.Cuboid{
+		m.Vector{-0.1, 0.1, -0.1},
+		m.Vector{0.1, 0.1, -0.1},
+		m.Vector{0.1, 0.1, 0.1},
+		m.Vector{-0.1, 0.1, 0.1},
+		m.Vector{-0.1, -0.1, -0.1},
+		m.Vector{0.1, -0.1, -0.1},
+		m.Vector{0.1, -0.1, 0.1},
+		m.Vector{-0.1, -0.1, 0.1},
+		m.NewColor(255, 0, 0),
 	}
-	objHeight := -object.Bound().Pmin.Y
-	for i := 0; i < 10; i++ {
-		shared := m.NewSharedObject(&object, m.Translate(m.Vector{float64(i) / 4, objHeight, -2}))
+
+	object := m.NewComplexObject(c.Tesselate())
+	//objHeight := -object.Bound().Pmin.Y
+	for i := 0; i < 100; i++ {
+		x := rand.Float64() * 2
+		y := rand.Float64() * 2
+		z := -rand.Float64() - 2
+		shared := m.NewSharedObject(&object, m.Translate(m.Vector{x, y, z}))
 		scene.Add(shared)
 	}
 
@@ -54,8 +67,8 @@ func main() {
 
 	fmt.Println("Rendering...")
 
-	// aw := render.NewAVI("out.avi", width, height)
-	from, to := m.Vector{0.2, 0.2, 0}, m.Vector{0, 0, -10}
+	//aw := render.NewAVI("out.avi", width, height)
+	from, to := m.Vector{0.2, 0.2, 0}, m.Vector{-1, 0, -10}
 	camera.LookAt(from, to, ey)
 	film := render.Render(scene, numWorkers)
 	film.SaveAsPNG("out.png")

@@ -29,8 +29,13 @@ func newFilm(w, h int) Film {
 	}
 }
 
+// row major order
+func (f Film) getArrayIndex(x, y int) int {
+	return y*f.width + x
+}
+
 func (f Film) Set(x, y int, c model.Color) {
-	f.pixels[y*f.height+x] = c
+	f.pixels[f.getArrayIndex(x, y)] = c
 }
 
 func (f Film) SaveAsPNG(filename string) {
@@ -57,7 +62,7 @@ func (f Film) toImage() image.Image {
 	img := image.NewRGBA(image.Rect(0, 0, f.width, f.height))
 	for x := 0; x < f.width; x++ {
 		for y := 0; y < f.height; y++ {
-			pc := f.pixels[y*f.height+x]
+			pc := f.pixels[f.getArrayIndex(x, y)]
 			c := color.RGBA{pc.R(), pc.G(), pc.B(), 255}
 			img.Set(x, y, c)
 		}
@@ -108,7 +113,7 @@ func (g gifImages) Add(f Film) gifImages {
 	m := image.NewPaletted(image.Rect(0, 0, f.width, f.height), palette.Plan9)
 	for x := 0; x < f.width; x++ {
 		for y := 0; y < f.height; y++ {
-			pc := f.pixels[y*f.height+x]
+			pc := f.pixels[f.getArrayIndex(x, y)]
 			c := color.RGBA{pc.R(), pc.G(), pc.B(), 255}
 			m.Set(x, y, c)
 		}

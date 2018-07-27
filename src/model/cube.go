@@ -131,7 +131,7 @@ type Quadrilateral struct {
 
 func (r Quadrilateral) Tesselate() []Object {
 	return []Object{
-		NewTriangle(r.P1, r.P4, r.P2, r.Color),
-		NewTriangle(r.P4, r.P3, r.P2, r.Color),
+		NewTriangle(r.P1, r.P2, r.P4, r.Color),
+		NewTriangle(r.P4, r.P2, r.P3, r.Color),
 	}
 }
