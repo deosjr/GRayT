@@ -123,7 +123,7 @@ func (so *SharedObject) GetColor() Color {
 
 func (so *SharedObject) Bound() AABB {
 	b := so.object.Bound()
-	bmin := so.objectToWorld.Vector(b.Pmin)
-	bmax := so.objectToWorld.Vector(b.Pmax)
+	bmin := so.objectToWorld.Point(b.Pmin)
+	bmax := so.objectToWorld.Point(b.Pmax)
 	return NewAABB(bmin, bmax)
 }

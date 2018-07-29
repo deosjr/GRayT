@@ -29,17 +29,6 @@ func main() {
 	l2 := m.NewPointLight(m.Vector{-0.1, 1, -1}, m.NewColor(255, 255, 255), 400)
 	scene.AddLights(l1, l2)
 
-	scene.Add(m.NewSphere(m.Vector{3, 1, 5}, 0.5, m.NewColor(0, 100, 255)))
-
-	// TODO: investigate why removing planes leads to black image
-	// --> something is really wrong..
-	// Only removing BOTH planes leads to problems. Something in BVH?
-
-	// Planes as background resulting in a LOT of extra allocations (hits)
-	// should use a background color/texture for this instead
-	scene.Add(m.NewPlane(m.Vector{0, 0, 0}, ez, ex, m.NewColor(40, 200, 40)))
-	scene.Add(m.NewPlane(m.Vector{-1, 0, -5}, ex, ey, m.NewColor(0, 40, 100)))
-
 	c := m.Cuboid{
 		m.Vector{-0.1, 0.1, -0.1},
 		m.Vector{0.1, 0.1, -0.1},
