@@ -58,7 +58,7 @@ func main() {
 		x := rand.Float64() * 2
 		y := rand.Float64() * 2
 		z := -rand.Float64() - 2
-		shared := m.NewSharedObject(&object, m.Translate(m.Vector{x, y, z}))
+		shared := m.NewSharedObject(object, m.Translate(m.Vector{x, y, z}))
 		scene.Add(shared)
 	}
 

@@ -53,28 +53,28 @@ func NewComplexObject(objects []Object) Object {
 	if len(objects) == 0 {
 		panic("invalid object, cant be empty")
 	}
-	return ComplexObject{
+	return &ComplexObject{
 		bvh:   NewBVH(objects, SplitMiddle),
 		bound: ObjectsBound(objects),
 	}
 }
 
-func (co ComplexObject) Intersect(ray Ray) *hit {
+func (co *ComplexObject) Intersect(ray Ray) *hit {
 	// TODO: not happy to redeclare max intersect distance here
 	return co.bvh.ClosestIntersection(ray, math.MaxFloat64)
 }
 
-func (co ComplexObject) SurfaceNormal(point Vector) Vector {
+func (co *ComplexObject) SurfaceNormal(point Vector) Vector {
 	panic("Dont call this function!")
 	return Vector{}
 }
 
-func (co ComplexObject) GetColor() Color {
+func (co *ComplexObject) GetColor() Color {
 	panic("Dont call this function!")
 	return Color{}
 }
 
-func (co ComplexObject) Bound() AABB {
+func (co *ComplexObject) Bound() AABB {
 	return co.bound
 }
 
@@ -82,28 +82,28 @@ func (co ComplexObject) Bound() AABB {
 // and a transformation that places this instance of the object (token) in the scene.
 // TODO: multiple instances can share geometry but differ in material? optionally?
 type SharedObject struct {
-	object        *Object
+	object        Object
 	objectToWorld Transform
 }
 
 // o is the object being shared, originToPosition is the transform in
 // world space from origin to the object's position
 // Note: objects should be centered on origin or this will not work properly!
-func NewSharedObject(o *Object, originToPosition Transform) SharedObject {
-	if (*o).Bound().Centroid().Length() != 0 {
+func NewSharedObject(o Object, originToPosition Transform) Object {
+	if o.Bound().Centroid().Length() != 0 {
 		panic("shared object should be centered on the origin!")
 	}
-	return SharedObject{
+	return &SharedObject{
 		object:        o,
 		objectToWorld: originToPosition,
 	}
 }
 
-func (so SharedObject) Intersect(ray Ray) *hit {
+func (so *SharedObject) Intersect(ray Ray) *hit {
 	// transform ray to object space
 	r := so.objectToWorld.Inverse().Ray(ray)
 
-	hit := (*so.object).Intersect(r)
+	hit := so.object.Intersect(r)
 	if hit == nil {
 		return nil
 	}
@@ -113,16 +113,16 @@ func (so SharedObject) Intersect(ray Ray) *hit {
 	return hit
 }
 
-func (so SharedObject) SurfaceNormal(point Vector) Vector {
-	return (*so.object).SurfaceNormal(point)
+func (so *SharedObject) SurfaceNormal(point Vector) Vector {
+	return so.object.SurfaceNormal(point)
 }
 
-func (so SharedObject) GetColor() Color {
-	return (*so.object).GetColor()
+func (so *SharedObject) GetColor() Color {
+	return so.object.GetColor()
 }
 
-func (so SharedObject) Bound() AABB {
-	b := (*so.object).Bound()
+func (so *SharedObject) Bound() AABB {
+	b := so.object.Bound()
 	bmin := so.objectToWorld.Vector(b.Pmin)
 	bmax := so.objectToWorld.Vector(b.Pmax)
 	return NewAABB(bmin, bmax)
