@@ -88,8 +88,8 @@ func NewTriangleMesh(grid [][]Vector) []Object {
 	triangles := make([]Object, 2*(mesh.xSize-1)*(mesh.ySize-1))
 	i := 0
 
-	c1 := NewColor(50, 200, 0)
-	c2 := NewColor(50, 150, 50)
+	c1 := &DiffuseMaterial{NewColor(50, 200, 0)}
+	c2 := &DiffuseMaterial{NewColor(50, 150, 50)}
 
 	for y := 0; y < mesh.ySize-1; y++ {
 		for x := 0; x < 2*(mesh.xSize-1); x += 2 {
@@ -129,9 +129,9 @@ func (m *TriangleMesh) get(x, y int) (p0, p1, p2 Vector) {
 	return m.pointGrid[y+1][x], m.pointGrid[y+1][x+1], m.pointGrid[y][x+1]
 }
 
-func NewTriangle(p0, p1, p2 Vector, c Color) Triangle {
+func NewTriangle(p0, p1, p2 Vector, m Material) Triangle {
 	return Triangle{
-		object: object{c},
+		object: object{m},
 		P0:     p0,
 		P1:     p1,
 		P2:     p2,

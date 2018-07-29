@@ -34,7 +34,7 @@ func LightContribution(ray Ray, hit *hit, l Light, as AccelerationStructure) (Co
 	lightRatio := object.SurfaceNormal(point).Dot(segment)
 	factors := standardAlbedo / math.Pi * l.Intensity(segmentLength) * facingRatio * lightRatio
 	lightColor := l.Color().Times(factors)
-	return object.GetColor().Product(lightColor), true
+	return object.GetColor(point).Product(lightColor), true
 }
 
 func pointInShadow(shadowRay Ray, as AccelerationStructure, maxDistance float64) bool {

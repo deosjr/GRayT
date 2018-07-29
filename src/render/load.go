@@ -12,7 +12,7 @@ import (
 )
 
 // LoadObj assumes filename contains one triangle mesh object
-func LoadObj(filename string, c model.Color) (model.Object, error) {
+func LoadObj(filename string, m model.Material) (model.Object, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -20,10 +20,10 @@ func LoadObj(filename string, c model.Color) (model.Object, error) {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
-	return loadObj(scanner, c)
+	return loadObj(scanner, m)
 }
 
-func loadObj(scanner *bufio.Scanner, c model.Color) (model.Object, error) {
+func loadObj(scanner *bufio.Scanner, m model.Material) (model.Object, error) {
 	var vertices []model.Vector
 	var triangles []model.Object
 	for scanner.Scan() {
@@ -43,7 +43,7 @@ func loadObj(scanner *bufio.Scanner, c model.Color) (model.Object, error) {
 			}
 			vertices = append(vertices, vertex)
 		case "f":
-			face, err := readTriangle(values, vertices, c)
+			face, err := readTriangle(values, vertices, m)
 			if err != nil {
 				return nil, err
 			}
@@ -74,7 +74,7 @@ func readVertex(coordinates []string) (model.Vector, error) {
 	return model.Vector{p1, p2, p3}, nil
 }
 
-func readTriangle(indices []string, vertices []model.Vector, c model.Color) (model.Triangle, error) {
+func readTriangle(indices []string, vertices []model.Vector, m model.Material) (model.Triangle, error) {
 	if len(indices) != 3 {
 		return model.Triangle{}, fmt.Errorf("Invalid indices: %v", indices)
 	}
@@ -102,7 +102,7 @@ func readTriangle(indices []string, vertices []model.Vector, c model.Color) (mod
 		return model.Triangle{}, fmt.Errorf("Invalid index: %d #indices: %d", i3, numVertices)
 	}
 	// TODO: coordinate handedness!
-	return model.NewTriangle(vertices[i3-1], vertices[i2-1], vertices[i1-1], c), nil
+	return model.NewTriangle(vertices[i3-1], vertices[i2-1], vertices[i1-1], m), nil
 }
 
 func toObject(triangles []model.Object) (model.Object, error) {
@@ -123,6 +123,6 @@ func centerTrianglesOnOrigin(triangles []model.Object) {
 			objectToOrigin.Point(t.P0),
 			objectToOrigin.Point(t.P1),
 			objectToOrigin.Point(t.P2),
-			t.Color)
+			t.Material)
 	}
 }

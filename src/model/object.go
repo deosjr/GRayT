@@ -18,17 +18,17 @@ import (
 type Object interface {
 	Intersect(Ray) *hit
 	SurfaceNormal(point Vector) Vector
-	GetColor() Color
+	GetColor(Vector) Color
 	Bound() AABB
 }
 
 type object struct {
-	Color Color
+	Material Material
 }
 
 // to be replaced by more interesting materials info
-func (o object) GetColor() Color {
-	return o.Color
+func (o object) GetColor(p Vector) Color {
+	return o.Material.GetColor(p)
 }
 
 func ObjectsBound(objects []Object) AABB {
@@ -69,7 +69,7 @@ func (co *ComplexObject) SurfaceNormal(point Vector) Vector {
 	return Vector{}
 }
 
-func (co *ComplexObject) GetColor() Color {
+func (co *ComplexObject) GetColor(Vector) Color {
 	panic("Dont call this function!")
 	return Color{}
 }
@@ -117,8 +117,8 @@ func (so *SharedObject) SurfaceNormal(point Vector) Vector {
 	return so.object.SurfaceNormal(point)
 }
 
-func (so *SharedObject) GetColor() Color {
-	return so.object.GetColor()
+func (so *SharedObject) GetColor(p Vector) Color {
+	return so.object.GetColor(p)
 }
 
 func (so *SharedObject) Bound() AABB {

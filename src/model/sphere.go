@@ -8,9 +8,9 @@ type Sphere struct {
 	Radius float64
 }
 
-func NewSphere(o Vector, r float64, c Color) Sphere {
+func NewSphere(o Vector, r float64, m Material) Sphere {
 	return Sphere{
-		object: object{c},
+		object: object{m},
 		Center: o,
 		Radius: r,
 	}

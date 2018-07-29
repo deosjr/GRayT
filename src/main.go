@@ -27,7 +27,15 @@ func main() {
 	scene := render.NewScene(camera)
 	l1 := m.NewPointLight(m.Vector{-2, 2, 0}, m.NewColor(255, 255, 255), 500)
 	l2 := m.NewPointLight(m.Vector{-0.1, 1, -1}, m.NewColor(255, 255, 255), 400)
-	scene.AddLights(l1, l2)
+	l3 := m.NewPointLight(m.Vector{3, 2, -2}, m.NewColor(255, 255, 255), 400)
+	scene.AddLights(l1, l2, l3)
+
+	//mat := &m.DiffuseMaterial{m.NewColor(255, 0, 0)}
+	mat := &m.PosFuncMat{
+		func(p m.Vector) m.Color {
+			return m.NewColor(uint8((p.X+2)*60), uint8((p.Y)*60), uint8((-p.Z+1)*60))
+		},
+	}
 
 	c := m.Cuboid{
 		m.Vector{-0.1, 0.1, -0.1},
@@ -38,15 +46,15 @@ func main() {
 		m.Vector{0.1, -0.1, -0.1},
 		m.Vector{0.1, -0.1, 0.1},
 		m.Vector{-0.1, -0.1, 0.1},
-		m.NewColor(255, 0, 0),
+		mat,
 	}
 
 	object := m.NewComplexObject(c.Tesselate())
 	//objHeight := -object.Bound().Pmin.Y
-	for i := 0; i < 100; i++ {
-		x := rand.Float64() * 2
-		y := rand.Float64() * 2
-		z := -rand.Float64() - 2
+	for i := 0; i < 1000; i++ {
+		x := -2 + rand.Float64()*4
+		y := rand.Float64() * 4
+		z := -1 - rand.Float64()*4
 		shared := m.NewSharedObject(object, m.Translate(m.Vector{x, y, z}))
 		scene.Add(shared)
 	}
@@ -56,17 +64,17 @@ func main() {
 
 	fmt.Println("Rendering...")
 
-	//aw := render.NewAVI("out.avi", width, height)
-	from, to := m.Vector{0.2, 0.2, 0}, m.Vector{-1, 0, -10}
+	// aw := render.NewAVI("out.avi", width, height)
+	from, to := m.Vector{0, 2, 0}, m.Vector{0, 0, -10}
 	camera.LookAt(from, to, ey)
 	film := render.Render(scene, numWorkers)
 	film.SaveAsPNG("out.png")
 
-	// for i := 0; i < 15; i++ {
+	// for i := 0; i < 30; i++ {
 	// 	camera.LookAt(from, to, ey)
 	// 	film := render.Render(scene, numWorkers)
 	// 	render.AddToAVI(aw, film)
-	// 	from = from.Add(m.Vector{0.1, 0, 0.1})
+	// 	from = from.Add(m.Vector{0, 0, -0.05})
 	// }
 	// render.SaveAVI(aw)
 }

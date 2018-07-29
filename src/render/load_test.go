@@ -29,13 +29,13 @@ func TestLoadObj(t *testing.T) {
 					model.Vector{4, 5, 6},
 					model.Vector{2, 3, 4},
 					model.Vector{1.0, -0.02, 2.1754370e-002},
-					model.NewColor(255, 0, 0)),
+					&model.DiffuseMaterial{}),
 			},
 		},
 	} {
 		reader := strings.NewReader(tt.obj)
 		scanner := bufio.NewScanner(reader)
-		got, err := loadObj(scanner, model.NewColor(255, 0, 0))
+		got, err := loadObj(scanner, &model.DiffuseMaterial{})
 		if err != nil {
 			if tt.want == nil {
 				continue

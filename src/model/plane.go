@@ -8,10 +8,10 @@ type Plane struct {
 	Normal Vector
 }
 
-func NewPlane(p Vector, u, v Vector, c Color) Plane {
+func NewPlane(p Vector, u, v Vector, m Material) Plane {
 	n := u.Cross(v).Normalize()
 	return Plane{
-		object: object{c},
+		object: object{m},
 		Point:  p,
 		Normal: n,
 	}
