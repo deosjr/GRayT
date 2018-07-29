@@ -5,7 +5,7 @@ import (
 	"model"
 )
 
-var BACKGROUND_COLOR = model.NewColor(10, 10, 10)
+var BACKGROUND_COLOR = model.NewColor(100, 100, 100)
 var MAX_RAY_DISTANCE = math.MaxFloat64
 
 type question struct {

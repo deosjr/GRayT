@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"time"
+
 	m "model"
 	"render"
 )
@@ -27,31 +29,22 @@ func main() {
 	scene := render.NewScene(camera)
 	l1 := m.NewPointLight(m.Vector{-2, 2, 0}, m.NewColor(255, 255, 255), 500)
 	l2 := m.NewPointLight(m.Vector{-0.1, 1, -1}, m.NewColor(255, 255, 255), 400)
-	l3 := m.NewPointLight(m.Vector{3, 2, -2}, m.NewColor(255, 255, 255), 400)
-	scene.AddLights(l1, l2, l3)
+	scene.AddLights(l1, l2)
 
-	//mat := &m.DiffuseMaterial{m.NewColor(255, 0, 0)}
+	// mat := &m.DiffuseMaterial{m.NewColor(255, 0, 0)}
 	mat := &m.PosFuncMat{
 		func(p m.Vector) m.Color {
 			return m.NewColor(uint8((p.X+2)*60), uint8((p.Y)*60), uint8((-p.Z+1)*60))
 		},
 	}
 
-	c := m.Cuboid{
-		m.Vector{-0.1, 0.1, -0.1},
-		m.Vector{0.1, 0.1, -0.1},
-		m.Vector{0.1, 0.1, 0.1},
-		m.Vector{-0.1, 0.1, 0.1},
-		m.Vector{-0.1, -0.1, -0.1},
-		m.Vector{0.1, -0.1, -0.1},
-		m.Vector{0.1, -0.1, 0.1},
-		m.Vector{-0.1, -0.1, 0.1},
-		mat,
-	}
+	box := m.NewAABB(m.Vector{-0.1, -0.1, -0.1}, m.Vector{0.1, 0.1, 0.1})
+	c := m.NewCuboid(box, mat)
 
-	object := m.NewComplexObject(c.Tesselate())
+	object := c.Tesselate()
 	//objHeight := -object.Bound().Pmin.Y
-	for i := 0; i < 1000; i++ {
+	rand.Seed(time.Now().UnixNano())
+	for i := 0; i < 100; i++ {
 		x := -2 + rand.Float64()*4
 		y := rand.Float64() * 4
 		z := -1 - rand.Float64()*4

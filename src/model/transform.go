@@ -113,6 +113,8 @@ func Scale(x, y, z float64) Transform {
 }
 
 //TODO: check: theta in radians
+//TODO: I either don't understand these or
+// they are horribly broken. fix/test
 func RotateX(theta float64) Transform {
 	sinTheta := math.Sin(theta)
 	cosTheta := math.Cos(theta)
