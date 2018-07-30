@@ -15,12 +15,12 @@ type NaiveAcceleration struct {
 	objects []Object
 }
 
-func NewNaiveAcceleration(objects []Object) NaiveAcceleration {
-	return NaiveAcceleration{objects: objects}
+func NewNaiveAcceleration(objects []Object) *NaiveAcceleration {
+	return &NaiveAcceleration{objects: objects}
 }
 
 // Try and hit ALL objects EVERY time
-func (na NaiveAcceleration) ClosestIntersection(ray Ray, maxDistance float64) *hit {
+func (na *NaiveAcceleration) ClosestIntersection(ray Ray, maxDistance float64) *hit {
 	hit := &hit{
 		ray:      ray,
 		distance: maxDistance,

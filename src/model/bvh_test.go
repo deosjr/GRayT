@@ -225,7 +225,7 @@ func TestBVHTraversal(t *testing.T) {
 			wantObjectIndex: 1,
 		},
 	} {
-		tt.want.object = &tt.bvh.objects[tt.wantObjectIndex]
+		tt.want.object = tt.bvh.objects[tt.wantObjectIndex]
 		hit := tt.bvh.ClosestIntersection(tt.ray, math.MaxFloat64)
 		if hit == nil {
 			t.Errorf("%d) got nil want %#v", i, tt.want)

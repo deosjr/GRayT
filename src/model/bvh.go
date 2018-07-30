@@ -67,7 +67,7 @@ type objectInfo struct {
 	centroid Vector
 }
 
-func NewBVH(objects []Object, splitFunc splitFunc) BVH {
+func NewBVH(objects []Object, splitFunc splitFunc) *BVH {
 	objectInfos := make([]objectInfo, len(objects))
 	for i, o := range objects {
 		aabb := o.Bound()
@@ -89,7 +89,7 @@ func NewBVH(objects []Object, splitFunc splitFunc) BVH {
 	offset := 0
 	flattenBVHTree(root, nodes, &offset)
 
-	return BVH{
+	return &BVH{
 		objects: orderedObjects,
 		nodes:   nodes,
 	}
@@ -199,7 +199,7 @@ func flattenBVHTree(node bvhNode, nodes []optimisedBVHNode, offset *int) int {
 }
 
 // Actual traversal of the BVH
-func (bvh BVH) ClosestIntersection(ray Ray, maxDistance float64) *hit {
+func (bvh *BVH) ClosestIntersection(ray Ray, maxDistance float64) *hit {
 	var toVisitOffset, currentNodeIndex int
 	var hit *hit
 	nodesToVisit := make([]int, 64)

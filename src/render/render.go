@@ -7,7 +7,22 @@ import "model"
 // - scaling: communicate over the wire
 //   - memory: use protobuff ?
 
-func Render(scene *Scene, numWorkers int) Film {
+type question struct {
+	x, y int
+}
+
+type answer struct {
+	x, y  int
+	color model.Color
+}
+
+func worker(scene *model.Scene, ch chan question, ans chan answer) {
+	for q := range ch {
+		ans <- answer{q.x, q.y, scene.GetColor(q.x, q.y)}
+	}
+}
+
+func Render(scene *model.Scene, numWorkers int) Film {
 	w, h := scene.Camera.Width(), scene.Camera.Height()
 	img := newFilm(w, h)
 
@@ -38,32 +53,4 @@ func Render(scene *Scene, numWorkers int) Film {
 	}
 
 	return img
-}
-
-type Scene struct {
-	Objects []model.Object
-	Lights  []model.Light
-	Camera  model.Camera
-
-	AccelerationStructure model.AccelerationStructure
-}
-
-func NewScene(camera model.Camera) *Scene {
-	return &Scene{
-		Objects: []model.Object{},
-		Lights:  []model.Light{},
-		Camera:  camera,
-	}
-}
-
-func (s *Scene) Add(o ...model.Object) {
-	s.Objects = append(s.Objects, o...)
-}
-
-func (s *Scene) AddLights(l ...model.Light) {
-	s.Lights = append(s.Lights, l...)
-}
-
-func (s *Scene) Precompute() {
-	s.AccelerationStructure = model.NewBVH(s.Objects, model.SplitMiddle)
 }

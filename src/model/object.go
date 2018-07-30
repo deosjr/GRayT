@@ -1,9 +1,5 @@
 package model
 
-import (
-	"math"
-)
-
 // TODO: world to object coordinates and vice versa
 // I think its only needed when caching common ray-object intersections?
 // But I dont understand transformations well enough yet
@@ -18,7 +14,7 @@ import (
 type Object interface {
 	Intersect(Ray) *hit
 	SurfaceNormal(point Vector) Vector
-	GetColor(Vector) Color
+	GetColor(si *SurfaceInteraction) Color
 	Bound() AABB
 }
 
@@ -27,8 +23,8 @@ type object struct {
 }
 
 // to be replaced by more interesting materials info
-func (o object) GetColor(p Vector) Color {
-	return o.Material.GetColor(p)
+func (o object) GetColor(si *SurfaceInteraction) Color {
+	return o.Material.GetColor(si)
 }
 
 func ObjectsBound(objects []Object) AABB {
@@ -45,7 +41,7 @@ func ObjectsBound(objects []Object) AABB {
 // these should always be called on the simple object that is hit,
 // never on the aggregate object containing those (it doesnt have its own)
 type ComplexObject struct {
-	bvh   BVH
+	bvh   *BVH
 	bound AABB
 }
 
@@ -60,8 +56,7 @@ func NewComplexObject(objects []Object) Object {
 }
 
 func (co *ComplexObject) Intersect(ray Ray) *hit {
-	// TODO: not happy to redeclare max intersect distance here
-	return co.bvh.ClosestIntersection(ray, math.MaxFloat64)
+	return co.bvh.ClosestIntersection(ray, MAX_RAY_DISTANCE)
 }
 
 func (co *ComplexObject) SurfaceNormal(point Vector) Vector {
@@ -69,7 +64,7 @@ func (co *ComplexObject) SurfaceNormal(point Vector) Vector {
 	return Vector{}
 }
 
-func (co *ComplexObject) GetColor(Vector) Color {
+func (co *ComplexObject) GetColor(*SurfaceInteraction) Color {
 	panic("Dont call this function!")
 	return Color{}
 }
@@ -117,8 +112,8 @@ func (so *SharedObject) SurfaceNormal(point Vector) Vector {
 	return so.object.SurfaceNormal(point)
 }
 
-func (so *SharedObject) GetColor(p Vector) Color {
-	return so.object.GetColor(p)
+func (so *SharedObject) GetColor(si *SurfaceInteraction) Color {
+	return so.object.GetColor(si)
 }
 
 func (so *SharedObject) Bound() AABB {

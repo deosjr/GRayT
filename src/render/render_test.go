@@ -7,9 +7,9 @@ import (
 	"model"
 )
 
-func sampleScene(b *testing.B) *Scene {
+func sampleScene(b *testing.B) *model.Scene {
 	camera := model.NewPerspectiveCamera(1600, 1200, 0.5*math.Pi)
-	scene := NewScene(camera)
+	scene := model.NewScene(camera)
 	l1 := model.NewPointLight(model.Vector{-2, 2, 0}, model.NewColor(255, 255, 255), 300)
 	l2 := model.NewPointLight(model.Vector{-0.1, 1, 0.1}, model.NewColor(255, 255, 255), 400)
 	scene.AddLights(l1, l2)
@@ -28,7 +28,7 @@ func sampleScene(b *testing.B) *Scene {
 	return scene
 }
 
-func benchmarkScene(scene *Scene, numWorkers int, b *testing.B) {
+func benchmarkScene(scene *model.Scene, numWorkers int, b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		Render(scene, numWorkers)
 	}
