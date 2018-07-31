@@ -67,7 +67,7 @@ func (s *Scene) GetRayColor(ray Ray) Color {
 	lightFound := false
 	for _, l := range s.Lights {
 		point := PointFromRay(hit.ray, hit.distance)
-		segment := VectorFromTo(point, l.Origin())
+		segment := l.VectorFromPoint(point)
 		shadowRay := NewRay(point, segment)
 
 		if pointInShadow(shadowRay, s.AccelerationStructure, segment.Length()) {

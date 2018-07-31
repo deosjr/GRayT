@@ -22,18 +22,16 @@ func main() {
 
 	fmt.Println("Creating scene...")
 	camera := m.NewPerspectiveCamera(width, height, 0.5*math.Pi)
-
 	scene := m.NewScene(camera)
-	l1 := m.NewPointLight(m.Vector{-2, 2, 0}, m.NewColor(255, 255, 255), 500)
-	l2 := m.NewPointLight(m.Vector{-0.1, 3, 0.5}, m.NewColor(255, 255, 255), 600)
-	scene.AddLights(l1, l2)
 
-	diffMat := &m.DiffuseMaterial{m.NewColor(255, 0, 0)}
+	l1 := m.NewDistantLight(m.Vector{0, 1, -1}, m.NewColor(255, 255, 255), 10)
+	scene.AddLights(l1)
+
+	diffMat := &m.DiffuseMaterial{m.NewColor(50, 10, 100)}
 	reflMat := &m.ReflectiveMaterial{scene}
 
-	scene.Add(m.NewSphere(m.Vector{-1, 2, 2}, 0.5, reflMat))
-	scene.Add(m.NewSphere(m.Vector{1, 2, 2}, 0.5, reflMat))
-	scene.Add(m.NewSphere(m.Vector{0, 1, 1}, 0.5, diffMat))
+	scene.Add(m.NewPlane(m.Vector{0, 0, 0}, ez, ex, reflMat))
+	scene.Add(m.NewSphere(m.Vector{0, 1, 4}, 0.5, diffMat))
 
 	fmt.Println("Building BVH...")
 	scene.Precompute()
@@ -41,7 +39,7 @@ func main() {
 	fmt.Println("Rendering...")
 
 	// aw := render.NewAVI("out.avi", width, height)
-	from, to := m.Vector{0, 2, 0}, m.Vector{0, 0, 10}
+	from, to := m.Vector{0, 1, 0}, m.Vector{0, 0, 10}
 	camera.LookAt(from, to, ey)
 	film := render.Render(scene, numWorkers)
 	film.SaveAsPNG("out.png")

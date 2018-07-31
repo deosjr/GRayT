@@ -33,10 +33,10 @@ type ReflectiveMaterial struct {
 	Scene *Scene
 }
 
-var maxReflectiveDepth = 5
+var maxRayDepth = 5
 
 func (m *ReflectiveMaterial) GetColor(si *SurfaceInteraction) Color {
-	if si.depth == maxReflectiveDepth {
+	if si.depth == maxRayDepth {
 		return BACKGROUND_COLOR
 	}
 	i := si.Incident
