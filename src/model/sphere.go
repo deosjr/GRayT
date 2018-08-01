@@ -16,17 +16,18 @@ func NewSphere(o Vector, r float64, m Material) Sphere {
 	}
 }
 
-func (s Sphere) Bound() AABB {
+func (s Sphere) Bound(t Transform) AABB {
+	c := t.Point(s.Center)
 	return NewAABB(
 		Vector{
-			s.Center.X - s.Radius,
-			s.Center.Y - s.Radius,
-			s.Center.Z - s.Radius,
+			c.X - s.Radius,
+			c.Y - s.Radius,
+			c.Z - s.Radius,
 		},
 		Vector{
-			s.Center.X + s.Radius,
-			s.Center.Y + s.Radius,
-			s.Center.Z + s.Radius,
+			c.X + s.Radius,
+			c.Y + s.Radius,
+			c.Z + s.Radius,
 		},
 	)
 }
@@ -47,7 +48,7 @@ func (s Sphere) Intersect(r Ray) *hit {
 	if d <= 0 {
 		return nil
 	}
-	return NewHit(s, r, d)
+	return NewHit(s, d)
 }
 
 func (s Sphere) SurfaceNormal(p Vector) Vector {

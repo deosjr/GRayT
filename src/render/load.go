@@ -114,7 +114,7 @@ func toObject(triangles []model.Object) (model.Object, error) {
 }
 
 func centerTrianglesOnOrigin(triangles []model.Object) {
-	b := model.ObjectsBound(triangles)
+	b := model.ObjectsBound(triangles, model.ScaleUniform(1.0))
 	objectToOrigin := model.Translate(b.Centroid()).Inverse()
 
 	for i, tobj := range triangles {

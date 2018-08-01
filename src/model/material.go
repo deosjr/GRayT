@@ -6,6 +6,7 @@ type Material interface {
 
 type SurfaceInteraction struct {
 	Point    Vector
+	Normal	 Vector
 	Object   Object
 	AS       AccelerationStructure
 	Incident Vector
@@ -43,5 +44,6 @@ func (m *ReflectiveMaterial) GetColor(si *SurfaceInteraction) Color {
 	n := si.Object.SurfaceNormal(si.Point)
 	reflection := i.Sub(n.Times(2 * i.Dot(n)))
 	ray := NewRay(si.Point, reflection)
+	// TODO: retain maxdistance for tracing
 	return m.Scene.GetRayColor(ray)
 }

@@ -23,8 +23,11 @@ type Triangle struct {
 	P2 Vector
 }
 
-func triangleBound(p0, p1, p2 Vector) AABB {
-	return NewAABB(p0, p1).AddPoint(p2)
+func triangleBound(p0, p1, p2 Vector, t Transform) AABB {
+	tp0 := t.Point(p0)
+	tp1 := t.Point(p1)
+	tp2 := t.Point(p2)
+	return NewAABB(tp0, tp1).AddPoint(tp2)
 }
 
 // Moller-Trumbore intersection algorithm
@@ -60,9 +63,9 @@ func triangleSurfaceNormal(p0, p1, p2 Vector) Vector {
 func (t TriangleInMesh) points() (p0, p1, p2 Vector) {
 	return t.mesh.get(t.x, t.y)
 }
-func (t TriangleInMesh) Bound() AABB {
+func (t TriangleInMesh) Bound(transform Transform) AABB {
 	p0, p1, p2 := t.points()
-	return triangleBound(p0, p1, p2)
+	return triangleBound(p0, p1, p2, transform)
 }
 func (t TriangleInMesh) Intersect(r Ray) *hit {
 	p0, p1, p2 := t.points()
@@ -70,7 +73,7 @@ func (t TriangleInMesh) Intersect(r Ray) *hit {
 	if !ok {
 		return nil
 	}
-	return NewHit(t, r, d)
+	return NewHit(t, d)
 }
 func (t TriangleInMesh) SurfaceNormal(Vector) Vector {
 	p0, p1, p2 := t.points()
@@ -138,15 +141,15 @@ func NewTriangle(p0, p1, p2 Vector, m Material) Triangle {
 	}
 }
 
-func (t Triangle) Bound() AABB {
-	return triangleBound(t.P0, t.P1, t.P2)
+func (t Triangle) Bound(transform Transform) AABB {
+	return triangleBound(t.P0, t.P1, t.P2, transform)
 }
 func (t Triangle) Intersect(r Ray) *hit {
 	d, ok := triangleIntersect(t.P0, t.P1, t.P2, r)
 	if !ok {
 		return nil
 	}
-	return NewHit(t, r, d)
+	return NewHit(t, d)
 }
 func (t Triangle) SurfaceNormal(Vector) Vector {
 	return triangleSurfaceNormal(t.P0, t.P1, t.P2)

@@ -1,6 +1,7 @@
 package model
 
 import (
+	"math"
 	"testing"
 )
 
@@ -231,4 +232,14 @@ func TestRay(t *testing.T) {
 			t.Errorf("%d) got %v want %v", i, got, tt.want)
 		}
 	}
+}
+
+// floating point precision
+func compareVectors(u, v Vector) bool {
+	for _, d := range Dimensions {
+		if math.Abs(u.Get(d)-v.Get(d)) > 0.00001 {
+			return false
+		}
+	}
+	return true
 }

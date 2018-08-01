@@ -146,6 +146,16 @@ type Quadrilateral struct {
 	material       Material
 }
 
+func NewQuadrilateral(p1, p2, p3, p4 Vector, m Material) Quadrilateral {
+	return Quadrilateral{
+		P1: p1, 
+		P2: p2,
+		P3: p3,
+		P4: p4,
+		material: m,
+	}
+}
+
 func (q Quadrilateral) Tesselate() Object {
 	t1, t2 := quadrilateralToTriangles(q.P1, q.P2, q.P3, q.P4, q.material)
 	return NewComplexObject([]Object{t1, t2})

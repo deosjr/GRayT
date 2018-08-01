@@ -1,6 +1,9 @@
 package model
 
-import "testing"
+import (
+	"math"
+	"testing"
+)
 
 func Test4x4Multiply(t *testing.T) {
 	for i, tt := range []struct {
@@ -126,6 +129,122 @@ func Test4x4Transpose(t *testing.T) {
 		got := tt.m1.transpose()
 		if got != tt.want {
 			t.Errorf("%d) got %v want %v", i, got, tt.want)
+		}
+	}
+}
+
+func TestRotateX(t *testing.T) {
+	for i, tt := range []struct {
+		p     Vector
+		theta float64
+		want  Vector
+	}{
+		{
+			p:     Vector{0, 0, -1},
+			theta: math.Pi / 2,
+			want:  Vector{0, 1, 0},
+		},
+		{
+			p:     Vector{0, 0, 1},
+			theta: math.Pi / 4,
+			want:  Vector{0, -0.7071, 0.7071},
+		},
+		{
+			p:     Vector{0, 1, 0},
+			theta: math.Pi / 2,
+			want:  Vector{0, 0, 1},
+		},
+	} {
+		transform := RotateX(tt.theta)
+		got := transform.Point(tt.p)
+		if !compareVectors(got, tt.want) {
+			t.Errorf("%d) got %v want %v", i, got, tt.want)
+		}
+	}
+}
+
+func TestRotateY(t *testing.T) {
+	for i, tt := range []struct {
+		p     Vector
+		theta float64
+		want  Vector
+	}{
+		{
+			p:     Vector{1, 0, 0},
+			theta: math.Pi / 2,
+			want:  Vector{0, 0, 1},
+		},
+		{
+			p:     Vector{1, 0, 0},
+			theta: math.Pi / 4,
+			want:  Vector{0.7071, 0, 0.7071},
+		},
+		{
+			p:     Vector{1, 0, 0},
+			theta: -math.Pi / 2,
+			want:  Vector{0, 0, -1},
+		},
+	} {
+		transform := RotateY(tt.theta)
+		got := transform.Point(tt.p)
+		if !compareVectors(got, tt.want) {
+			t.Errorf("%d) got %v want %v", i, got, tt.want)
+		}
+	}
+}
+
+func TestRotateZ(t *testing.T) {
+	for i, tt := range []struct {
+		p     Vector
+		theta float64
+		want  Vector
+	}{
+		{
+			p:     Vector{1, 0, 0},
+			theta: math.Pi / 2,
+			want:  Vector{0, 1, 0},
+		},
+		{
+			p:     Vector{1, 0, 0},
+			theta: math.Pi / 4,
+			want:  Vector{0.7071, 0.7071, 0},
+		},
+		{
+			p:     Vector{0, 1, 0},
+			theta: -math.Pi / 2,
+			want:  Vector{1, 0, 0},
+		},
+	} {
+		transform := RotateZ(tt.theta)
+		got := transform.Point(tt.p)
+		if !compareVectors(got, tt.want) {
+			t.Errorf("%d) got %v want %v", i, got, tt.want)
+		}
+	}
+}
+
+func TestTransformComposition(t *testing.T) {
+	for i, tt := range []struct {
+		p     Vector
+		t1	Transform
+		t2	Transform
+		want  Vector
+	}{
+		{
+			p:     Vector{1, 0, 0},
+			t1: RotateY(math.Pi/2),
+			t2: Translate(Vector{0,0,1}),
+			want:  Vector{0, 0, 2},
+		},
+	} {
+		transform := tt.t2.Mul(tt.t1)
+		got := transform.Point(tt.p)
+		if !compareVectors(got, tt.want) {
+			t.Errorf("%d) got %v want %v", i, got, tt.want)
+		}
+		p2 := transform.Inverse().Point(got)
+		if !compareVectors(tt.p, p2) {
+			t.Errorf("%d) inverse: got %v want %v", i, tt.p, p2)
 		}
 	}
 }

@@ -11,14 +11,13 @@ var BACKGROUND_COLOR = NewColor(0, 50, 100)
 
 type hit struct {
 	object   Object
-	ray      Ray
+	normal   Vector
 	distance float64
 }
 
-func NewHit(o Object, r Ray, d float64) *hit {
+func NewHit(o Object, d float64) *hit {
 	return &hit{
 		object:   o,
-		ray:      r,
 		distance: d,
 	}
 }
@@ -66,14 +65,13 @@ func (s *Scene) GetRayColor(ray Ray) Color {
 	var objectColor Color
 	lightFound := false
 	for _, l := range s.Lights {
-		point := PointFromRay(hit.ray, hit.distance)
-		segment := l.VectorFromPoint(point)
-		shadowRay := NewRay(point, segment)
+		point := PointFromRay(ray, hit.distance)
+		lightSegment := l.GetLightSegment(point)
 
-		if pointInShadow(shadowRay, s.AccelerationStructure, segment.Length()) {
+		if pointInShadow(point, lightSegment, s.AccelerationStructure) {
 			continue
 		}
-		facingRatio := hit.object.SurfaceNormal(point).Dot(VectorFromTo(point, ray.Origin))
+		facingRatio := hit.normal.Dot(VectorFromTo(point, ray.Origin))
 		if facingRatio <= 0 {
 			continue
 		}
@@ -82,22 +80,29 @@ func (s *Scene) GetRayColor(ray Ray) Color {
 			lightFound = true
 			si := &SurfaceInteraction{
 				Point:    point,
+				Normal:   hit.normal,
 				Object:   hit.object,
 				AS:       s.AccelerationStructure,
-				Incident: ray.Direction.Normalize(),
+				// already normalized
+				Incident: ray.Direction,
 			}
 			objectColor = hit.object.GetColor(si)
 		}
 
-		lightRatio := hit.object.SurfaceNormal(point).Dot(segment)
-		factors := standardAlbedo / math.Pi * l.Intensity(segment.Length()) * facingRatio * lightRatio
+		lightRatio := l.LightRatio(point, hit.normal)
+		// TODO: current lighting weirdness issue is at least
+		// in part due to this formula only applying to diffuse 
+		// surfaces. At the moment it's also applied to reflective ones!
+		factors := standardAlbedo / math.Pi * l.Intensity(lightSegment.Length()) * facingRatio * lightRatio
 		lightColor := l.Color().Times(factors)
 		color = color.Add(objectColor.Product(lightColor))
 	}
 	return color
 }
 
-func pointInShadow(shadowRay Ray, as AccelerationStructure, maxDistance float64) bool {
+func pointInShadow(point Vector, lightSegment Vector, as AccelerationStructure) bool {
+	shadowRay := NewRay(point, lightSegment)
+	maxDistance := lightSegment.Length()
 	if hit := as.ClosestIntersection(shadowRay, maxDistance); hit != nil {
 		return true
 	}

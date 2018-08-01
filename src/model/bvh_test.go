@@ -182,19 +182,18 @@ func TestBVHTraversal(t *testing.T) {
 			bvh: BVH{
 				objects: []Object{
 					Triangle{
-						P0: Vector{-1, 0, -1},
-						P1: Vector{1, 0, -1},
-						P2: Vector{1, 1, -1},
+						P0: Vector{-1, 0, 1},
+						P1: Vector{1, 0, 1},
+						P2: Vector{1, 1, 1},
 					},
 				},
 				nodes: []optimisedBVHNode{
-					{bounds: AABB{Pmin: Vector{X: -1, Y: 0, Z: -1}, Pmax: Vector{X: 1, Y: 1, Z: -1}}, offset: 0, numObjects: 1},
+					{bounds: AABB{Pmin: Vector{X: -1, Y: 0, Z: 1}, Pmax: Vector{X: 1, Y: 1, Z: 1}}, offset: 0, numObjects: 1},
 				},
 			},
-			ray: NewRay(Vector{0, 0, 0}, Vector{0, 0, -1}),
+			ray: NewRay(Vector{0, 0, 0}, Vector{0, 0, 1}),
 			want: hit{
 				distance: 1,
-				ray:      NewRay(Vector{0, 0, 0}, Vector{0, 0, -1}),
 				//point: Vector{0, 0, -1},
 			},
 			wantObjectIndex: 0,
@@ -203,23 +202,22 @@ func TestBVHTraversal(t *testing.T) {
 			bvh: BVH{
 				objects: []Object{
 					Sphere{
-						Center: Vector{-2, 1, -4},
+						Center: Vector{-2, 1, 4},
 						Radius: 1.0,
 					},
 					Sphere{
-						Center: Vector{2, 0, -2},
+						Center: Vector{2, 0, 2},
 						Radius: 1.0,
 					},
 				},
 				nodes: []optimisedBVHNode{
-					{bounds: NewAABB(Vector{-3, -1, -5}, Vector{3, 2, -1}), offset: 2, numObjects: 0, axis: X},
-					{bounds: NewAABB(Vector{-3, 0, -5}, Vector{-1, 2, -3}), offset: 0, numObjects: 1},
-					{bounds: NewAABB(Vector{1, -1, -3}, Vector{3, 1, -1}), offset: 1, numObjects: 1}},
+					{bounds: NewAABB(Vector{-3, -1, 5}, Vector{3, 2, 1}), offset: 2, numObjects: 0, axis: X},
+					{bounds: NewAABB(Vector{-3, 0, 5}, Vector{-1, 2, 3}), offset: 0, numObjects: 1},
+					{bounds: NewAABB(Vector{1, -1, 3}, Vector{3, 1, 1}), offset: 1, numObjects: 1}},
 			},
-			ray: NewRay(Vector{0, 0, 0}, Vector{1, 0, -1}),
+			ray: NewRay(Vector{0, 0, 0}, Vector{1, 0, 1}),
 			want: hit{
 				distance: 1.8284271247461907,
-				ray:      NewRay(Vector{0, 0, 0}, Vector{1, 0, -1}),
 				//point: Vector{1.2928932188134528, 0, -1.2928932188134528},
 			},
 			wantObjectIndex: 1,

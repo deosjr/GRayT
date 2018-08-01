@@ -21,17 +21,13 @@ func NewNaiveAcceleration(objects []Object) *NaiveAcceleration {
 
 // Try and hit ALL objects EVERY time
 func (na *NaiveAcceleration) ClosestIntersection(ray Ray, maxDistance float64) *hit {
-	hit := &hit{
-		ray:      ray,
-		distance: maxDistance,
-	}
+	var hit *hit
+	distance := maxDistance
 	for _, o := range na.objects {
-		if h := o.Intersect(ray); h != nil && h.distance < hit.distance && h.distance > ERROR_MARGIN {
+		if h := o.Intersect(ray); h != nil && h.distance < distance && h.distance > ERROR_MARGIN {
+			distance = h.distance
 			hit = h
 		}
-	}
-	if hit.distance == maxDistance {
-		return nil
 	}
 	return hit
 }

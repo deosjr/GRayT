@@ -15,7 +15,7 @@ type Object interface {
 	Intersect(Ray) *hit
 	SurfaceNormal(point Vector) Vector
 	GetColor(si *SurfaceInteraction) Color
-	Bound() AABB
+	Bound(Transform) AABB
 }
 
 type object struct {
@@ -27,10 +27,10 @@ func (o object) GetColor(si *SurfaceInteraction) Color {
 	return o.Material.GetColor(si)
 }
 
-func ObjectsBound(objects []Object) AABB {
-	bound := objects[0].Bound()
+func ObjectsBound(objects []Object, t Transform) AABB {
+	bound := objects[0].Bound(t)
 	for i := 1; i < len(objects); i++ {
-		bound = bound.AddAABB(objects[i].Bound())
+		bound = bound.AddAABB(objects[i].Bound(t))
 	}
 	return bound
 }
@@ -42,7 +42,6 @@ func ObjectsBound(objects []Object) AABB {
 // never on the aggregate object containing those (it doesnt have its own)
 type ComplexObject struct {
 	bvh   *BVH
-	bound AABB
 }
 
 func NewComplexObject(objects []Object) Object {
@@ -51,7 +50,6 @@ func NewComplexObject(objects []Object) Object {
 	}
 	return &ComplexObject{
 		bvh:   NewBVH(objects, SplitMiddle),
-		bound: ObjectsBound(objects),
 	}
 }
 
@@ -69,12 +67,16 @@ func (co *ComplexObject) GetColor(*SurfaceInteraction) Color {
 	return Color{}
 }
 
-func (co *ComplexObject) Bound() AABB {
-	return co.bound
+// TODO: a prime candidate for caching
+func (co *ComplexObject) Bound(t Transform) AABB {
+	return ObjectsBound(co.bvh.objects, t)
 }
 
 // a shared object stores a pointer to an object (type)
 // and a transformation that places this instance of the object (token) in the scene.
+// SurfaceNormal and GetColor are part of later material functions
+// these should always be called on the simple object that is hit,
+// never on the aggregate object containing those (it doesnt have its own)
 // TODO: multiple instances can share geometry but differ in material? optionally?
 type SharedObject struct {
 	object        Object
@@ -85,7 +87,8 @@ type SharedObject struct {
 // world space from origin to the object's position
 // Note: objects should be centered on origin or this will not work properly!
 func NewSharedObject(o Object, originToPosition Transform) Object {
-	if o.Bound().Centroid().Length() != 0 {
+	// TODO: investigate: doubly shared objects?
+	if o.Bound(identity).Centroid().Length() != 0 {
 		panic("shared object should be centered on the origin!")
 	}
 	return &SharedObject{
@@ -104,21 +107,22 @@ func (so *SharedObject) Intersect(ray Ray) *hit {
 	}
 
 	// transform hit info back to world space
-	hit.ray = so.objectToWorld.Ray(r)
+	point := PointFromRay(r, hit.distance)
+	hit.normal = so.objectToWorld.Normal(hit.object.SurfaceNormal(point))
 	return hit
 }
 
-func (so *SharedObject) SurfaceNormal(point Vector) Vector {
-	return so.object.SurfaceNormal(point)
+func (so *SharedObject) SurfaceNormal(Vector) Vector {
+	panic("Dont call this function!")
+	return Vector{}
 }
 
-func (so *SharedObject) GetColor(si *SurfaceInteraction) Color {
-	return so.object.GetColor(si)
+func (so *SharedObject) GetColor(*SurfaceInteraction) Color {
+	panic("Dont call this function!")
+	return Color{}
 }
 
-func (so *SharedObject) Bound() AABB {
-	b := so.object.Bound()
-	bmin := so.objectToWorld.Point(b.Pmin)
-	bmax := so.objectToWorld.Point(b.Pmax)
-	return NewAABB(bmin, bmax)
+func (so *SharedObject) Bound(t Transform) AABB {
+	transform := t.Mul(so.objectToWorld)
+	return so.object.Bound(transform)
 }

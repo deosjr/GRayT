@@ -70,7 +70,7 @@ type objectInfo struct {
 func NewBVH(objects []Object, splitFunc splitFunc) *BVH {
 	objectInfos := make([]objectInfo, len(objects))
 	for i, o := range objects {
-		aabb := o.Bound()
+		aabb := o.Bound(identity)
 		objectInfos[i] = objectInfo{
 			index:    i,
 			bounds:   aabb,

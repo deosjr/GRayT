@@ -3,6 +3,8 @@ package model
 import "fmt"
 import "math"
 
+var identity = ScaleUniform(1.0)
+
 // row-major order matrix
 type matrix4x4 [4][4]float64
 
@@ -38,6 +40,15 @@ func (t Transform) Vector(v Vector) Vector {
 		t.m[0][0]*x + t.m[0][1]*y + t.m[0][2]*z,
 		t.m[1][0]*x + t.m[1][1]*y + t.m[1][2]*z,
 		t.m[2][0]*x + t.m[2][1]*y + t.m[2][2]*z,
+	}
+}
+
+func (t Transform) Normal(v Vector) Vector {
+	x, y, z := v.X, v.Y, v.Z
+	return Vector{
+		t.mInv[0][0]*x + t.mInv[1][0]*y + t.mInv[2][0]*z,
+		t.mInv[0][1]*x + t.mInv[1][1]*y + t.mInv[2][1]*z,
+		t.mInv[0][2]*x + t.mInv[1][2]*y + t.mInv[2][2]*z,
 	}
 }
 
@@ -112,9 +123,7 @@ func Scale(x, y, z float64) Transform {
 	}
 }
 
-//TODO: check: theta in radians
-//TODO: I either don't understand these or
-// they are horribly broken. fix/test
+// coordinate system: left-handed
 func RotateX(theta float64) Transform {
 	sinTheta := math.Sin(theta)
 	cosTheta := math.Cos(theta)
@@ -131,9 +140,9 @@ func RotateY(theta float64) Transform {
 	sinTheta := math.Sin(theta)
 	cosTheta := math.Cos(theta)
 	m := matrix4x4{
-		{cosTheta, 0, sinTheta, 0},
+		{cosTheta, 0, -sinTheta, 0},
 		{0, 1, 0, 0},
-		{-sinTheta, 0, cosTheta, 0},
+		{sinTheta, 0, cosTheta, 0},
 		{0, 0, 0, 1},
 	}
 	return Transform{m, m.transpose()}

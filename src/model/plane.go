@@ -20,7 +20,7 @@ func NewPlane(p Vector, u, v Vector, m Material) Plane {
 // NOTE: planes dont work nicely with BVH since their bounding box is infinite
 // They force a lot more intersection tests, slowing everything down
 
-func (p Plane) Bound() AABB {
+func (p Plane) Bound(Transform) AABB {
 	return NewAABB(
 		Vector{
 			-math.MaxFloat64,
@@ -43,7 +43,7 @@ func (p Plane) Intersect(r Ray) *hit {
 	if d <= 0 {
 		return nil
 	}
-	return NewHit(p, r, d)
+	return NewHit(p, d)
 }
 
 func (p Plane) SurfaceNormal(Vector) Vector {
@@ -51,5 +51,5 @@ func (p Plane) SurfaceNormal(Vector) Vector {
 	// solution: I think 2d faces have only one side that can be lit;
 	// related to direction of surface normal.
 	// with facingRatio this means other side is always pure black
-	return p.Normal.Times(1)
+	return p.Normal
 }
