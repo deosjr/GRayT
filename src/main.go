@@ -24,7 +24,7 @@ func main() {
 	camera := m.NewPerspectiveCamera(width, height, 0.5*math.Pi)
 	scene := m.NewScene(camera)
 
-	l1 := m.NewDistantLight(m.Vector{1, -1, 1}, m.NewColor(255, 255, 255), 20)
+	l1 := m.NewDistantLight(m.Vector{1, -1, 1}, m.NewColor(255, 255, 255), 50)
 	// l2 := m.NewPointLight(m.Vector{1, 2, 3}, m.NewColor(255, 255, 255), 200)
 	scene.AddLights(l1)
 
@@ -38,19 +38,9 @@ func main() {
 		m.Vector{-1, 0, 1},
 		reflMat)
 	plane := rectangle.Tesselate()
+	// TODO: dive into scaling effects with tests
 	translation := m.Translate(m.Vector{0, 0, 3})//.Mul(m.ScaleUniform(2))
-	// TODO: current issues very clear when adding a 
-	// scaling transformation to the 'plane' object
-	// I still suspect normal transformations to be off too
 	scene.Add(m.NewSharedObject(plane, translation))
-
-	// NOTE: dividing the plane up into more small rectangles works just fine
-	// somehow the size of the object determines light intensity... ?
-	// scene.Add(m.NewSharedObject(plane, m.Translate(m.Vector{1, 0, 3})))
-	// scene.Add(m.NewSharedObject(plane, m.Translate(m.Vector{-1, 0, 3})))
-	// scene.Add(m.NewSharedObject(plane, m.Translate(m.Vector{0, 0, 2})))
-	// scene.Add(m.NewSharedObject(plane, m.Translate(m.Vector{-1, 0, 2})))
-	// scene.Add(m.NewSharedObject(plane, m.Translate(m.Vector{1, 0, 2})))
 
 	box := m.NewAABB(m.Vector{-0.1, -0.1, -0.1}, m.Vector{0.1, 0.1, 0.1})
 	c := m.NewCuboid(box, diffMat)

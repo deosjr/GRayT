@@ -62,45 +62,32 @@ func (s *Scene) GetRayColor(ray Ray) Color {
 	}
 
 	color := NewColor(0, 0, 0)
-	var objectColor Color
-	lightFound := false
-	for _, l := range s.Lights {
+	for _, light := range s.Lights {
 		point := PointFromRay(ray, hit.distance)
-		lightSegment := l.GetLightSegment(point)
-
-		if pointInShadow(point, lightSegment, s.AccelerationStructure) {
+		if pointInShadow(light, point, s.AccelerationStructure) {
 			continue
 		}
-		facingRatio := hit.normal.Dot(VectorFromTo(point, ray.Origin))
+		facingRatio := hit.normal.Dot(ray.Direction.Times(-1))
 		if facingRatio <= 0 {
 			continue
 		}
 
-		if !lightFound {
-			lightFound = true
-			si := &SurfaceInteraction{
-				Point:    point,
-				Normal:   hit.normal,
-				Object:   hit.object,
-				AS:       s.AccelerationStructure,
-				// already normalized
-				Incident: ray.Direction,
-			}
-			objectColor = hit.object.GetColor(si)
+		si := &SurfaceInteraction{
+			Point:    point,
+			Normal:   hit.normal,
+			Object:   hit.object,
+			AS:       s.AccelerationStructure,
+			// already normalized
+			Incident: ray.Direction,
 		}
-
-		lightRatio := l.LightRatio(point, hit.normal)
-		// TODO: current lighting weirdness issue is at least
-		// in part due to this formula only applying to diffuse 
-		// surfaces. At the moment it's also applied to reflective ones!
-		factors := standardAlbedo / math.Pi * l.Intensity(lightSegment.Length()) * facingRatio * lightRatio
-		lightColor := l.Color().Times(factors)
-		color = color.Add(objectColor.Product(lightColor))
+		objectColor := hit.object.GetColor(si, light)
+		color = color.Add(objectColor)
 	}
 	return color
 }
 
-func pointInShadow(point Vector, lightSegment Vector, as AccelerationStructure) bool {
+func pointInShadow(light Light, point Vector, as AccelerationStructure) bool {
+	lightSegment := light.GetLightSegment(point)
 	shadowRay := NewRay(point, lightSegment)
 	maxDistance := lightSegment.Length()
 	if hit := as.ClosestIntersection(shadowRay, maxDistance); hit != nil {

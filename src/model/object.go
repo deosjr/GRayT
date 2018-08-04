@@ -14,7 +14,7 @@ package model
 type Object interface {
 	Intersect(Ray) *hit
 	SurfaceNormal(point Vector) Vector
-	GetColor(si *SurfaceInteraction) Color
+	GetColor(si *SurfaceInteraction, l Light) Color
 	Bound(Transform) AABB
 }
 
@@ -23,8 +23,8 @@ type object struct {
 }
 
 // to be replaced by more interesting materials info
-func (o object) GetColor(si *SurfaceInteraction) Color {
-	return o.Material.GetColor(si)
+func (o object) GetColor(si *SurfaceInteraction, l Light) Color {
+	return o.Material.GetColor(si, l)
 }
 
 func ObjectsBound(objects []Object, t Transform) AABB {
@@ -62,7 +62,7 @@ func (co *ComplexObject) SurfaceNormal(point Vector) Vector {
 	return Vector{}
 }
 
-func (co *ComplexObject) GetColor(*SurfaceInteraction) Color {
+func (co *ComplexObject) GetColor(*SurfaceInteraction, Light) Color {
 	panic("Dont call this function!")
 	return Color{}
 }
@@ -117,7 +117,7 @@ func (so *SharedObject) SurfaceNormal(Vector) Vector {
 	return Vector{}
 }
 
-func (so *SharedObject) GetColor(*SurfaceInteraction) Color {
+func (so *SharedObject) GetColor(*SurfaceInteraction, Light) Color {
 	panic("Dont call this function!")
 	return Color{}
 }
