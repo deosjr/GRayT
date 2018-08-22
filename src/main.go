@@ -24,6 +24,8 @@ func main() {
 	camera := m.NewPerspectiveCamera(width, height, 0.5*math.Pi)
 	scene := m.NewScene(camera)
 
+	m.SetBackgroundColor(m.NewColor(0, 50, 100))
+
 	l1 := m.NewDistantLight(m.Vector{1, -1, 1}, m.NewColor(255, 255, 255), 50)
 	// l2 := m.NewPointLight(m.Vector{1, 2, 3}, m.NewColor(255, 255, 255), 200)
 	scene.AddLights(l1)

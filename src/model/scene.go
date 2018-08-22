@@ -7,7 +7,7 @@ const (
 	MAX_RAY_DISTANCE = math.MaxFloat64
 )
 
-var BACKGROUND_COLOR = NewColor(0, 50, 100)
+var BACKGROUND_COLOR Color
 
 type hit struct {
 	object   Object
@@ -73,10 +73,10 @@ func (s *Scene) GetRayColor(ray Ray) Color {
 		}
 
 		si := &SurfaceInteraction{
-			Point:    point,
-			Normal:   hit.normal,
-			Object:   hit.object,
-			AS:       s.AccelerationStructure,
+			Point:  point,
+			Normal: hit.normal,
+			Object: hit.object,
+			AS:     s.AccelerationStructure,
 			// already normalized
 			Incident: ray.Direction,
 		}
@@ -94,4 +94,8 @@ func pointInShadow(light Light, point Vector, as AccelerationStructure) bool {
 		return true
 	}
 	return false
+}
+
+func SetBackgroundColor(c Color) {
+	BACKGROUND_COLOR = c
 }
