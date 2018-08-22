@@ -7,7 +7,7 @@ import (
 
 	perlin "github.com/aquilax/go-perlin"
 
-	"model"
+	"github.com/deosjr/GRayT/src/model"
 )
 
 // NOTE: this folder will not be part of this project

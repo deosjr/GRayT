@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"model"
+	"github.com/deosjr/GRayT/src/model"
 )
 
 // LoadObj assumes filename contains one triangle mesh object

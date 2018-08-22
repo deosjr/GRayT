@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"model"
+	"github.com/deosjr/GRayT/src/model"
 )
 
 func sampleScene(b *testing.B) *model.Scene {

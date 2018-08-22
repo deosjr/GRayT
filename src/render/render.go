@@ -1,6 +1,6 @@
 package render
 
-import "model"
+import "github.com/deosjr/GRayT/src/model"
 
 // TODO: optimizations
 //   - backface culling? only for opaque objects?

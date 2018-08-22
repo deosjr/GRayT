@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"model"
+	"github.com/deosjr/GRayT/src/model"
 )
 
 func TestLoadObj(t *testing.T) {

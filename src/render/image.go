@@ -11,7 +11,7 @@ import (
 	"image/png"
 	"os"
 
-	"model"
+	"github.com/deosjr/GRayT/src/model"
 
 	"github.com/icza/mjpeg"
 )

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"math"
 
-	m "model"
-	"render"
+	m "github.com/deosjr/GRayT/src/model"
+	"github.com/deosjr/GRayT/src/render"
 )
 
 var (
@@ -39,14 +39,14 @@ func main() {
 		reflMat)
 	plane := rectangle.Tesselate()
 	// TODO: dive into scaling effects with tests
-	translation := m.Translate(m.Vector{0, 0, 3})//.Mul(m.ScaleUniform(2))
+	translation := m.Translate(m.Vector{0, 0, 3}) //.Mul(m.ScaleUniform(2))
 	scene.Add(m.NewSharedObject(plane, translation))
 
 	box := m.NewAABB(m.Vector{-0.1, -0.1, -0.1}, m.Vector{0.1, 0.1, 0.1})
 	c := m.NewCuboid(box, diffMat)
 	object := c.Tesselate()
 
-	rotation := m.RotateY(math.Pi / 4) 
+	rotation := m.RotateY(math.Pi / 4)
 	translation = m.Translate(m.Vector{0, 0.5, 3})
 	shared := m.NewSharedObject(object, translation.Mul(rotation))
 	scene.Add(shared)
