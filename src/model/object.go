@@ -41,7 +41,7 @@ func ObjectsBound(objects []Object, t Transform) AABB {
 // these should always be called on the simple object that is hit,
 // never on the aggregate object containing those (it doesnt have its own)
 type ComplexObject struct {
-	bvh   *BVH
+	bvh *BVH
 }
 
 func NewComplexObject(objects []Object) Object {
@@ -49,7 +49,7 @@ func NewComplexObject(objects []Object) Object {
 		panic("invalid object, cant be empty")
 	}
 	return &ComplexObject{
-		bvh:   NewBVH(objects, SplitMiddle),
+		bvh: NewBVH(objects, SplitMiddle),
 	}
 }
 
@@ -88,9 +88,6 @@ type SharedObject struct {
 // Note: objects should be centered on origin or this will not work properly!
 func NewSharedObject(o Object, originToPosition Transform) Object {
 	// TODO: investigate: doubly shared objects?
-	if o.Bound(identity).Centroid().Length() != 0 {
-		panic("shared object should be centered on the origin!")
-	}
 	return &SharedObject{
 		object:        o,
 		objectToWorld: originToPosition,
