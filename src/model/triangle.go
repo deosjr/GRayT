@@ -73,7 +73,9 @@ func (t TriangleInMesh) Intersect(r Ray) *hit {
 	if !ok {
 		return nil
 	}
-	return NewHit(t, d)
+	hit := NewHit(t, d)
+	hit.normal = t.SurfaceNormal(PointFromRay(r, d))
+	return hit
 }
 func (t TriangleInMesh) SurfaceNormal(Vector) Vector {
 	p0, p1, p2 := t.points()
@@ -149,7 +151,9 @@ func (t Triangle) Intersect(r Ray) *hit {
 	if !ok {
 		return nil
 	}
-	return NewHit(t, d)
+	hit := NewHit(t, d)
+	hit.normal = t.SurfaceNormal(PointFromRay(r, d))
+	return hit
 }
 func (t Triangle) SurfaceNormal(Vector) Vector {
 	return triangleSurfaceNormal(t.P0, t.P1, t.P2)

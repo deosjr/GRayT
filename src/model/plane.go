@@ -43,7 +43,9 @@ func (p Plane) Intersect(r Ray) *hit {
 	if d <= 0 {
 		return nil
 	}
-	return NewHit(p, d)
+	hit := NewHit(p, d)
+	hit.normal = p.SurfaceNormal(PointFromRay(r, d))
+	return hit
 }
 
 func (p Plane) SurfaceNormal(Vector) Vector {

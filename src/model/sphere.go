@@ -48,7 +48,9 @@ func (s Sphere) Intersect(r Ray) *hit {
 	if d <= 0 {
 		return nil
 	}
-	return NewHit(s, d)
+	hit := NewHit(s, d)
+	hit.normal = s.SurfaceNormal(PointFromRay(r, d))
+	return hit
 }
 
 func (s Sphere) SurfaceNormal(p Vector) Vector {
