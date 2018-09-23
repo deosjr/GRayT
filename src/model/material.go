@@ -8,7 +8,7 @@ type Material interface {
 
 type SurfaceInteraction struct {
 	Point    Vector
-	Normal	 Vector
+	Normal   Vector
 	Object   Object
 	AS       AccelerationStructure
 	Incident Vector
@@ -28,15 +28,6 @@ func (m *DiffuseMaterial) GetColor(si *SurfaceInteraction, l Light) Color {
 	return m.Color.Product(lightColor)
 }
 
-// temporary material to play around with
-type PosFuncMat struct {
-	Func func(Vector) Color
-}
-
-func (m *PosFuncMat) GetColor(si *SurfaceInteraction) Color {
-	return m.Func(si.Point)
-}
-
 type ReflectiveMaterial struct {
 	Scene *Scene
 }
@@ -52,5 +43,24 @@ func (m *ReflectiveMaterial) GetColor(si *SurfaceInteraction, l Light) Color {
 	reflection := i.Sub(n.Times(2 * i.Dot(n)))
 	ray := NewRay(si.Point, reflection)
 	// TODO: retain maxdistance for tracing
-	return m.Scene.GetRayColor(ray)//.Times(1 - standardAlbedo) // simulates nonperfect reflection
+	return m.Scene.GetRayColor(ray) //.Times(1 - standardAlbedo) // simulates nonperfect reflection
+}
+
+type NormalMappingMaterial struct {
+	WrappedMaterial Material
+	NormalFunc      func(*SurfaceInteraction) Vector
+}
+
+func (m *NormalMappingMaterial) GetColor(si *SurfaceInteraction, l Light) Color {
+	si.Normal = m.NormalFunc(si)
+	return m.WrappedMaterial.GetColor(si, l)
+}
+
+// temporary material to play around with
+type PosFuncMat struct {
+	Func func(Vector) Color
+}
+
+func (m *PosFuncMat) GetColor(si *SurfaceInteraction) Color {
+	return m.Func(si.Point)
 }
