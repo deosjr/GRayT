@@ -58,9 +58,9 @@ func (m *NormalMappingMaterial) GetColor(si *SurfaceInteraction, l Light) Color 
 
 // temporary material to play around with
 type PosFuncMat struct {
-	Func func(Vector) Color
+	Func func(*SurfaceInteraction, Light) Color
 }
 
-func (m *PosFuncMat) GetColor(si *SurfaceInteraction) Color {
-	return m.Func(si.Point)
+func (m *PosFuncMat) GetColor(si *SurfaceInteraction, l Light) Color {
+	return m.Func(si, l)
 }
