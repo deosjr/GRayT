@@ -123,12 +123,12 @@ func (c Cuboid) Tesselate() Object {
 	p8 := Vector{pmin.X, pmin.Y, pmax.Z}
 
 	triangles := make([]Object, 12)
-	triangles[0], triangles[1] = quadrilateralToTriangles(p1, p2, p3, p4, c.material)
-	triangles[2], triangles[3] = quadrilateralToTriangles(p2, p1, p5, p6, c.material)
-	triangles[4], triangles[5] = quadrilateralToTriangles(p3, p2, p6, p7, c.material)
-	triangles[6], triangles[7] = quadrilateralToTriangles(p4, p3, p7, p8, c.material)
-	triangles[8], triangles[9] = quadrilateralToTriangles(p1, p4, p8, p5, c.material)
-	triangles[10], triangles[11] = quadrilateralToTriangles(p6, p5, p8, p7, c.material)
+	triangles[0], triangles[1] = QuadrilateralToTriangles(p1, p2, p3, p4, c.material)
+	triangles[2], triangles[3] = QuadrilateralToTriangles(p2, p1, p5, p6, c.material)
+	triangles[4], triangles[5] = QuadrilateralToTriangles(p3, p2, p6, p7, c.material)
+	triangles[6], triangles[7] = QuadrilateralToTriangles(p4, p3, p7, p8, c.material)
+	triangles[8], triangles[9] = QuadrilateralToTriangles(p1, p4, p8, p5, c.material)
+	triangles[10], triangles[11] = QuadrilateralToTriangles(p6, p5, p8, p7, c.material)
 	return NewComplexObject(triangles)
 }
 
@@ -148,20 +148,20 @@ type Quadrilateral struct {
 
 func NewQuadrilateral(p1, p2, p3, p4 Vector, m Material) Quadrilateral {
 	return Quadrilateral{
-		P1: p1, 
-		P2: p2,
-		P3: p3,
-		P4: p4,
+		P1:       p1,
+		P2:       p2,
+		P3:       p3,
+		P4:       p4,
 		material: m,
 	}
 }
 
 func (q Quadrilateral) Tesselate() Object {
-	t1, t2 := quadrilateralToTriangles(q.P1, q.P2, q.P3, q.P4, q.material)
+	t1, t2 := QuadrilateralToTriangles(q.P1, q.P2, q.P3, q.P4, q.material)
 	return NewComplexObject([]Object{t1, t2})
 }
 
-func quadrilateralToTriangles(p1, p2, p3, p4 Vector, m Material) (Triangle, Triangle) {
+func QuadrilateralToTriangles(p1, p2, p3, p4 Vector, m Material) (Triangle, Triangle) {
 	return NewTriangle(p1, p2, p4, m),
 		NewTriangle(p4, p2, p3, m)
 }
