@@ -67,6 +67,9 @@ type objectInfo struct {
 	centroid Vector
 }
 
+// max recursion depth, see recursiveBuildBVH function
+var maxDepth = 10
+
 func NewBVH(objects []Object, splitFunc splitFunc) *BVH {
 	objectInfos := make([]objectInfo, len(objects))
 	for i, o := range objects {
@@ -79,7 +82,7 @@ func NewBVH(objects []Object, splitFunc splitFunc) *BVH {
 	}
 	objectOrder := make([]int, len(objects))
 	total, numObjects := 0, 0
-	root := recursiveBuildBVH(objectInfos, 0, len(objectInfos), &numObjects, &total, objectOrder, splitFunc)
+	root := recursiveBuildBVH(objectInfos, 0, len(objectInfos), &numObjects, &total, objectOrder, splitFunc, maxDepth)
 	orderedObjects := make([]Object, len(objects))
 	for i, p := range objectOrder {
 		orderedObjects[i] = objects[p]
@@ -99,7 +102,10 @@ func NewBVH(objects []Object, splitFunc splitFunc) *BVH {
 // the total so far of nodes created, the list of object indices to order
 // and a function to split on, and returns the node that represents the
 // range [start, end) and updated total
-func recursiveBuildBVH(objectInfos []objectInfo, start, end int, objs, total *int, objectOrder []int, splitFunc splitFunc) bvhNode {
+// TODO: max recursion depth added as a fix to this function causing stack overflow
+// this probably happens when objects overlap, not sure why though.
+// underlying cause should be found and fixed instead
+func recursiveBuildBVH(objectInfos []objectInfo, start, end int, objs, total *int, objectOrder []int, splitFunc splitFunc, depth int) bvhNode {
 	*total++
 	bounds := objectInfos[start].bounds
 	for i := start + 1; i < end; i++ {
@@ -107,8 +113,8 @@ func recursiveBuildBVH(objectInfos []objectInfo, start, end int, objs, total *in
 	}
 	numObjects := end - start
 
-	// Only one object remaining, return a leaf node
-	if numObjects == 1 {
+	// Only one object remaining, return a leaf node or recursion depth reached
+	if numObjects == 1 || depth == 0 {
 		offset := updateWithObjects(objectInfos, start, end, objs, objectOrder)
 		return newBVHLeaf(offset, numObjects, bounds)
 	}
@@ -128,8 +134,8 @@ func recursiveBuildBVH(objectInfos []objectInfo, start, end int, objs, total *in
 	}
 
 	mid := splitFunc(objectInfos, start, end, dim, centroidBounds)
-	c1 := recursiveBuildBVH(objectInfos, start, mid, objs, total, objectOrder, splitFunc)
-	c2 := recursiveBuildBVH(objectInfos, mid, end, objs, total, objectOrder, splitFunc)
+	c1 := recursiveBuildBVH(objectInfos, start, mid, objs, total, objectOrder, splitFunc, depth-1)
+	c2 := recursiveBuildBVH(objectInfos, mid, end, objs, total, objectOrder, splitFunc, depth-1)
 	return newBVHInterior(dim, c1, c2)
 }
 
