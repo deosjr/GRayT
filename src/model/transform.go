@@ -166,9 +166,9 @@ func Rotate(theta float64, axis Vector) Transform {
 	c := math.Cos(theta)
 	minC := 1 - c
 	m := matrix4x4{
-		{minC*v.X*v.X + c, minC*v.X*v.Y + v.Z*s, minC*v.Z*v.X - v.Y*s, 0},
-		{minC*v.X*v.Y - v.Z*s, minC*v.Y*v.Y + c, minC*v.Y*v.Z + v.X*s, 0},
-		{minC*v.Z*v.X + v.Y*s, minC*v.Y*v.Z - v.X*s, minC*v.Z*v.Z + c, 0},
+		{minC*v.X*v.X + c, minC*v.X*v.Y - v.Z*s, minC*v.Z*v.X + v.Y*s, 0},
+		{minC*v.X*v.Y + v.Z*s, minC*v.Y*v.Y + c, minC*v.Y*v.Z - v.X*s, 0},
+		{minC*v.Z*v.X - v.Y*s, minC*v.Y*v.Z + v.X*s, minC*v.Z*v.Z + c, 0},
 		{0, 0, 0, 1},
 	}
 	return NewTransform(m)
