@@ -67,7 +67,7 @@ func TestRecursiveBuild(t *testing.T) {
 	} {
 		gotTotal, prims := 0, 0
 		gotOrder := make([]int, len(tt.objects))
-		gotTree := recursiveBuildBVH(tt.objects, 0, len(tt.objects), &prims, &gotTotal, gotOrder, tt.splitFunc)
+		gotTree := recursiveBuildBVH(tt.objects, 0, len(tt.objects), &prims, &gotTotal, gotOrder, tt.splitFunc, 10)
 		if gotTotal != tt.wantTotal {
 			t.Errorf("%d) TOTAL: got %#v want %#v", i, gotTotal, tt.wantTotal)
 		}
@@ -194,7 +194,7 @@ func TestBVHTraversal(t *testing.T) {
 			ray: NewRay(Vector{0, 0, 0}, Vector{0, 0, 1}),
 			want: hit{
 				distance: 1,
-				//point: Vector{0, 0, -1},
+				// normal:   Vector{0, 0, -1},
 			},
 			wantObjectIndex: 0,
 		},
@@ -218,7 +218,7 @@ func TestBVHTraversal(t *testing.T) {
 			ray: NewRay(Vector{0, 0, 0}, Vector{1, 0, 1}),
 			want: hit{
 				distance: 1.8284271247461907,
-				//point: Vector{1.2928932188134528, 0, -1.2928932188134528},
+				// normal:   Vector{1.2928932188134528, 0, -1.2928932188134528},
 			},
 			wantObjectIndex: 1,
 		},
@@ -230,6 +230,8 @@ func TestBVHTraversal(t *testing.T) {
 			continue
 		}
 		got := *hit
+		// dont care about the normal right now
+		got.normal = Vector{}
 		if !reflect.DeepEqual(got, tt.want) {
 			t.Errorf("%d) got %#v want %#v", i, got, tt.want)
 		}

@@ -15,12 +15,6 @@ func sampleScene(b *testing.B) *model.Scene {
 	scene.AddLights(l1, l2)
 	scene.Add(model.NewSphere(model.Vector{3, 1, 5}, 0.5, &model.DiffuseMaterial{model.NewColor(255, 100, 0)}))
 
-	obj, err := LoadObj("../bunny.obj", &model.DiffuseMaterial{model.NewColor(255, 0, 0)})
-	if err != nil {
-		b.Fatalf("Error in benchmark: %s", err.Error())
-	}
-	scene.Add(obj)
-
 	scene.Precompute()
 
 	from, to := model.Vector{0, 0, 0}, model.Vector{0, 0, 10}

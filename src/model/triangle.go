@@ -1,19 +1,15 @@
 package model
 
-// TODO: optimizations
-// - mesh is not a mesh at all atm,
-// just a collection of triangles.
 // - speed: SIMD instructions
 
 type TriangleMesh struct {
-	pointGrid    [][]Vector
-	xSize, ySize int
+	vertices map[int64]Vector
 }
 
 type TriangleInMesh struct {
 	object
-	x, y int
-	mesh *TriangleMesh
+	p0, p1, p2 int64
+	mesh       *TriangleMesh
 }
 
 type Triangle struct {
@@ -61,7 +57,10 @@ func triangleSurfaceNormal(p0, p1, p2 Vector) Vector {
 }
 
 func (t TriangleInMesh) points() (p0, p1, p2 Vector) {
-	return t.mesh.get(t.x, t.y)
+	p0 = t.mesh.get(t.p0)
+	p1 = t.mesh.get(t.p1)
+	p2 = t.mesh.get(t.p2)
+	return
 }
 func (t TriangleInMesh) Bound(transform Transform) AABB {
 	p0, p1, p2 := t.points()
@@ -82,56 +81,37 @@ func (t TriangleInMesh) SurfaceNormal(Vector) Vector {
 	return triangleSurfaceNormal(p0, p1, p2)
 }
 
-// Assumption: for now this is a fully filled grid mesh
-// so it doesnt represent things like cubes well (which wrap)
-func NewTriangleMesh(grid [][]Vector) []Object {
-	mesh := &TriangleMesh{
-		pointGrid: grid,
-		xSize:     len(grid[0]),
-		ySize:     len(grid),
-	}
-	triangles := make([]Object, 2*(mesh.xSize-1)*(mesh.ySize-1))
-	i := 0
-
-	c1 := &DiffuseMaterial{NewColor(50, 200, 0)}
-	c2 := &DiffuseMaterial{NewColor(50, 150, 50)}
-
-	for y := 0; y < mesh.ySize-1; y++ {
-		for x := 0; x < 2*(mesh.xSize-1); x += 2 {
-			triangles[i] = TriangleInMesh{
-				mesh:   mesh,
-				x:      x,
-				y:      y,
-				object: object{c1},
-			}
-			i++
-			triangles[i] = TriangleInMesh{
-				mesh:   mesh,
-				x:      x + 1,
-				y:      y,
-				object: object{c2},
-			}
-			i++
-		}
-	}
-	return triangles
+type Face struct {
+	V0, V1, V2 int64
 }
 
-//   P1       P2
-//    . ----- .
-//    |    /  |
-//    |  /    |
-//    . ----- .
-//   P4       P3
-func (m *TriangleMesh) get(x, y int) (p0, p1, p2 Vector) {
-	oldX := x
-	x = x / 2
-	if oldX%2 == 0 {
-		// P1, P4, P2
-		return m.pointGrid[y][x], m.pointGrid[y+1][x], m.pointGrid[y][x+1]
+func NewFace(v0, v1, v2 int64) Face {
+	return Face{v0, v1, v2}
+}
+
+func NewTriangleMesh(vertices []Vector, faces []Face, m Material) Object {
+	vertexMap := map[int64]Vector{}
+	for i, v := range vertices {
+		vertexMap[int64(i)] = v
 	}
-	// P4, P3, P2
-	return m.pointGrid[y+1][x], m.pointGrid[y+1][x+1], m.pointGrid[y][x+1]
+	mesh := &TriangleMesh{
+		vertices: vertexMap,
+	}
+	triangles := make([]Object, len(faces))
+	for i, f := range faces {
+		triangles[i] = TriangleInMesh{
+			object: object{m},
+			p0:     f.V0,
+			p1:     f.V1,
+			p2:     f.V2,
+			mesh:   mesh,
+		}
+	}
+	return NewComplexObject(triangles)
+}
+
+func (m *TriangleMesh) get(i int64) Vector {
+	return m.vertices[i]
 }
 
 func NewTriangle(p0, p1, p2 Vector, m Material) Triangle {

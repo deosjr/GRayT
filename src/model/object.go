@@ -72,6 +72,10 @@ func (co *ComplexObject) Bound(t Transform) AABB {
 	return ObjectsBound(co.bvh.objects, t)
 }
 
+func (co *ComplexObject) Objects() []Object {
+	return co.bvh.objects
+}
+
 // a shared object stores a pointer to an object (type)
 // and a transformation that places this instance of the object (token) in the scene.
 // SurfaceNormal and GetColor are part of later material functions
