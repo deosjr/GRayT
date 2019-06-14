@@ -83,8 +83,8 @@ func (co *ComplexObject) Objects() []Object {
 // never on the aggregate object containing those (it doesnt have its own)
 // TODO: multiple instances can share geometry but differ in material? optionally?
 type SharedObject struct {
-	object        Object
-	objectToWorld Transform
+	Object        Object
+	ObjectToWorld Transform
 }
 
 // o is the object being shared, originToPosition is the transform in
@@ -93,23 +93,23 @@ type SharedObject struct {
 func NewSharedObject(o Object, originToPosition Transform) Object {
 	// TODO: investigate: doubly shared objects?
 	return &SharedObject{
-		object:        o,
-		objectToWorld: originToPosition,
+		Object:        o,
+		ObjectToWorld: originToPosition,
 	}
 }
 
 func (so *SharedObject) Intersect(ray Ray) *hit {
 	// transform ray to object space
-	r := so.objectToWorld.Inverse().Ray(ray)
+	r := so.ObjectToWorld.Inverse().Ray(ray)
 
-	hit := so.object.Intersect(r)
+	hit := so.Object.Intersect(r)
 	if hit == nil {
 		return nil
 	}
 
 	// transform hit info back to world space
 	point := PointFromRay(r, hit.distance)
-	hit.normal = so.objectToWorld.Normal(hit.object.SurfaceNormal(point))
+	hit.normal = so.ObjectToWorld.Normal(hit.object.SurfaceNormal(point))
 	return hit
 }
 
@@ -124,6 +124,6 @@ func (so *SharedObject) GetColor(*SurfaceInteraction, Light) Color {
 }
 
 func (so *SharedObject) Bound(t Transform) AABB {
-	transform := t.Mul(so.objectToWorld)
-	return so.object.Bound(transform)
+	transform := t.Mul(so.ObjectToWorld)
+	return so.Object.Bound(transform)
 }
