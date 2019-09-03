@@ -1,10 +1,8 @@
 package model
 
-import "math"
-
 const (
 	standardAlbedo   = 0.18
-	MAX_RAY_DISTANCE = math.MaxFloat64
+	MAX_RAY_DISTANCE = 1000000.0
 )
 
 var BACKGROUND_COLOR Color

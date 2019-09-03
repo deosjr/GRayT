@@ -27,7 +27,7 @@ func main() {
 	m.SetBackgroundColor(m.NewColor(0, 50, 100))
 
 	l1 := m.NewDistantLight(m.Vector{1, -1, 1}, m.NewColor(255, 255, 255), 50)
-	// l2 := m.NewPointLight(m.Vector{1, 2, 3}, m.NewColor(255, 255, 255), 200)
+	//l1 := m.NewPointLight(m.Vector{1, 2, 3}, m.NewColor(255, 255, 255), 2000)
 	scene.AddLights(l1)
 
 	diffMat := &m.DiffuseMaterial{m.NewColor(50, 10, 100)}

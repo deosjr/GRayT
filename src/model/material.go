@@ -20,9 +20,9 @@ type DiffuseMaterial struct {
 }
 
 func (m *DiffuseMaterial) GetColor(si *SurfaceInteraction, l Light) Color {
-	lightRatio := l.LightRatio(si.Point, si.Normal)
 	facingRatio := si.Normal.Dot(si.Incident.Times(-1))
 	lightSegment := l.GetLightSegment(si.Point)
+	lightRatio := si.Normal.Dot(lightSegment.Normalize())
 	factors := standardAlbedo / math.Pi * l.Intensity(lightSegment.Length()) * facingRatio * lightRatio
 	lightColor := l.Color().Times(factors)
 	return m.Color.Product(lightColor)

@@ -6,7 +6,6 @@ type Light interface {
 	Intensity(distance float64) float64
 	Color() Color
 	GetLightSegment(p Vector) Vector
-	LightRatio(point, normal Vector) float64
 }
 
 type light struct {
@@ -41,10 +40,6 @@ func (l PointLight) GetLightSegment(p Vector) Vector {
 	return VectorFromTo(p, l.origin)
 }
 
-func (l PointLight) LightRatio(p, n Vector) float64 {
-	return n.Dot(l.GetLightSegment(p))
-}
-
 type DistantLight struct {
 	light
 	direction Vector
@@ -69,8 +64,4 @@ func (l DistantLight) Intensity(r float64) float64 {
 
 func (l DistantLight) GetLightSegment(p Vector) Vector {
 	return l.direction.Times(MAX_RAY_DISTANCE)
-}
-
-func (l DistantLight) LightRatio(p, n Vector) float64 {
-	return n.Dot(l.direction)
 }
