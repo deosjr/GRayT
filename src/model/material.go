@@ -13,6 +13,7 @@ type SurfaceInteraction struct {
 	AS       AccelerationStructure
 	Incident Vector
 	depth    int
+	tracer   Tracer
 }
 
 type DiffuseMaterial struct {
@@ -28,22 +29,25 @@ func (m *DiffuseMaterial) GetColor(si *SurfaceInteraction, l Light) Color {
 	return m.Color.Product(lightColor)
 }
 
+type RadiantMaterial struct {
+	Color Color
+}
+
+func (r *RadiantMaterial) GetColor(si *SurfaceInteraction, l Light) Color {
+	return r.Color
+}
+
 type ReflectiveMaterial struct {
 	Scene *Scene
 }
 
-var maxRayDepth = 5
-
 func (m *ReflectiveMaterial) GetColor(si *SurfaceInteraction, l Light) Color {
-	if si.depth == maxRayDepth {
-		return BACKGROUND_COLOR
-	}
 	i := si.Incident
 	n := si.Object.SurfaceNormal(si.Point)
 	reflection := i.Sub(n.Times(2 * i.Dot(n)))
 	ray := NewRay(si.Point, reflection)
 	// TODO: retain maxdistance for tracing
-	return m.Scene.GetRayColor(ray) //.Times(1 - standardAlbedo) // simulates nonperfect reflection
+	return si.tracer.GetRayColor(ray, m.Scene, si.depth+1) //.Times(1 - standardAlbedo) // simulates nonperfect reflection
 }
 
 type NormalMappingMaterial struct {
@@ -63,4 +67,11 @@ type PosFuncMat struct {
 
 func (m *PosFuncMat) GetColor(si *SurfaceInteraction, l Light) Color {
 	return m.Func(si, l)
+}
+
+var DebugNormalMaterial = &PosFuncMat{
+	Func: func(si *SurfaceInteraction, _ Light) Color {
+		n := si.Normal.Times(0.5).Add(Vector{0.5, 0.5, 0.5})
+		return Color{n.X, n.Y, n.Z}
+	},
 }

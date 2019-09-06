@@ -1,11 +1,19 @@
 package render
 
-import "github.com/deosjr/GRayT/src/model"
+import (
+	"github.com/deosjr/GRayT/src/model"
+)
 
 // TODO: optimizations
 //   - backface culling? only for opaque objects?
 // - scaling: communicate over the wire
 //   - memory: use protobuff ?
+
+type worker struct {
+	scene *model.Scene
+	in    chan question
+	out   chan answer
+}
 
 type question struct {
 	x, y int
@@ -16,13 +24,26 @@ type answer struct {
 	color model.Color
 }
 
-func worker(scene *model.Scene, ch chan question, ans chan answer) {
-	for q := range ch {
-		ans <- answer{q.x, q.y, scene.GetColor(q.x, q.y)}
+func (w worker) work(tracer model.Tracer) {
+	for q := range w.in {
+		ray := w.scene.Camera.PixelRay(q.x, q.y)
+		color := tracer.GetRayColor(ray, w.scene, 0)
+		w.out <- answer{q.x, q.y, color}
 	}
 }
 
-func Render(scene *model.Scene, numWorkers int) Film {
+func RenderNaive(scene *model.Scene, numWorkers int) Film {
+	return render(scene, numWorkers, model.NewNaiveRayTracer)
+}
+
+func RenderWithPathTracer(scene *model.Scene, numWorkers, numSamples int) Film {
+	f := func() model.Tracer {
+		return model.NewPathTracer(numSamples)
+	}
+	return render(scene, numWorkers, f)
+}
+
+func render(scene *model.Scene, numWorkers int, newTracerFunc func() model.Tracer) Film {
 	w, h := scene.Camera.Width(), scene.Camera.Height()
 	img := newFilm(w, h)
 
@@ -30,7 +51,13 @@ func Render(scene *model.Scene, numWorkers int) Film {
 	ans := make(chan answer, numWorkers)
 
 	for i := 0; i < numWorkers; i++ {
-		go worker(scene, ch, ans)
+		worker := worker{
+			scene: scene,
+			in:    ch,
+			out:   ans,
+		}
+		tracer := newTracerFunc()
+		go worker.work(tracer)
 	}
 
 	go func() {

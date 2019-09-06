@@ -8,7 +8,7 @@ package model
 var ERROR_MARGIN = 1E-10
 
 type AccelerationStructure interface {
-	ClosestIntersection(ray Ray, maxDistance float64) *hit
+	ClosestIntersection(ray Ray, maxDistance float64) (hit, bool)
 }
 
 type NaiveAcceleration struct {
@@ -20,14 +20,16 @@ func NewNaiveAcceleration(objects []Object) *NaiveAcceleration {
 }
 
 // Try and hit ALL objects EVERY time
-func (na *NaiveAcceleration) ClosestIntersection(ray Ray, maxDistance float64) *hit {
-	var hit *hit
+func (na *NaiveAcceleration) ClosestIntersection(ray Ray, maxDistance float64) (hit, bool) {
+	var hit hit
+	var found bool
 	distance := maxDistance
 	for _, o := range na.objects {
-		if h := o.Intersect(ray); h != nil && h.distance < distance && h.distance > ERROR_MARGIN {
+		if h, ok := o.Intersect(ray); ok && h.distance < distance && h.distance > ERROR_MARGIN {
 			distance = h.distance
+			found = true
 			hit = h
 		}
 	}
-	return hit
+	return hit, found
 }

@@ -12,7 +12,7 @@ package model
 // transformations from object space to world space (?)
 
 type Object interface {
-	Intersect(Ray) *hit
+	Intersect(Ray) (hit, bool)
 	SurfaceNormal(point Vector) Vector
 	GetColor(si *SurfaceInteraction, l Light) Color
 	Bound(Transform) AABB
@@ -53,7 +53,7 @@ func NewComplexObject(objects []Object) Object {
 	}
 }
 
-func (co *ComplexObject) Intersect(ray Ray) *hit {
+func (co *ComplexObject) Intersect(ray Ray) (hit, bool) {
 	return co.bvh.ClosestIntersection(ray, MAX_RAY_DISTANCE)
 }
 
@@ -98,19 +98,19 @@ func NewSharedObject(o Object, originToPosition Transform) Object {
 	}
 }
 
-func (so *SharedObject) Intersect(ray Ray) *hit {
+func (so *SharedObject) Intersect(ray Ray) (hit, bool) {
 	// transform ray to object space
 	r := so.ObjectToWorld.Inverse().Ray(ray)
 
-	hit := so.Object.Intersect(r)
-	if hit == nil {
-		return nil
+	hit, ok := so.Object.Intersect(r)
+	if !ok {
+		return hit, false
 	}
 
 	// transform hit info back to world space
 	point := PointFromRay(r, hit.distance)
-	hit.normal = so.ObjectToWorld.Normal(hit.object.SurfaceNormal(point))
-	return hit
+	normal := so.ObjectToWorld.Normal(hit.object.SurfaceNormal(point))
+	return NewHit(hit.object, hit.distance, normal), true
 }
 
 func (so *SharedObject) SurfaceNormal(Vector) Vector {

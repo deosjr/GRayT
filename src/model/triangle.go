@@ -66,15 +66,14 @@ func (t TriangleInMesh) Bound(transform Transform) AABB {
 	p0, p1, p2 := t.points()
 	return triangleBound(p0, p1, p2, transform)
 }
-func (t TriangleInMesh) Intersect(r Ray) *hit {
+func (t TriangleInMesh) Intersect(r Ray) (hit, bool) {
 	p0, p1, p2 := t.points()
 	d, ok := triangleIntersect(p0, p1, p2, r)
 	if !ok {
-		return nil
+		return hit{}, false
 	}
-	hit := NewHit(t, d)
-	hit.normal = t.SurfaceNormal(PointFromRay(r, d))
-	return hit
+	normal := t.SurfaceNormal(PointFromRay(r, d))
+	return NewHit(t, d, normal), true
 }
 func (t TriangleInMesh) SurfaceNormal(Vector) Vector {
 	p0, p1, p2 := t.points()
@@ -126,14 +125,13 @@ func NewTriangle(p0, p1, p2 Vector, m Material) Triangle {
 func (t Triangle) Bound(transform Transform) AABB {
 	return triangleBound(t.P0, t.P1, t.P2, transform)
 }
-func (t Triangle) Intersect(r Ray) *hit {
+func (t Triangle) Intersect(r Ray) (hit, bool) {
 	d, ok := triangleIntersect(t.P0, t.P1, t.P2, r)
 	if !ok {
-		return nil
+		return hit{}, false
 	}
-	hit := NewHit(t, d)
-	hit.normal = t.SurfaceNormal(PointFromRay(r, d))
-	return hit
+	normal := t.SurfaceNormal(PointFromRay(r, d))
+	return NewHit(t, d, normal), true
 }
 func (t Triangle) SurfaceNormal(Vector) Vector {
 	return triangleSurfaceNormal(t.P0, t.P1, t.P2)
