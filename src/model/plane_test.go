@@ -34,11 +34,11 @@ func TestPlaneIntersect(t *testing.T) {
 			wantTruth: true,
 		},
 	} {
-		hit := tt.p.Intersect(tt.r)
-		if hit == nil && tt.wantTruth == false {
+		hit, found := tt.p.Intersect(tt.r)
+		if !found && tt.wantTruth == false {
 			continue
 		}
-		if (hit == nil && tt.wantTruth == true) || (hit != nil && tt.wantTruth == false) {
+		if (!found && tt.wantTruth == true) || (found && tt.wantTruth == false) {
 			t.Errorf("%d) incorrect bool value; want %v", i, tt.wantTruth)
 			continue
 		}

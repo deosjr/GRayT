@@ -3,7 +3,7 @@ package model
 import (
 	"math"
 	"testing"
-) 
+)
 
 func TestObjectIntersect(t *testing.T) {
 	for i, tt := range []struct {
@@ -49,7 +49,7 @@ func TestObjectIntersect(t *testing.T) {
 				Sphere{
 					Center: Vector{0, 0, 0},
 					Radius: 0.5,
-				}, Translate(Vector{0,0,2}).Mul(RotateY(math.Pi / 2))),
+				}, Translate(Vector{0, 0, 2}).Mul(RotateY(math.Pi/2))),
 			r: Ray{
 				Origin:    Vector{0, 0, 0},
 				Direction: Vector{0, 0, 1},
@@ -58,11 +58,11 @@ func TestObjectIntersect(t *testing.T) {
 			wantTruth: true,
 		},
 	} {
-		hit := tt.o.Intersect(tt.r)
-		if hit == nil && tt.wantTruth == false {
+		hit, found := tt.o.Intersect(tt.r)
+		if !found && tt.wantTruth == false {
 			continue
 		}
-		if (hit == nil && tt.wantTruth == true) || (hit != nil && tt.wantTruth == false) {
+		if (!found && tt.wantTruth == true) || (found && tt.wantTruth == false) {
 			t.Errorf("%d) incorrect bool value; want %v", i, tt.wantTruth)
 			continue
 		}
@@ -76,7 +76,7 @@ func TestObjectIntersect(t *testing.T) {
 func TestObjectBound(t *testing.T) {
 	for i, tt := range []struct {
 		o    Object
-		t 	 Transform
+		t    Transform
 		want AABB
 	}{
 		{
@@ -91,7 +91,7 @@ func TestObjectBound(t *testing.T) {
 					P1: Vector{1, 0, -1},
 					P2: Vector{1, 1, -1},
 				}}),
-			t: identity,
+			t:    identity,
 			want: NewAABB(Vector{-1, 0, -1}, Vector{1, 1, 1}),
 		},
 		{
@@ -100,7 +100,7 @@ func TestObjectBound(t *testing.T) {
 					Center: Vector{0, 0, 0},
 					Radius: 1,
 				}, Translate(Vector{0, 0, 0})),
-			t: identity,
+			t:    identity,
 			want: NewAABB(Vector{-1, -1, -1}, Vector{1, 1, 1}),
 		},
 		{
@@ -109,7 +109,7 @@ func TestObjectBound(t *testing.T) {
 					Center: Vector{0, 0, 0},
 					Radius: 1,
 				}, Translate(Vector{0, 0, 1})),
-			t: identity,
+			t:    identity,
 			want: NewAABB(Vector{-1, -1, 0}, Vector{1, 1, 2}),
 		},
 		{
@@ -117,8 +117,8 @@ func TestObjectBound(t *testing.T) {
 				Sphere{
 					Center: Vector{0, 0, 0},
 					Radius: 1,
-				}, RotateY(math.Pi / 2)),
-			t: identity,
+				}, RotateY(math.Pi/2)),
+			t:    identity,
 			want: NewAABB(Vector{-1, -1, -1}, Vector{1, 1, 1}),
 		},
 		{
@@ -126,8 +126,8 @@ func TestObjectBound(t *testing.T) {
 				Sphere{
 					Center: Vector{0, 0, 0},
 					Radius: 1,
-				}, Translate(Vector{2,2,2}).Mul(RotateY(math.Pi / 2))),
-			t: identity,
+				}, Translate(Vector{2, 2, 2}).Mul(RotateY(math.Pi/2))),
+			t:    identity,
 			want: NewAABB(Vector{1, 1, 1}, Vector{3, 3, 3}),
 		},
 	} {

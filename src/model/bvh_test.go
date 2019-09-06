@@ -224,12 +224,11 @@ func TestBVHTraversal(t *testing.T) {
 		},
 	} {
 		tt.want.object = tt.bvh.objects[tt.wantObjectIndex]
-		hit := tt.bvh.ClosestIntersection(tt.ray, math.MaxFloat64)
-		if hit == nil {
+		got, ok := tt.bvh.ClosestIntersection(tt.ray, math.MaxFloat64)
+		if !ok {
 			t.Errorf("%d) got nil want %#v", i, tt.want)
 			continue
 		}
-		got := *hit
 		// dont care about the normal right now
 		got.normal = Vector{}
 		if !reflect.DeepEqual(got, tt.want) {

@@ -24,7 +24,7 @@ func sampleScene(b *testing.B) *model.Scene {
 
 func benchmarkScene(scene *model.Scene, numWorkers int, b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		Render(scene, numWorkers)
+		RenderNaive(scene, numWorkers)
 	}
 }
 
