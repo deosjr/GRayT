@@ -34,6 +34,18 @@ func (f Film) getArrayIndex(x, y int) int {
 	return y*f.width + x
 }
 
+func (f Film) Add(x, y int, c model.Color) {
+	index := f.getArrayIndex(x, y)
+	current := f.pixels[index]
+	f.pixels[index] = current.Add(c)
+}
+
+func (f Film) DivideBySamples(n int) {
+	for i, c := range f.pixels {
+		f.pixels[i] = c.Times(1.0 / float64(n))
+	}
+}
+
 func (f Film) Set(x, y int, c model.Color) {
 	f.pixels[f.getArrayIndex(x, y)] = c
 }

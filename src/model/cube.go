@@ -156,9 +156,9 @@ func NewQuadrilateral(p1, p2, p3, p4 Vector, m Material) Quadrilateral {
 	}
 }
 
-func (q Quadrilateral) Tesselate() Object {
+func (q Quadrilateral) Tesselate() (Triangle, Triangle) {
 	t1, t2 := QuadrilateralToTriangles(q.P1, q.P2, q.P3, q.P4, q.material)
-	return NewComplexObject([]Object{t1, t2})
+	return t1, t2
 }
 
 func QuadrilateralToTriangles(p1, p2, p3, p4 Vector, m Material) (Triangle, Triangle) {

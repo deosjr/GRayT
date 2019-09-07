@@ -13,9 +13,10 @@ import (
 )
 
 var (
-	width      uint = 512
-	height     uint = 512
+	width      uint = 1200
+	height     uint = 1200
 	numWorkers      = 10
+	numSamples      = 1000
 
 	ex = m.Vector{1, 0, 0}
 	ey = m.Vector{0, 1, 0}
@@ -42,7 +43,8 @@ func main() {
 	camera := m.NewPerspectiveCamera(width, height, 0.5*math.Pi)
 	scene := m.NewScene(camera)
 
-	lightMat := &m.RadiantMaterial{m.NewColor(255, 255, 255)}
+	intensity := 5.0
+	lightMat := &m.RadiantMaterial{m.NewColor(255, 255, 255).Times(intensity)}
 	/*
 		light := m.NewQuadrilateral(
 			m.Vector{213, 548.8, 332},
@@ -179,7 +181,6 @@ func main() {
 	from, to := m.Vector{278, 273, -800}, m.Vector{278, 273, -799}
 	camera.LookAt(from, to, ey)
 
-	numSamples := 10
 	film := render.RenderWithPathTracer(scene, numWorkers, numSamples)
 	//film := render.RenderNaive(scene, numWorkers)
 	film.SaveAsPNG("out.png")

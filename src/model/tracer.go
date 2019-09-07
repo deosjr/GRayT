@@ -1,6 +1,7 @@
 package model
 
 import (
+	"math"
 	"math/rand"
 	"time"
 )
@@ -18,13 +19,13 @@ type Tracer interface {
 	GetRayColor(Ray, *Scene, int) Color
 }
 
-type naiveRayTracer struct{}
+type whittedRayTracer struct{}
 
-func NewNaiveRayTracer() Tracer {
-	return &naiveRayTracer{}
+func NewWhittedRayTracer() Tracer {
+	return whittedRayTracer{}
 }
 
-func (nrt *naiveRayTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color {
+func (wrt whittedRayTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color {
 	if depth == MAX_RAY_DEPTH {
 		return BLACK
 	}
@@ -45,7 +46,7 @@ func (nrt *naiveRayTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color {
 		// already normalized
 		Incident: ray.Direction,
 		depth:    depth,
-		tracer:   nrt,
+		tracer:   wrt,
 	}
 
 	color := NewColor(0, 0, 0)
@@ -75,13 +76,12 @@ func pointInShadow(light Light, point Vector, as AccelerationStructure) bool {
 }
 
 type pathTracer struct {
-	random  *rand.Rand
-	samples int
+	random *rand.Rand
 }
 
-func NewPathTracer(n int) *pathTracer {
+func NewPathTracer() Tracer {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	return &pathTracer{random: r, samples: n}
+	return &pathTracer{random: r}
 }
 
 func (pt *pathTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color {
@@ -109,31 +109,27 @@ func (pt *pathTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color {
 	}
 	o := hit.object.(Triangle)
 
-	emittedColor := NewColor(0, 0, 0)
 	surfaceDiffuseColor := NewColor(0, 0, 0)
 	if rad, ok := o.Material.(*RadiantMaterial); ok {
-		emittedColor = rad.Color
-		surfaceDiffuseColor = rad.Color
+		facingRatio := si.Normal.Dot(si.Incident.Times(-1))
+		return rad.Color.Times(facingRatio)
 	}
 	if diff, ok := o.Material.(*DiffuseMaterial); ok {
-		facingRatio := si.Normal.Dot(si.Incident.Times(-1))
-		surfaceDiffuseColor = diff.Color.Times(facingRatio)
+		surfaceDiffuseColor = diff.Color
 	}
 	if debug, ok := o.Material.(*PosFuncMat); ok {
 		surfaceDiffuseColor = debug.GetColor(si, nil)
 	}
 
-	sumSampleColor := NewColor(0, 0, 0)
-	for i := 0; i < pt.samples; i++ {
-		// random new ray
-		randomDirection := pt.randomInHemisphere(hit.normal)
-		newRay := NewRay(point, randomDirection)
-		costheta := hit.normal.Dot(randomDirection)
-		recursiveColor := pt.GetRayColor(newRay, scene, depth+1)
-		sampleColor := emittedColor.Add(recursiveColor.Times(2).Times(costheta).Product(surfaceDiffuseColor))
-		sumSampleColor = sumSampleColor.Add(sampleColor)
-	}
-	return sumSampleColor.Times(1.0 / float64(pt.samples))
+	// random new ray
+	randomDirection := pt.randomInHemisphere(hit.normal)
+	newRay := NewRay(point, randomDirection)
+	cos := hit.normal.Dot(randomDirection)
+	recursiveColor := pt.GetRayColor(newRay, scene, depth+1)
+	brdf := surfaceDiffuseColor.Times(1.0 / math.Pi)
+	pdf := 1.0 / (2.0 * math.Pi)
+	sampleColor := recursiveColor.Times(cos / pdf).Product(brdf)
+	return sampleColor
 }
 
 func (pt *pathTracer) randomInHemisphere(normal Vector) Vector {
