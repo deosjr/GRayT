@@ -43,8 +43,14 @@ func main() {
 	camera := m.NewPerspectiveCamera(width, height, 0.5*math.Pi)
 	scene := m.NewScene(camera)
 
+	// use pointlight for whitted style ray tracer
+	pointLight := m.NewPointLight(m.Vector{250, 500, 100}, m.NewColor(255, 255, 255), 50000000)
+	scene.AddLights(pointLight)
+
+	// use area light for path tracer
 	intensity := 5.0
 	lightMat := &m.RadiantMaterial{m.NewColor(255, 255, 255).Times(intensity)}
+
 	/*
 		light := m.NewQuadrilateral(
 			m.Vector{213, 548.8, 332},

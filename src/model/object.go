@@ -83,8 +83,9 @@ func (co *ComplexObject) Objects() []Object {
 // never on the aggregate object containing those (it doesnt have its own)
 // TODO: multiple instances can share geometry but differ in material? optionally?
 type SharedObject struct {
-	Object        Object
-	ObjectToWorld Transform
+	Object               Object
+	ObjectToWorld        Transform
+	ObjectToWorldInverse Transform
 }
 
 // o is the object being shared, originToPosition is the transform in
@@ -93,14 +94,15 @@ type SharedObject struct {
 func NewSharedObject(o Object, originToPosition Transform) Object {
 	// TODO: investigate: doubly shared objects?
 	return &SharedObject{
-		Object:        o,
-		ObjectToWorld: originToPosition,
+		Object:               o,
+		ObjectToWorld:        originToPosition,
+		ObjectToWorldInverse: originToPosition.Inverse(),
 	}
 }
 
 func (so *SharedObject) Intersect(ray Ray) (hit, bool) {
 	// transform ray to object space
-	r := so.ObjectToWorld.Inverse().Ray(ray)
+	r := so.ObjectToWorldInverse.Ray(ray)
 
 	hit, ok := so.Object.Intersect(r)
 	if !ok {

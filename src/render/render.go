@@ -10,9 +10,10 @@ import (
 //   - memory: use protobuff ?
 
 type worker struct {
-	scene *model.Scene
-	in    chan question
-	out   chan answer
+	scene   *model.Scene
+	in      chan question
+	out     chan answer
+	samples int
 }
 
 type question struct {
@@ -27,14 +28,12 @@ type answer struct {
 func (w worker) work(tracer model.Tracer) {
 	for q := range w.in {
 		ray := w.scene.Camera.PixelRay(q.x, q.y)
-
-		//sumSampleColor := model.NewColor(0, 0, 0)
-		//for i := 0; i < 1000; i++ {
-		color := tracer.GetRayColor(ray, w.scene, 0)
-		//sumSampleColor = sumSampleColor.Add(color)
-		//}
-		//color := sumSampleColor.Times(1.0 / 1000.0)
-
+		color := model.NewColor(0, 0, 0)
+		for i := 0; i < w.samples; i++ {
+			sampleColor := tracer.GetRayColor(ray, w.scene, 0)
+			color = color.Add(sampleColor)
+		}
+		color = color.Times(1.0 / float64(w.samples))
 		w.out <- answer{q.x, q.y, color}
 	}
 }
@@ -51,14 +50,15 @@ func render(scene *model.Scene, numWorkers int, newTracerFunc func() model.Trace
 	w, h := scene.Camera.Width(), scene.Camera.Height()
 	img := newFilm(w, h)
 
-	ch := make(chan question, numWorkers)
-	ans := make(chan answer, numWorkers)
+	inputChannel := make(chan question, numWorkers)
+	outputChannel := make(chan answer, numWorkers)
 
 	for i := 0; i < numWorkers; i++ {
 		worker := worker{
-			scene: scene,
-			in:    ch,
-			out:   ans,
+			scene:   scene,
+			in:      inputChannel,
+			out:     outputChannel,
+			samples: numSamples,
 		}
 		tracer := newTracerFunc()
 		go worker.work(tracer)
@@ -67,25 +67,21 @@ func render(scene *model.Scene, numWorkers int, newTracerFunc func() model.Trace
 	go func() {
 		for y := 0; y < h; y++ {
 			for x := 0; x < w; x++ {
-				for s := 0; s < numSamples; s++ {
-					ch <- question{x, y}
-				}
+				inputChannel <- question{x, y}
 			}
 		}
-		close(ch)
+		close(inputChannel)
 	}()
 
-	numPixelSamples := h * w * numSamples
+	numPixelSamples := h * w
 	for {
 		if numPixelSamples == 0 {
 			break
 		}
-		a := <-ans
-		img.Add(a.x, a.y, a.color)
+		a := <-outputChannel
+		img.Set(a.x, a.y, a.color)
 		numPixelSamples--
 	}
-
-	img.DivideBySamples(numSamples)
 
 	return img
 }
