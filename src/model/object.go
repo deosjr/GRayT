@@ -12,7 +12,7 @@ package model
 // transformations from object space to world space (?)
 
 type Object interface {
-	Intersect(Ray) (hit, bool)
+	Intersect(ray Ray) (distance float64, hit bool)
 	SurfaceNormal(point Vector) Vector
 	GetColor(si *SurfaceInteraction, l Light) Color
 	Bound(Transform) AABB
@@ -25,6 +25,28 @@ type object struct {
 // to be replaced by more interesting materials info
 func (o object) GetColor(si *SurfaceInteraction, l Light) Color {
 	return o.Material.GetColor(si, l)
+}
+
+func GetSurfaceInteraction(object Object, ray Ray, distance float64) *SurfaceInteraction {
+	switch o := object.(type) {
+	case *ComplexObject:
+		// TODO: ewwwww... this hack means double checking intersection every time
+		si, _ := o.bvh.ClosestIntersection(ray, MAX_RAY_DISTANCE)
+		obj := si.object
+
+		p := PointFromRay(ray, distance)
+		n := obj.SurfaceNormal(p)
+		return NewSurfaceInteraction(obj, distance, n, ray)
+	case *SharedObject:
+		// transform hit info back to world space
+		r := o.ObjectToWorldInverse.Ray(ray)
+		point := PointFromRay(r, distance)
+		normal := o.ObjectToWorld.Normal(o.Object.SurfaceNormal(point))
+		return NewSurfaceInteraction(o.Object, distance, normal, ray)
+	default:
+		normal := o.SurfaceNormal(PointFromRay(ray, distance))
+		return NewSurfaceInteraction(o, distance, normal, ray)
+	}
 }
 
 func ObjectsBound(objects []Object, t Transform) AABB {
@@ -53,8 +75,9 @@ func NewComplexObject(objects []Object) Object {
 	}
 }
 
-func (co *ComplexObject) Intersect(ray Ray) (hit, bool) {
-	return co.bvh.ClosestIntersection(ray, MAX_RAY_DISTANCE)
+func (co *ComplexObject) Intersect(ray Ray) (float64, bool) {
+	si, ok := co.bvh.ClosestIntersection(ray, MAX_RAY_DISTANCE)
+	return si.distance, ok
 }
 
 func (co *ComplexObject) SurfaceNormal(point Vector) Vector {
@@ -100,19 +123,10 @@ func NewSharedObject(o Object, originToPosition Transform) Object {
 	}
 }
 
-func (so *SharedObject) Intersect(ray Ray) (hit, bool) {
+func (so *SharedObject) Intersect(ray Ray) (float64, bool) {
 	// transform ray to object space
 	r := so.ObjectToWorldInverse.Ray(ray)
-
-	hit, ok := so.Object.Intersect(r)
-	if !ok {
-		return hit, false
-	}
-
-	// transform hit info back to world space
-	point := PointFromRay(r, hit.distance)
-	normal := so.ObjectToWorld.Normal(hit.object.SurfaceNormal(point))
-	return NewHit(hit.object, hit.distance, normal), true
+	return so.Object.Intersect(r)
 }
 
 func (so *SharedObject) SurfaceNormal(Vector) Vector {

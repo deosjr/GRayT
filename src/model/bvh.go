@@ -205,10 +205,10 @@ func flattenBVHTree(node bvhNode, nodes []optimisedBVHNode, offset *int) int {
 }
 
 // Actual traversal of the BVH
-func (bvh *BVH) ClosestIntersection(ray Ray, maxDistance float64) (hit, bool) {
+func (bvh *BVH) ClosestIntersection(ray Ray, maxDistance float64) (*SurfaceInteraction, bool) {
 	var toVisitOffset, currentNodeIndex int
-	var hit hit
 	var found bool
+	var object Object
 	nodesToVisit := make([]int, 64)
 	for {
 		node := bvh.nodes[currentNodeIndex]
@@ -219,10 +219,10 @@ func (bvh *BVH) ClosestIntersection(ray Ray, maxDistance float64) (hit, bool) {
 				// this is a leaf node
 				for i := 0; i < node.numObjects; i++ {
 					o := bvh.objects[node.offset+i]
-					if h, ok := o.Intersect(ray); ok && h.distance < maxDistance && h.distance > ERROR_MARGIN {
-						maxDistance = h.distance
+					if d, ok := o.Intersect(ray); ok && d < maxDistance && d > ERROR_MARGIN {
+						maxDistance = d
 						found = true
-						hit = h
+						object = o
 					}
 				}
 				if toVisitOffset == 0 {
@@ -246,5 +246,9 @@ func (bvh *BVH) ClosestIntersection(ray Ray, maxDistance float64) (hit, bool) {
 			currentNodeIndex = nodesToVisit[toVisitOffset]
 		}
 	}
-	return hit, found
+	if !found {
+		return nil, false
+	}
+	si := GetSurfaceInteraction(object, ray, maxDistance)
+	return si, true
 }

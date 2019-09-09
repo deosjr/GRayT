@@ -34,7 +34,7 @@ func TestPlaneIntersect(t *testing.T) {
 			wantTruth: true,
 		},
 	} {
-		hit, found := tt.p.Intersect(tt.r)
+		got, found := tt.p.Intersect(tt.r)
 		if !found && tt.wantTruth == false {
 			continue
 		}
@@ -42,7 +42,6 @@ func TestPlaneIntersect(t *testing.T) {
 			t.Errorf("%d) incorrect bool value; want %v", i, tt.wantTruth)
 			continue
 		}
-		got := hit.distance
 		if got != tt.want {
 			t.Errorf("%d) got %v want %v", i, got, tt.want)
 		}

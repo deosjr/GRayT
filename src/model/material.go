@@ -7,13 +7,26 @@ type Material interface {
 }
 
 type SurfaceInteraction struct {
-	Point    Vector
-	Normal   Vector
-	Object   Object
-	AS       AccelerationStructure
-	Incident Vector
+	distance float64
+	ray      Ray
+	point    Vector
+	normal   Vector
+	object   Object
+	as       AccelerationStructure
+	incident Vector
 	depth    int
 	tracer   Tracer
+}
+
+func NewSurfaceInteraction(o Object, d float64, n Vector, r Ray) *SurfaceInteraction {
+	return &SurfaceInteraction{
+		object:   o,
+		distance: d,
+		normal:   n,
+		ray:      r,
+		point:    PointFromRay(r, d),
+		incident: r.Direction,
+	}
 }
 
 type DiffuseMaterial struct {
@@ -21,9 +34,9 @@ type DiffuseMaterial struct {
 }
 
 func (m *DiffuseMaterial) GetColor(si *SurfaceInteraction, l Light) Color {
-	facingRatio := si.Normal.Dot(si.Incident.Times(-1))
-	lightSegment := l.GetLightSegment(si.Point)
-	lightRatio := si.Normal.Dot(lightSegment.Normalize())
+	facingRatio := si.normal.Dot(si.incident.Times(-1))
+	lightSegment := l.GetLightSegment(si.point)
+	lightRatio := si.normal.Dot(lightSegment.Normalize())
 	factors := standardAlbedo / math.Pi * l.Intensity(lightSegment.Length()) * facingRatio * lightRatio
 	lightColor := l.Color().Times(factors)
 	return m.Color.Product(lightColor)
@@ -42,10 +55,10 @@ type ReflectiveMaterial struct {
 }
 
 func (m *ReflectiveMaterial) GetColor(si *SurfaceInteraction, l Light) Color {
-	i := si.Incident
-	n := si.Object.SurfaceNormal(si.Point)
+	i := si.incident
+	n := si.object.SurfaceNormal(si.point)
 	reflection := i.Sub(n.Times(2 * i.Dot(n)))
-	ray := NewRay(si.Point, reflection)
+	ray := NewRay(si.point, reflection)
 	// TODO: retain maxdistance for tracing
 	return si.tracer.GetRayColor(ray, m.Scene, si.depth+1) //.Times(1 - standardAlbedo) // simulates nonperfect reflection
 }
@@ -56,7 +69,7 @@ type NormalMappingMaterial struct {
 }
 
 func (m *NormalMappingMaterial) GetColor(si *SurfaceInteraction, l Light) Color {
-	si.Normal = m.NormalFunc(si)
+	si.normal = m.NormalFunc(si)
 	return m.WrappedMaterial.GetColor(si, l)
 }
 
@@ -71,7 +84,7 @@ func (m *PosFuncMat) GetColor(si *SurfaceInteraction, l Light) Color {
 
 var DebugNormalMaterial = &PosFuncMat{
 	Func: func(si *SurfaceInteraction, _ Light) Color {
-		n := si.Normal.Times(0.5).Add(Vector{0.5, 0.5, 0.5})
+		n := si.normal.Times(0.5).Add(Vector{0.5, 0.5, 0.5})
 		return Color{n.X, n.Y, n.Z}
 	},
 }

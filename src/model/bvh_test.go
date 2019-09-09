@@ -175,7 +175,7 @@ func TestBVHTraversal(t *testing.T) {
 	for i, tt := range []struct {
 		bvh             BVH
 		ray             Ray
-		want            hit
+		want            SurfaceInteraction
 		wantObjectIndex int
 	}{
 		{
@@ -192,7 +192,7 @@ func TestBVHTraversal(t *testing.T) {
 				},
 			},
 			ray: NewRay(Vector{0, 0, 0}, Vector{0, 0, 1}),
-			want: hit{
+			want: SurfaceInteraction{
 				distance: 1,
 				// normal:   Vector{0, 0, -1},
 			},
@@ -216,7 +216,7 @@ func TestBVHTraversal(t *testing.T) {
 					{bounds: NewAABB(Vector{1, -1, 3}, Vector{3, 1, 1}), offset: 1, numObjects: 1}},
 			},
 			ray: NewRay(Vector{0, 0, 0}, Vector{1, 0, 1}),
-			want: hit{
+			want: SurfaceInteraction{
 				distance: 1.8284271247461907,
 				// normal:   Vector{1.2928932188134528, 0, -1.2928932188134528},
 			},
@@ -229,9 +229,7 @@ func TestBVHTraversal(t *testing.T) {
 			t.Errorf("%d) got nil want %#v", i, tt.want)
 			continue
 		}
-		// dont care about the normal right now
-		got.normal = Vector{}
-		if !reflect.DeepEqual(got, tt.want) {
+		if got.distance != tt.want.distance {
 			t.Errorf("%d) got %#v want %#v", i, got, tt.want)
 		}
 	}

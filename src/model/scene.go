@@ -1,19 +1,5 @@
 package model
 
-type hit struct {
-	object   Object
-	normal   Vector
-	distance float64
-}
-
-func NewHit(o Object, d float64, n Vector) hit {
-	return hit{
-		object:   o,
-		distance: d,
-		normal:   n,
-	}
-}
-
 type Scene struct {
 	Objects []Object
 	Lights  []Light
