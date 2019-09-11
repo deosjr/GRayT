@@ -52,28 +52,59 @@ func (b AABB) Centroid() Vector {
 
 // Unoptimised, analytic solution for now
 // TODO: either optimise or check assumptions on NaN / divide by zero (inf) logic
-func (b AABB) Intersect(ray Ray) bool {
+// This function is one of the main bottlenecks
+// writing the dimension loop explicitly saves a lot of time
+func (b AABB) Intersect(ray Ray) (tMin float64, hit bool) {
 	t0, t1 := 0.0, math.MaxFloat64
-	for _, dim := range Dimensions {
-		// TODO: divide by zero?
-		invRayDir := 1 / ray.Direction.Get(dim)
-		tNear := (b.Pmin.Get(dim) - ray.Origin.Get(dim)) * invRayDir
-		tFar := (b.Pmax.Get(dim) - ray.Origin.Get(dim)) * invRayDir
-		if tNear > tFar {
-			tNear, tFar = tFar, tNear
-		}
-		// TODO: correct for error margin in tFar
-		if tNear > t0 {
-			t0 = tNear
-		}
-		if tFar < t1 {
-			t1 = tFar
-		}
-		if t0 > t1 {
-			return false
-		}
+	invRayDir := 1 / ray.Direction.X
+	tNear := (b.Pmin.X - ray.Origin.X) * invRayDir
+	tFar := (b.Pmax.X - ray.Origin.Y) * invRayDir
+	if tNear > tFar {
+		tNear, tFar = tFar, tNear
 	}
-	return true
+	// TODO: correct for error margin in tFar
+	if tNear > t0 {
+		t0 = tNear
+	}
+	if tFar < t1 {
+		t1 = tFar
+	}
+	if t0 > t1 {
+		return 0, false
+	}
+	invRayDir = 1 / ray.Direction.Y
+	tNear = (b.Pmin.Y - ray.Origin.Y) * invRayDir
+	tFar = (b.Pmax.Y - ray.Origin.Y) * invRayDir
+	if tNear > tFar {
+		tNear, tFar = tFar, tNear
+	}
+	// TODO: correct for error margin in tFar
+	if tNear > t0 {
+		t0 = tNear
+	}
+	if tFar < t1 {
+		t1 = tFar
+	}
+	if t0 > t1 {
+		return 0, false
+	}
+	invRayDir = 1 / ray.Direction.Z
+	tNear = (b.Pmin.Z - ray.Origin.Z) * invRayDir
+	tFar = (b.Pmax.Z - ray.Origin.Z) * invRayDir
+	if tNear > tFar {
+		tNear, tFar = tFar, tNear
+	}
+	// TODO: correct for error margin in tFar
+	if tNear > t0 {
+		t0 = tNear
+	}
+	if tFar < t1 {
+		t1 = tFar
+	}
+	if t0 > t1 {
+		return 0, false
+	}
+	return t0, true
 }
 
 // TODO: check efficiency

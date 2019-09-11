@@ -212,9 +212,7 @@ func (bvh *BVH) ClosestIntersection(ray Ray, maxDistance float64) (*SurfaceInter
 	nodesToVisit := make([]int, 64)
 	for {
 		node := bvh.nodes[currentNodeIndex]
-		// TODO: disregard box intersection with distance of tMin
-		// farther than current closest intersection distance d
-		if node.bounds.Intersect(ray) {
+		if tMin, hit := node.bounds.Intersect(ray); hit && tMin < maxDistance {
 			if node.numObjects > 0 {
 				// this is a leaf node
 				for i := 0; i < node.numObjects; i++ {

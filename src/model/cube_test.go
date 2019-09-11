@@ -133,7 +133,7 @@ func TestAABBRayIntersect(t *testing.T) {
 			want: false,
 		},
 	} {
-		got := tt.aabb.Intersect(tt.ray)
+		_, got := tt.aabb.Intersect(tt.ray)
 		if got != tt.want {
 			t.Errorf("%d) got %v want %v", i, got, tt.want)
 		}

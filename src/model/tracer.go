@@ -30,29 +30,49 @@ func (wrt whittedRayTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color 
 		return BLACK
 	}
 
-	as := scene.AccelerationStructure
-
-	si, ok := as.ClosestIntersection(ray, MAX_RAY_DISTANCE)
+	si, ok := scene.AccelerationStructure.ClosestIntersection(ray, MAX_RAY_DISTANCE)
 	if !ok {
 		return BACKGROUND_COLOR
 	}
 
-	si.as = as
+	si.as = scene.AccelerationStructure
 	si.depth = depth
 	si.tracer = wrt
 
 	color := NewColor(0, 0, 0)
+	material := si.object.GetMaterial()
 	for _, light := range scene.Lights {
-		if pointInShadow(light, si.point, as) {
+		if pointInShadow(light, si.point, si.as) {
 			continue
 		}
-		facingRatio := si.normal.Dot(ray.Direction.Times(-1))
+		facingRatio := si.normal.Dot(si.incident.Times(-1))
 		if facingRatio <= 0 {
 			continue
 		}
 
-		objectColor := si.object.GetColor(si, light)
-		color = color.Add(objectColor)
+		var objectColor Color
+		switch mat := material.(type) {
+		case *RadiantMaterial:
+			objectColor = mat.Color
+		case *DiffuseMaterial:
+			lightSegment := light.GetLightSegment(si.point)
+			lightRatio := si.normal.Dot(lightSegment.Normalize())
+			factors := standardAlbedo / math.Pi * light.Intensity(lightSegment.Length()) * lightRatio
+			lightColor := light.Color().Times(factors)
+			objectColor = mat.Color.Product(lightColor)
+		case *ReflectiveMaterial:
+			i := si.incident
+			n := si.object.SurfaceNormal(si.point)
+			reflection := i.Sub(n.Times(2 * i.Dot(n)))
+			newRay := NewRay(si.point, reflection)
+			// TODO: retain maxdistance for tracing
+			objectColor = wrt.GetRayColor(newRay, scene, depth+1) //.Times(1 - standardAlbedo) // simulates nonperfect reflection
+		case *PosFuncMat:
+			objectColor = mat.GetColor(si)
+		}
+
+		//objectColor := si.object.GetColor(si, light)
+		color = color.Add(objectColor.Times(facingRatio))
 	}
 	return color
 }
@@ -81,32 +101,22 @@ func (pt *pathTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color {
 		return BLACK
 	}
 
-	as := scene.AccelerationStructure
-
-	si, ok := as.ClosestIntersection(ray, MAX_RAY_DISTANCE)
+	si, ok := scene.AccelerationStructure.ClosestIntersection(ray, MAX_RAY_DISTANCE)
 	if !ok {
 		return BLACK
 	}
 
-	si.as = as
+	si.as = scene.AccelerationStructure
 	si.depth = depth
 	si.tracer = pt
 
-	o := si.object.(Triangle)
-	surfaceDiffuseColor := NewColor(0, 0, 0)
-	if rad, ok := o.Material.(*RadiantMaterial); ok {
-		facingRatio := si.normal.Dot(si.incident.Times(-1))
-		return rad.Color.Times(facingRatio)
-	}
-	if diff, ok := o.Material.(*DiffuseMaterial); ok {
-		surfaceDiffuseColor = diff.Color
-	}
-	if debug, ok := o.Material.(*PosFuncMat); ok {
-		surfaceDiffuseColor = debug.GetColor(si, nil)
+	surfaceDiffuseColor := si.object.GetColor(si)
+	if si.object.IsLight() {
+		return surfaceDiffuseColor
 	}
 
 	// random new ray
-	randomDirection := pt.randomInHemisphere(si.normal)
+	randomDirection := randomInHemisphere(pt.random, si.normal)
 	newRay := NewRay(si.point, randomDirection)
 	cos := si.normal.Dot(randomDirection)
 	recursiveColor := pt.GetRayColor(newRay, scene, depth+1)
@@ -116,26 +126,21 @@ func (pt *pathTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color {
 	return sampleColor
 }
 
-func (pt *pathTracer) randomInHemisphere(normal Vector) Vector {
+// this is actually slower than the very naive method before..
+func randomInHemisphere(random *rand.Rand, normal Vector) Vector {
 	// uniform hemisphere sampling: pbrt 774
-	// TODO: rotate the sample from ey to normal?
-	/*
-		z := random.Float64()
-		det := 1 - z*z
-		r := 0
-		if det > 0 {
-			r = math.Sqrt(det)
-		}
-		phi := 2 * math.Pi * random.Float64()
-		v := Vector{r * math.Cos(phi), r * math.Sin(phi), z}
-	*/
-
-	// this is slow and dumb..
-	for {
-		randomVector := Vector{pt.random.Float64() - 0.5, pt.random.Float64() - 0.5, pt.random.Float64() - 0.5}.Normalize()
-		if normal.Dot(randomVector) <= 0 {
-			continue
-		}
-		return randomVector
+	// samples from hemisphere with z-axis = up direction
+	z := random.Float64()
+	det := 1 - z*z
+	r := 0.0
+	if det > 0 {
+		r = math.Sqrt(det)
 	}
+	phi := 2 * math.Pi * random.Float64()
+	v := Vector{r * math.Cos(phi), r * math.Sin(phi), z}
+
+	ez := Vector{0, 0, 1}
+	rotationVector := ez.Cross(normal)
+	theta := math.Acos(ez.Dot(normal))
+	return Rotate(theta, rotationVector).Vector(v)
 }

@@ -1,9 +1,14 @@
 package model
 
-import "math"
-
 type Material interface {
-	GetColor(*SurfaceInteraction, Light) Color
+	GetColor(*SurfaceInteraction) Color
+	IsLight() bool
+}
+
+type material struct{}
+
+func (material) IsLight() bool {
+	return false
 }
 
 type SurfaceInteraction struct {
@@ -30,31 +35,37 @@ func NewSurfaceInteraction(o Object, d float64, n Vector, r Ray) *SurfaceInterac
 }
 
 type DiffuseMaterial struct {
+	material
 	Color Color
 }
 
-func (m *DiffuseMaterial) GetColor(si *SurfaceInteraction, l Light) Color {
-	facingRatio := si.normal.Dot(si.incident.Times(-1))
-	lightSegment := l.GetLightSegment(si.point)
-	lightRatio := si.normal.Dot(lightSegment.Normalize())
-	factors := standardAlbedo / math.Pi * l.Intensity(lightSegment.Length()) * facingRatio * lightRatio
-	lightColor := l.Color().Times(factors)
-	return m.Color.Product(lightColor)
+func (m *DiffuseMaterial) GetColor(si *SurfaceInteraction) Color {
+	return m.Color
 }
 
 type RadiantMaterial struct {
+	material
 	Color Color
 }
 
-func (r *RadiantMaterial) GetColor(si *SurfaceInteraction, l Light) Color {
-	return r.Color
+func (r *RadiantMaterial) GetColor(si *SurfaceInteraction) Color {
+	facingRatio := si.normal.Dot(si.incident.Times(-1))
+	if facingRatio <= 0 {
+		return BLACK
+	}
+	return r.Color.Times(facingRatio)
+}
+
+func (*RadiantMaterial) IsLight() bool {
+	return true
 }
 
 type ReflectiveMaterial struct {
+	material
 	Scene *Scene
 }
 
-func (m *ReflectiveMaterial) GetColor(si *SurfaceInteraction, l Light) Color {
+func (m *ReflectiveMaterial) GetColor(si *SurfaceInteraction) Color {
 	i := si.incident
 	n := si.object.SurfaceNormal(si.point)
 	reflection := i.Sub(n.Times(2 * i.Dot(n)))
@@ -64,26 +75,28 @@ func (m *ReflectiveMaterial) GetColor(si *SurfaceInteraction, l Light) Color {
 }
 
 type NormalMappingMaterial struct {
+	material
 	WrappedMaterial Material
 	NormalFunc      func(*SurfaceInteraction) Vector
 }
 
-func (m *NormalMappingMaterial) GetColor(si *SurfaceInteraction, l Light) Color {
+func (m *NormalMappingMaterial) GetColor(si *SurfaceInteraction) Color {
 	si.normal = m.NormalFunc(si)
-	return m.WrappedMaterial.GetColor(si, l)
+	return m.WrappedMaterial.GetColor(si)
 }
 
 // temporary material to play around with
 type PosFuncMat struct {
-	Func func(*SurfaceInteraction, Light) Color
+	material
+	Func func(*SurfaceInteraction) Color
 }
 
-func (m *PosFuncMat) GetColor(si *SurfaceInteraction, l Light) Color {
-	return m.Func(si, l)
+func (m *PosFuncMat) GetColor(si *SurfaceInteraction) Color {
+	return m.Func(si)
 }
 
 var DebugNormalMaterial = &PosFuncMat{
-	Func: func(si *SurfaceInteraction, _ Light) Color {
+	Func: func(si *SurfaceInteraction) Color {
 		n := si.normal.Times(0.5).Add(Vector{0.5, 0.5, 0.5})
 		return Color{n.X, n.Y, n.Z}
 	},

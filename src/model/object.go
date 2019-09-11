@@ -14,7 +14,9 @@ package model
 type Object interface {
 	Intersect(ray Ray) (distance float64, hit bool)
 	SurfaceNormal(point Vector) Vector
-	GetColor(si *SurfaceInteraction, l Light) Color
+	GetColor(si *SurfaceInteraction) Color
+	GetMaterial() Material
+	IsLight() bool
 	Bound(Transform) AABB
 }
 
@@ -23,8 +25,16 @@ type object struct {
 }
 
 // to be replaced by more interesting materials info
-func (o object) GetColor(si *SurfaceInteraction, l Light) Color {
-	return o.Material.GetColor(si, l)
+func (o object) GetColor(si *SurfaceInteraction) Color {
+	return o.Material.GetColor(si)
+}
+
+func (o object) GetMaterial() Material {
+	return o.Material
+}
+
+func (o object) IsLight() bool {
+	return o.Material.IsLight()
 }
 
 func GetSurfaceInteraction(object Object, ray Ray, distance float64) *SurfaceInteraction {
@@ -85,9 +95,19 @@ func (co *ComplexObject) SurfaceNormal(point Vector) Vector {
 	return Vector{}
 }
 
-func (co *ComplexObject) GetColor(*SurfaceInteraction, Light) Color {
+func (co *ComplexObject) GetColor(*SurfaceInteraction) Color {
 	panic("Dont call this function!")
 	return Color{}
+}
+
+func (co *ComplexObject) GetMaterial() Material {
+	panic("Dont call this function!")
+	return nil
+}
+
+func (co *ComplexObject) IsLight() bool {
+	panic("Dont call this function!")
+	return false
 }
 
 // TODO: a prime candidate for caching
@@ -134,9 +154,19 @@ func (so *SharedObject) SurfaceNormal(Vector) Vector {
 	return Vector{}
 }
 
-func (so *SharedObject) GetColor(*SurfaceInteraction, Light) Color {
+func (so *SharedObject) GetColor(*SurfaceInteraction) Color {
 	panic("Dont call this function!")
 	return Color{}
+}
+
+func (so *SharedObject) GetMaterial() Material {
+	panic("Dont call this function!")
+	return nil
+}
+
+func (so *SharedObject) IsLight() bool {
+	panic("Dont call this function!")
+	return false
 }
 
 func (so *SharedObject) Bound(t Transform) AABB {

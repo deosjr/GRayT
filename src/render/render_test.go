@@ -13,7 +13,7 @@ func sampleScene(b *testing.B) *model.Scene {
 	l1 := model.NewPointLight(model.Vector{-2, 2, 0}, model.NewColor(255, 255, 255), 300)
 	l2 := model.NewPointLight(model.Vector{-0.1, 1, 0.1}, model.NewColor(255, 255, 255), 400)
 	scene.AddLights(l1, l2)
-	scene.Add(model.NewSphere(model.Vector{3, 1, 5}, 0.5, &model.DiffuseMaterial{model.NewColor(255, 100, 0)}))
+	scene.Add(model.NewSphere(model.Vector{3, 1, 5}, 0.5, &model.DiffuseMaterial{Color: model.NewColor(255, 100, 0)}))
 
 	scene.Precompute()
 
