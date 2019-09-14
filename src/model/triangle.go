@@ -66,7 +66,16 @@ func (t TriangleInMesh) Bound(transform Transform) AABB {
 	p0, p1, p2 := t.points()
 	return triangleBound(p0, p1, p2, transform)
 }
-func (t TriangleInMesh) Intersect(r Ray) (float64, bool) {
+func (t TriangleInMesh) Intersect(r Ray) (*SurfaceInteraction, bool) {
+	p0, p1, p2 := t.points()
+	d, ok := triangleIntersect(p0, p1, p2, r)
+	if !ok {
+		return nil, false
+	}
+	n := triangleSurfaceNormal(p0, p1, p2)
+	return NewSurfaceInteraction(t, d, n, r), true
+}
+func (t TriangleInMesh) IntersectOptimized(r Ray) (float64, bool) {
 	p0, p1, p2 := t.points()
 	d, ok := triangleIntersect(p0, p1, p2, r)
 	if !ok {
@@ -124,7 +133,15 @@ func NewTriangle(p0, p1, p2 Vector, m Material) Triangle {
 func (t Triangle) Bound(transform Transform) AABB {
 	return triangleBound(t.P0, t.P1, t.P2, transform)
 }
-func (t Triangle) Intersect(r Ray) (float64, bool) {
+func (t Triangle) Intersect(r Ray) (*SurfaceInteraction, bool) {
+	d, ok := triangleIntersect(t.P0, t.P1, t.P2, r)
+	if !ok {
+		return nil, false
+	}
+	n := triangleSurfaceNormal(t.P0, t.P1, t.P2)
+	return NewSurfaceInteraction(t, d, n, r), true
+}
+func (t Triangle) IntersectOptimized(r Ray) (float64, bool) {
 	d, ok := triangleIntersect(t.P0, t.P1, t.P2, r)
 	if !ok {
 		return 0, false

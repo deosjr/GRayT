@@ -33,17 +33,18 @@ func (p Plane) Bound(Transform) AABB {
 	)
 }
 
-func (p Plane) Intersect(r Ray) (float64, bool) {
+func (p Plane) Intersect(r Ray) (*SurfaceInteraction, bool) {
 	ln := r.Direction.Dot(p.Normal)
 	if ln == 0 {
 		// line and plane parallel
-		return 0, false
+		return nil, false
 	}
 	d := VectorFromTo(r.Origin, p.Point).Dot(p.Normal) / ln
 	if d <= 0 {
-		return 0, false
+		return nil, false
 	}
-	return d, true
+	n := p.Normal
+	return NewSurfaceInteraction(p, d, n, r), true
 }
 
 func (p Plane) SurfaceNormal(Vector) Vector {

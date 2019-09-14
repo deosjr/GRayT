@@ -6,6 +6,10 @@ type BVH struct {
 	nodes   []optimisedBVHNode
 }
 
+func (bvh *BVH) GetObjects() []Object {
+	return bvh.objects
+}
+
 // A split function reorders the objects in the objects list
 // between [start, end) and returns a split index called mid
 // additional parameters are the axis dimension to split on
@@ -208,7 +212,7 @@ func flattenBVHTree(node bvhNode, nodes []optimisedBVHNode, offset *int) int {
 func (bvh *BVH) ClosestIntersection(ray Ray, maxDistance float64) (*SurfaceInteraction, bool) {
 	var toVisitOffset, currentNodeIndex int
 	var found bool
-	var object Object
+	var surfaceInteraction *SurfaceInteraction
 	distance := maxDistance
 	nodesToVisit := make([]int, 64)
 	for {
@@ -218,10 +222,10 @@ func (bvh *BVH) ClosestIntersection(ray Ray, maxDistance float64) (*SurfaceInter
 				// this is a leaf node
 				for i := 0; i < node.numObjects; i++ {
 					o := bvh.objects[node.offset+i]
-					if d, ok := o.Intersect(ray); ok && d < distance && d > ERROR_MARGIN {
-						distance = d
+					if si, ok := o.Intersect(ray); ok && si.distance < distance && si.distance > ERROR_MARGIN {
+						distance = si.distance
 						found = true
-						object = o
+						surfaceInteraction = si
 					}
 				}
 				if toVisitOffset == 0 {
@@ -248,6 +252,95 @@ func (bvh *BVH) ClosestIntersection(ray Ray, maxDistance float64) (*SurfaceInter
 	if !found {
 		return nil, false
 	}
-	si := GetSurfaceInteraction(object, ray, distance)
-	return si, true
+	return surfaceInteraction, true
+}
+
+// Bounded Volume Hierarchy for triangles only!
+// 4-ary tree
+type TriangleBVH struct {
+	triangles []Triangle
+	nodes     []optimisedBVHNode
+}
+
+func (bvh *TriangleBVH) GetObjects() []Object {
+	objects := make([]Object, len(bvh.triangles))
+	for i, t := range bvh.triangles {
+		objects[i] = t
+	}
+	return objects
+}
+
+func NewTriangleBVH(triangles []Triangle, splitFunc splitFunc) *TriangleBVH {
+	objectInfos := make([]objectInfo, len(triangles))
+	for i, o := range triangles {
+		aabb := o.Bound(identity)
+		objectInfos[i] = objectInfo{
+			index:    i,
+			bounds:   aabb,
+			centroid: aabb.Centroid(),
+		}
+	}
+	triangleOrder := make([]int, len(triangles))
+	total, numTriangles := 0, 0
+	root := recursiveBuildBVH(objectInfos, 0, len(objectInfos), &numTriangles, &total, triangleOrder, splitFunc, maxDepth)
+	orderedTriangles := make([]Triangle, len(triangles))
+	for i, p := range triangleOrder {
+		orderedTriangles[i] = triangles[p]
+	}
+
+	nodes := make([]optimisedBVHNode, total)
+	offset := 0
+	flattenBVHTree(root, nodes, &offset)
+
+	return &TriangleBVH{
+		triangles: orderedTriangles,
+		nodes:     nodes,
+	}
+}
+
+func (bvh *TriangleBVH) ClosestIntersection(ray Ray, maxDistance float64) (*SurfaceInteraction, bool) {
+	var toVisitOffset, currentNodeIndex int
+	var found bool
+	var triangle Triangle
+	distance := maxDistance
+	nodesToVisit := make([]int, 64)
+	for {
+		node := bvh.nodes[currentNodeIndex]
+		if tMin, hit := node.bounds.Intersect(ray); hit && tMin < maxDistance {
+			if node.numObjects > 0 {
+				// this is a leaf node
+				for i := 0; i < node.numObjects; i++ {
+					t := bvh.triangles[node.offset+i]
+					if d, ok := t.IntersectOptimized(ray); ok && d < distance && d > ERROR_MARGIN {
+						distance = d
+						found = true
+						triangle = t
+					}
+				}
+				if toVisitOffset == 0 {
+					break
+				}
+				toVisitOffset--
+				currentNodeIndex = nodesToVisit[toVisitOffset]
+			} else {
+				// this is an interior node
+				// TODO: optimisation regarding direction of ray and child visit order
+				nodesToVisit[toVisitOffset] = currentNodeIndex + 1
+				toVisitOffset++
+				currentNodeIndex = node.offset
+
+			}
+		} else {
+			if toVisitOffset == 0 {
+				break
+			}
+			toVisitOffset--
+			currentNodeIndex = nodesToVisit[toVisitOffset]
+		}
+	}
+	if !found {
+		return nil, false
+	}
+	normal := triangle.SurfaceNormal(PointFromRay(ray, distance))
+	return NewSurfaceInteraction(triangle, distance, normal, ray), true
 }

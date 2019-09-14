@@ -54,7 +54,7 @@ func TestSphereIntersect(t *testing.T) {
 			t.Errorf("%d) incorrect bool value; want %v", i, tt.wantTruth)
 			continue
 		}
-		if got != tt.want {
+		if got.distance != tt.want {
 			t.Errorf("%d) got %v want %v", i, got, tt.want)
 		}
 	}

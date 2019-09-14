@@ -8,6 +8,7 @@ package model
 var ERROR_MARGIN = 1E-10
 
 type AccelerationStructure interface {
+	GetObjects() []Object
 	ClosestIntersection(ray Ray, maxDistance float64) (*SurfaceInteraction, bool)
 }
 
@@ -19,21 +20,24 @@ func NewNaiveAcceleration(objects []Object) *NaiveAcceleration {
 	return &NaiveAcceleration{objects: objects}
 }
 
+func (na NaiveAcceleration) GetObjects() []Object {
+	return na.objects
+}
+
 // Try and hit ALL objects EVERY time
 func (na *NaiveAcceleration) ClosestIntersection(ray Ray, maxDistance float64) (*SurfaceInteraction, bool) {
 	var found bool
-	var object Object
+	var surfaceInteraction *SurfaceInteraction
 	distance := maxDistance
 	for _, o := range na.objects {
-		if d, ok := o.Intersect(ray); ok && d < distance && d > ERROR_MARGIN {
-			distance = d
-			object = o
+		if si, ok := o.Intersect(ray); ok && si.distance < distance && si.distance > ERROR_MARGIN {
+			distance = si.distance
+			surfaceInteraction = si
 			found = true
 		}
 	}
 	if !found {
 		return nil, false
 	}
-	si := GetSurfaceInteraction(object, ray, distance)
-	return si, true
+	return surfaceInteraction, true
 }

@@ -12,7 +12,7 @@ package model
 // transformations from object space to world space (?)
 
 type Object interface {
-	Intersect(ray Ray) (distance float64, hit bool)
+	Intersect(ray Ray) (si *SurfaceInteraction, hit bool)
 	SurfaceNormal(point Vector) Vector
 	GetColor(si *SurfaceInteraction) Color
 	GetMaterial() Material
@@ -37,28 +37,6 @@ func (o object) IsLight() bool {
 	return o.Material.IsLight()
 }
 
-func GetSurfaceInteraction(object Object, ray Ray, distance float64) *SurfaceInteraction {
-	switch o := object.(type) {
-	case *ComplexObject:
-		// TODO: ewwwww... this hack means double checking intersection every time
-		si, ok := o.bvh.ClosestIntersection(ray, MAX_RAY_DISTANCE)
-		if !ok {
-			panic("expected hit to be deterministic")
-		}
-		return GetSurfaceInteraction(si.object, ray, distance)
-	case *SharedObject:
-		// again take the ray to object space
-		r := o.WorldToObject.Ray(ray)
-		si := GetSurfaceInteraction(o.Object, r, distance)
-		// transform surface interaction info back to world space
-		normal := o.ObjectToWorld.Normal(si.normal)
-		return NewSurfaceInteraction(si.object, distance, normal, ray)
-	default:
-		normal := o.SurfaceNormal(PointFromRay(ray, distance))
-		return NewSurfaceInteraction(o, distance, normal, ray)
-	}
-}
-
 func ObjectsBound(objects []Object, t Transform) AABB {
 	bound := objects[0].Bound(t)
 	for i := 1; i < len(objects); i++ {
@@ -72,9 +50,8 @@ func ObjectsBound(objects []Object, t Transform) AABB {
 // SurfaceNormal and GetColor are part of later material functions
 // these should always be called on the simple object that is hit,
 // never on the aggregate object containing those (it doesnt have its own)
-// TODO: separate BVH for ComplexObjects (toplevel BVH) and primitives
 type ComplexObject struct {
-	bvh *BVH
+	as AccelerationStructure
 }
 
 func NewComplexObject(objects []Object) Object {
@@ -82,16 +59,21 @@ func NewComplexObject(objects []Object) Object {
 		panic("invalid object, cant be empty")
 	}
 	return &ComplexObject{
-		bvh: NewBVH(objects, SplitMiddle),
+		as: NewBVH(objects, SplitMiddle),
 	}
 }
 
-func (co *ComplexObject) Intersect(ray Ray) (float64, bool) {
-	si, ok := co.bvh.ClosestIntersection(ray, MAX_RAY_DISTANCE)
-	if !ok {
-		return 0, false
+func NewTriangleComplexObject(triangles []Triangle) Object {
+	if len(triangles) == 0 {
+		panic("invalid triangles, cant be empty")
 	}
-	return si.distance, true
+	return &ComplexObject{
+		as: NewTriangleBVH(triangles, SplitMiddle),
+	}
+}
+
+func (co *ComplexObject) Intersect(ray Ray) (*SurfaceInteraction, bool) {
+	return co.as.ClosestIntersection(ray, MAX_RAY_DISTANCE)
 }
 
 func (co *ComplexObject) SurfaceNormal(point Vector) Vector {
@@ -116,11 +98,11 @@ func (co *ComplexObject) IsLight() bool {
 
 // TODO: a prime candidate for caching
 func (co *ComplexObject) Bound(t Transform) AABB {
-	return ObjectsBound(co.bvh.objects, t)
+	return ObjectsBound(co.as.GetObjects(), t)
 }
 
 func (co *ComplexObject) Objects() []Object {
-	return co.bvh.objects
+	return co.as.GetObjects()
 }
 
 // a shared object stores a pointer to an object (type)
@@ -147,10 +129,18 @@ func NewSharedObject(o Object, originToPosition Transform) Object {
 	}
 }
 
-func (so *SharedObject) Intersect(ray Ray) (float64, bool) {
+func (so *SharedObject) Intersect(ray Ray) (*SurfaceInteraction, bool) {
 	// transform ray to object space
 	r := so.WorldToObject.Ray(ray)
-	return so.Object.Intersect(r)
+	si, ok := so.Object.Intersect(r)
+	if !ok {
+		return nil, false
+	}
+	// transform surface interaction info back to world space
+	si.normal = so.ObjectToWorld.Normal(si.normal)
+	si.Point = PointFromRay(ray, si.distance)
+	si.incident = ray.Direction
+	return si, true
 }
 
 func (so *SharedObject) SurfaceNormal(Vector) Vector {

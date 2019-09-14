@@ -97,8 +97,8 @@ func TestObjectIntersect(t *testing.T) {
 			t.Errorf("%d) incorrect bool value; want %v", i, tt.wantTruth)
 			continue
 		}
-		if got != tt.want {
-			t.Errorf("%d) got %f want %f", i, got, tt.want)
+		if got.distance != tt.want {
+			t.Errorf("%d) got %f want %f", i, got.distance, tt.want)
 		}
 	}
 }
@@ -215,7 +215,7 @@ func TestObjectSurfaceNormal(t *testing.T) {
 			want: Vector{0, 0, 1},
 		},
 	} {
-		si := GetSurfaceInteraction(tt.o, tt.r, tt.d)
+		si, _ := tt.o.Intersect(tt.r)
 		got := si.normal
 		if got != tt.want {
 			t.Errorf("%d) got %v want %v", i, got, tt.want)

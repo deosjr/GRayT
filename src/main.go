@@ -42,8 +42,8 @@ func main() {
 	fmt.Println("Rendering...")
 
 	// aw := render.NewAVI("out.avi", width, height)
-	//film := render.RenderWithPathTracer(scene, numWorkers, numSamples)
-	film := render.RenderNaive(scene, numWorkers)
+	film := render.RenderWithPathTracer(scene, numWorkers, numSamples)
+	//	film := render.RenderNaive(scene, numWorkers)
 	film.SaveAsPNG("out.png")
 
 	if *memprofile != "" {

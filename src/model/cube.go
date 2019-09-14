@@ -153,14 +153,14 @@ func (c Cuboid) Tesselate() Object {
 	p7 := Vector{pmax.X, pmin.Y, pmax.Z}
 	p8 := Vector{pmin.X, pmin.Y, pmax.Z}
 
-	triangles := make([]Object, 12)
+	triangles := make([]Triangle, 12)
 	triangles[0], triangles[1] = QuadrilateralToTriangles(p1, p2, p3, p4, c.material)
 	triangles[2], triangles[3] = QuadrilateralToTriangles(p2, p1, p5, p6, c.material)
 	triangles[4], triangles[5] = QuadrilateralToTriangles(p3, p2, p6, p7, c.material)
 	triangles[6], triangles[7] = QuadrilateralToTriangles(p4, p3, p7, p8, c.material)
 	triangles[8], triangles[9] = QuadrilateralToTriangles(p1, p4, p8, p5, c.material)
 	triangles[10], triangles[11] = QuadrilateralToTriangles(p6, p5, p8, p7, c.material)
-	return NewComplexObject(triangles)
+	return NewTriangleComplexObject(triangles)
 }
 
 func (c Cuboid) TesselateInsideOut() Object {
@@ -177,14 +177,14 @@ func (c Cuboid) TesselateInsideOut() Object {
 	p7 := Vector{pmax.X, pmin.Y, pmax.Z}
 	p8 := Vector{pmin.X, pmin.Y, pmax.Z}
 
-	triangles := make([]Object, 12)
+	triangles := make([]Triangle, 12)
 	triangles[0], triangles[1] = QuadrilateralToTriangles(p4, p3, p2, p1, c.material)
 	triangles[2], triangles[3] = QuadrilateralToTriangles(p6, p5, p1, p2, c.material)
 	triangles[4], triangles[5] = QuadrilateralToTriangles(p7, p6, p2, p3, c.material)
 	triangles[6], triangles[7] = QuadrilateralToTriangles(p8, p7, p3, p4, c.material)
 	triangles[8], triangles[9] = QuadrilateralToTriangles(p5, p8, p4, p1, c.material)
 	triangles[10], triangles[11] = QuadrilateralToTriangles(p7, p8, p5, p6, c.material)
-	return NewComplexObject(triangles)
+	return NewTriangleComplexObject(triangles)
 }
 
 //   P1           P2
