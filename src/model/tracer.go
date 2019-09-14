@@ -42,7 +42,7 @@ func (wrt whittedRayTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color 
 	color := NewColor(0, 0, 0)
 	material := si.object.GetMaterial()
 	for _, light := range scene.Lights {
-		if pointInShadow(light, si.point, si.as) {
+		if pointInShadow(light, si.Point, si.as) {
 			continue
 		}
 		facingRatio := si.normal.Dot(si.incident.Times(-1))
@@ -55,23 +55,21 @@ func (wrt whittedRayTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color 
 		case *RadiantMaterial:
 			objectColor = mat.Color
 		case *DiffuseMaterial:
-			lightSegment := light.GetLightSegment(si.point)
+			lightSegment := light.GetLightSegment(si.Point)
 			lightRatio := si.normal.Dot(lightSegment.Normalize())
 			factors := standardAlbedo / math.Pi * light.Intensity(lightSegment.Length()) * lightRatio
 			lightColor := light.Color().Times(factors)
 			objectColor = mat.Color.Product(lightColor)
 		case *ReflectiveMaterial:
 			i := si.incident
-			n := si.object.SurfaceNormal(si.point)
+			n := si.object.SurfaceNormal(si.Point)
 			reflection := i.Sub(n.Times(2 * i.Dot(n)))
-			newRay := NewRay(si.point, reflection)
+			newRay := NewRay(si.Point, reflection)
 			// TODO: retain maxdistance for tracing
 			objectColor = wrt.GetRayColor(newRay, scene, depth+1) //.Times(1 - standardAlbedo) // simulates nonperfect reflection
 		case *PosFuncMat:
 			objectColor = mat.GetColor(si)
 		}
-
-		//objectColor := si.object.GetColor(si, light)
 		color = color.Add(objectColor.Times(facingRatio))
 	}
 	return color
@@ -110,14 +108,14 @@ func (pt *pathTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color {
 	si.depth = depth
 	si.tracer = pt
 
-	surfaceDiffuseColor := si.object.GetColor(si)
 	if si.object.IsLight() {
-		return surfaceDiffuseColor
+		return si.object.GetMaterial().(*RadiantMaterial).Color
 	}
+	surfaceDiffuseColor := si.object.GetColor(si)
 
 	// random new ray
 	randomDirection := randomInHemisphere(pt.random, si.normal)
-	newRay := NewRay(si.point, randomDirection)
+	newRay := NewRay(si.Point, randomDirection)
 	cos := si.normal.Dot(randomDirection)
 	recursiveColor := pt.GetRayColor(newRay, scene, depth+1)
 	brdf := surfaceDiffuseColor.Times(1.0 / math.Pi)

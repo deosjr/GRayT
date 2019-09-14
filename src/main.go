@@ -15,7 +15,7 @@ var (
 	width      uint = 1200
 	height     uint = 1200
 	numWorkers      = 10
-	numSamples      = 1000
+	numSamples      = 100
 
 	ex = m.Vector{1, 0, 0}
 	ey = m.Vector{0, 1, 0}
@@ -42,8 +42,8 @@ func main() {
 	fmt.Println("Rendering...")
 
 	// aw := render.NewAVI("out.avi", width, height)
-	film := render.RenderWithPathTracer(scene, numWorkers, numSamples)
-	//film := render.RenderNaive(scene, numWorkers)
+	//film := render.RenderWithPathTracer(scene, numWorkers, numSamples)
+	film := render.RenderNaive(scene, numWorkers)
 	film.SaveAsPNG("out.png")
 
 	if *memprofile != "" {

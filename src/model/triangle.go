@@ -53,7 +53,7 @@ func triangleIntersect(p0, p1, p2 Vector, ray Ray) (float64, bool) {
 }
 
 func triangleSurfaceNormal(p0, p1, p2 Vector) Vector {
-	return VectorFromTo(p0, p2).Cross(VectorFromTo(p0, p1)).Normalize().Times(1)
+	return VectorFromTo(p0, p2).Cross(VectorFromTo(p0, p1)).Normalize() //.Times(-1)
 }
 
 func (t TriangleInMesh) points() (p0, p1, p2 Vector) {

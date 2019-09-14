@@ -14,7 +14,7 @@ func (material) IsLight() bool {
 type SurfaceInteraction struct {
 	distance float64
 	ray      Ray
-	point    Vector
+	Point    Vector
 	normal   Vector
 	object   Object
 	as       AccelerationStructure
@@ -29,7 +29,7 @@ func NewSurfaceInteraction(o Object, d float64, n Vector, r Ray) *SurfaceInterac
 		distance: d,
 		normal:   n,
 		ray:      r,
-		point:    PointFromRay(r, d),
+		Point:    PointFromRay(r, d),
 		incident: r.Direction,
 	}
 }
@@ -67,9 +67,9 @@ type ReflectiveMaterial struct {
 
 func (m *ReflectiveMaterial) GetColor(si *SurfaceInteraction) Color {
 	i := si.incident
-	n := si.object.SurfaceNormal(si.point)
+	n := si.object.SurfaceNormal(si.Point)
 	reflection := i.Sub(n.Times(2 * i.Dot(n)))
-	ray := NewRay(si.point, reflection)
+	ray := NewRay(si.Point, reflection)
 	// TODO: retain maxdistance for tracing
 	return si.tracer.GetRayColor(ray, m.Scene, si.depth+1) //.Times(1 - standardAlbedo) // simulates nonperfect reflection
 }

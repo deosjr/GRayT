@@ -209,6 +209,7 @@ func (bvh *BVH) ClosestIntersection(ray Ray, maxDistance float64) (*SurfaceInter
 	var toVisitOffset, currentNodeIndex int
 	var found bool
 	var object Object
+	distance := maxDistance
 	nodesToVisit := make([]int, 64)
 	for {
 		node := bvh.nodes[currentNodeIndex]
@@ -217,8 +218,8 @@ func (bvh *BVH) ClosestIntersection(ray Ray, maxDistance float64) (*SurfaceInter
 				// this is a leaf node
 				for i := 0; i < node.numObjects; i++ {
 					o := bvh.objects[node.offset+i]
-					if d, ok := o.Intersect(ray); ok && d < maxDistance && d > ERROR_MARGIN {
-						maxDistance = d
+					if d, ok := o.Intersect(ray); ok && d < distance && d > ERROR_MARGIN {
+						distance = d
 						found = true
 						object = o
 					}
@@ -247,6 +248,6 @@ func (bvh *BVH) ClosestIntersection(ray Ray, maxDistance float64) (*SurfaceInter
 	if !found {
 		return nil, false
 	}
-	si := GetSurfaceInteraction(object, ray, maxDistance)
+	si := GetSurfaceInteraction(object, ray, distance)
 	return si, true
 }

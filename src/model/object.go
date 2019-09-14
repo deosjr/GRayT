@@ -41,18 +41,18 @@ func GetSurfaceInteraction(object Object, ray Ray, distance float64) *SurfaceInt
 	switch o := object.(type) {
 	case *ComplexObject:
 		// TODO: ewwwww... this hack means double checking intersection every time
-		si, _ := o.bvh.ClosestIntersection(ray, MAX_RAY_DISTANCE)
-		obj := si.object
-
-		p := PointFromRay(ray, distance)
-		n := obj.SurfaceNormal(p)
-		return NewSurfaceInteraction(obj, distance, n, ray)
+		si, ok := o.bvh.ClosestIntersection(ray, MAX_RAY_DISTANCE)
+		if !ok {
+			panic("expected hit to be deterministic")
+		}
+		return GetSurfaceInteraction(si.object, ray, distance)
 	case *SharedObject:
-		// transform hit info back to world space
-		r := o.ObjectToWorldInverse.Ray(ray)
-		point := PointFromRay(r, distance)
-		normal := o.ObjectToWorld.Normal(o.Object.SurfaceNormal(point))
-		return NewSurfaceInteraction(o.Object, distance, normal, ray)
+		// again take the ray to object space
+		r := o.WorldToObject.Ray(ray)
+		si := GetSurfaceInteraction(o.Object, r, distance)
+		// transform surface interaction info back to world space
+		normal := o.ObjectToWorld.Normal(si.normal)
+		return NewSurfaceInteraction(si.object, distance, normal, ray)
 	default:
 		normal := o.SurfaceNormal(PointFromRay(ray, distance))
 		return NewSurfaceInteraction(o, distance, normal, ray)
@@ -72,6 +72,7 @@ func ObjectsBound(objects []Object, t Transform) AABB {
 // SurfaceNormal and GetColor are part of later material functions
 // these should always be called on the simple object that is hit,
 // never on the aggregate object containing those (it doesnt have its own)
+// TODO: separate BVH for ComplexObjects (toplevel BVH) and primitives
 type ComplexObject struct {
 	bvh *BVH
 }
@@ -87,7 +88,10 @@ func NewComplexObject(objects []Object) Object {
 
 func (co *ComplexObject) Intersect(ray Ray) (float64, bool) {
 	si, ok := co.bvh.ClosestIntersection(ray, MAX_RAY_DISTANCE)
-	return si.distance, ok
+	if !ok {
+		return 0, false
+	}
+	return si.distance, true
 }
 
 func (co *ComplexObject) SurfaceNormal(point Vector) Vector {
@@ -126,9 +130,9 @@ func (co *ComplexObject) Objects() []Object {
 // never on the aggregate object containing those (it doesnt have its own)
 // TODO: multiple instances can share geometry but differ in material? optionally?
 type SharedObject struct {
-	Object               Object
-	ObjectToWorld        Transform
-	ObjectToWorldInverse Transform
+	Object        Object
+	ObjectToWorld Transform
+	WorldToObject Transform
 }
 
 // o is the object being shared, originToPosition is the transform in
@@ -137,15 +141,15 @@ type SharedObject struct {
 func NewSharedObject(o Object, originToPosition Transform) Object {
 	// TODO: investigate: doubly shared objects?
 	return &SharedObject{
-		Object:               o,
-		ObjectToWorld:        originToPosition,
-		ObjectToWorldInverse: originToPosition.Inverse(),
+		Object:        o,
+		ObjectToWorld: originToPosition,
+		WorldToObject: originToPosition.Inverse(),
 	}
 }
 
 func (so *SharedObject) Intersect(ray Ray) (float64, bool) {
 	// transform ray to object space
-	r := so.ObjectToWorldInverse.Ray(ray)
+	r := so.WorldToObject.Ray(ray)
 	return so.Object.Intersect(r)
 }
 

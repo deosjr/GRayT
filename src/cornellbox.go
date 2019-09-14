@@ -64,8 +64,7 @@ func CornellBox() *m.Scene {
 		green)
 	scene.Add(rightwall.Tesselate())
 
-	leftwall := m.NewQuadrilateral(
-		m.Vector{556.0, 548.8, 559.2},
+	leftwall := m.NewQuadrilateral(m.Vector{556.0, 548.8, 559.2},
 		m.Vector{549.6, 0.0, 559.2},
 		m.Vector{552.8, 0.0, 0.0},
 		m.Vector{556.0, 548.8, 0.0},

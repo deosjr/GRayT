@@ -58,7 +58,7 @@ func (b AABB) Intersect(ray Ray) (tMin float64, hit bool) {
 	t0, t1 := 0.0, math.MaxFloat64
 	invRayDir := 1 / ray.Direction.X
 	tNear := (b.Pmin.X - ray.Origin.X) * invRayDir
-	tFar := (b.Pmax.X - ray.Origin.Y) * invRayDir
+	tFar := (b.Pmax.X - ray.Origin.X) * invRayDir
 	if tNear > tFar {
 		tNear, tFar = tFar, tNear
 	}
@@ -160,6 +160,30 @@ func (c Cuboid) Tesselate() Object {
 	triangles[6], triangles[7] = QuadrilateralToTriangles(p4, p3, p7, p8, c.material)
 	triangles[8], triangles[9] = QuadrilateralToTriangles(p1, p4, p8, p5, c.material)
 	triangles[10], triangles[11] = QuadrilateralToTriangles(p6, p5, p8, p7, c.material)
+	return NewComplexObject(triangles)
+}
+
+func (c Cuboid) TesselateInsideOut() Object {
+	pmin := c.cuboid.Pmin
+	pmax := c.cuboid.Pmax
+
+	p1 := Vector{pmin.X, pmax.Y, pmin.Z}
+	p2 := Vector{pmax.X, pmax.Y, pmin.Z}
+	p3 := Vector{pmax.X, pmax.Y, pmax.Z}
+	p4 := Vector{pmin.X, pmax.Y, pmax.Z}
+
+	p5 := Vector{pmin.X, pmin.Y, pmin.Z}
+	p6 := Vector{pmax.X, pmin.Y, pmin.Z}
+	p7 := Vector{pmax.X, pmin.Y, pmax.Z}
+	p8 := Vector{pmin.X, pmin.Y, pmax.Z}
+
+	triangles := make([]Object, 12)
+	triangles[0], triangles[1] = QuadrilateralToTriangles(p4, p3, p2, p1, c.material)
+	triangles[2], triangles[3] = QuadrilateralToTriangles(p6, p5, p1, p2, c.material)
+	triangles[4], triangles[5] = QuadrilateralToTriangles(p7, p6, p2, p3, c.material)
+	triangles[6], triangles[7] = QuadrilateralToTriangles(p8, p7, p3, p4, c.material)
+	triangles[8], triangles[9] = QuadrilateralToTriangles(p5, p8, p4, p1, c.material)
+	triangles[10], triangles[11] = QuadrilateralToTriangles(p7, p8, p5, p6, c.material)
 	return NewComplexObject(triangles)
 }
 
