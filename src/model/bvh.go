@@ -256,7 +256,7 @@ func (bvh *BVH) ClosestIntersection(ray Ray, maxDistance float64) (*SurfaceInter
 }
 
 // Bounded Volume Hierarchy for triangles only!
-// 4-ary tree
+// TODO: mBVH: 4-ary tree
 type TriangleBVH struct {
 	triangles []Triangle
 	nodes     []optimisedBVHNode

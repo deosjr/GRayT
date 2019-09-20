@@ -8,7 +8,7 @@ import (
 // Triangle normals have been changed to reflect this
 
 type Camera interface {
-	PixelRay(x, y int) Ray
+	PixelRay(x, y float64) Ray
 	Width() int
 	Height() int
 	LookAt(from, to, up Vector)
@@ -85,8 +85,8 @@ func orthographic(zNear, zFar float64) Transform {
 	return Scale(1, 1, 1.0/(zFar-zNear)).Mul(Translate(Vector{0, 0, -zNear}))
 }
 
-func (c *OrthographicCamera) PixelRay(x, y int) Ray {
-	pCamera := c.rasterToCamera.Point(Vector{float64(x) + 0.5, float64(y) + 0.5, 0})
+func (c *OrthographicCamera) PixelRay(x, y float64) Ray {
+	pCamera := c.rasterToCamera.Point(Vector{x, y, 0})
 	r := NewRay(pCamera, Vector{0, 0, 1})
 	return c.cameraToWorld.Ray(r)
 }
@@ -116,8 +116,8 @@ func perspective(fov, n, f float64) Transform {
 	return Scale(invTanAng, invTanAng, 1).Mul(NewTransform(persp))
 }
 
-func (c *PerspectiveCamera) PixelRay(x, y int) Ray {
-	pCamera := c.rasterToCamera.Point(Vector{float64(x) + 0.5, float64(y) + 0.5, 0})
+func (c *PerspectiveCamera) PixelRay(x, y float64) Ray {
+	pCamera := c.rasterToCamera.Point(Vector{x, y, 0})
 	r := NewRay(Vector{0, 0, 0}, pCamera)
 	return c.cameraToWorld.Ray(r)
 }

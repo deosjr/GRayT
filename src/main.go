@@ -15,7 +15,7 @@ var (
 	width      uint = 1200
 	height     uint = 1200
 	numWorkers      = 10
-	numSamples      = 100
+	numSamples      = 1000
 
 	ex = m.Vector{1, 0, 0}
 	ey = m.Vector{0, 1, 0}

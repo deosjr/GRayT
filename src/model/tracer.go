@@ -10,6 +10,7 @@ const (
 	standardAlbedo   = 0.18
 	MAX_RAY_DISTANCE = 1000000.0
 	MAX_RAY_DEPTH    = 5
+	INVPI            = 1 / math.Pi
 )
 
 var BACKGROUND_COLOR Color
@@ -17,12 +18,24 @@ var BLACK = NewColor(0, 0, 0)
 
 type Tracer interface {
 	GetRayColor(Ray, *Scene, int) Color
+	Random() *rand.Rand
 }
 
-type whittedRayTracer struct{}
+type tracer struct {
+	random *rand.Rand
+}
+
+func (t tracer) Random() *rand.Rand {
+	return t.random
+}
+
+type whittedRayTracer struct {
+	tracer
+}
 
 func NewWhittedRayTracer() Tracer {
-	return whittedRayTracer{}
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	return &whittedRayTracer{tracer{random: r}}
 }
 
 func (wrt whittedRayTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color {
@@ -57,7 +70,7 @@ func (wrt whittedRayTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color 
 		case *DiffuseMaterial:
 			lightSegment := light.GetLightSegment(si.Point)
 			lightRatio := si.normal.Dot(lightSegment.Normalize())
-			factors := standardAlbedo / math.Pi * light.Intensity(lightSegment.Length()) * lightRatio
+			factors := standardAlbedo * INVPI * light.Intensity(lightSegment.Length()) * lightRatio
 			lightColor := light.Color().Times(factors)
 			objectColor = mat.Color.Product(lightColor)
 		case *ReflectiveMaterial:
@@ -86,13 +99,15 @@ func pointInShadow(light Light, point Vector, as AccelerationStructure) bool {
 }
 
 type pathTracer struct {
-	random *rand.Rand
+	tracer
 }
 
 func NewPathTracer() Tracer {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	return &pathTracer{random: r}
+	return &pathTracer{tracer{random: r}}
 }
+
+const pdf = 2.0 * math.Pi
 
 func (pt *pathTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color {
 	if depth == MAX_RAY_DEPTH {
@@ -118,9 +133,11 @@ func (pt *pathTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color {
 	newRay := NewRay(si.Point, randomDirection)
 	cos := si.normal.Dot(randomDirection)
 	recursiveColor := pt.GetRayColor(newRay, scene, depth+1)
-	brdf := surfaceDiffuseColor.Times(1.0 / math.Pi)
-	pdf := 1.0 / (2.0 * math.Pi)
-	sampleColor := recursiveColor.Times(cos / pdf).Product(brdf)
+	brdf := surfaceDiffuseColor.Times(INVPI)
+	//pdf := 1.0 / (2.0 * math.Pi)
+	//TODO: albedo? just multiplying with standardalbedo leads to horrible results
+	// probably because light intensity does not make sense yet
+	sampleColor := recursiveColor.Times(cos * pdf).Product(brdf)
 	return sampleColor
 }
 

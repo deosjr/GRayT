@@ -25,11 +25,23 @@ type answer struct {
 	color model.Color
 }
 
+// TODO: pass as parameter
+const antiAliasing = true
+
 func (w worker) work(tracer model.Tracer) {
+	random := tracer.Random()
 	for q := range w.in {
-		ray := w.scene.Camera.PixelRay(q.x, q.y)
+		x, y := float64(q.x), float64(q.y)
+		xvar, yvar := 0.5, 0.5
+		ray := w.scene.Camera.PixelRay(x+xvar, y+yvar)
 		color := model.NewColor(0, 0, 0)
 		for i := 0; i < w.samples; i++ {
+			// anti-aliasing: first sample is exact middle of pixel
+			// rest is randomly sampled
+			if antiAliasing && i != 0 {
+				xvar, yvar = random.Float64(), random.Float64()
+				ray = w.scene.Camera.PixelRay(x+xvar, y+yvar)
+			}
 			sampleColor := tracer.GetRayColor(ray, w.scene, 0)
 			color = color.Add(sampleColor)
 		}
