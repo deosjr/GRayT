@@ -209,7 +209,7 @@ func flattenBVHTree(node bvhNode, nodes []optimisedBVHNode, offset *int) int {
 }
 
 // Actual traversal of the BVH
-func (bvh *BVH) ClosestIntersection(ray Ray, maxDistance float64) (*SurfaceInteraction, bool) {
+func (bvh *BVH) ClosestIntersection(ray Ray, maxDistance float32) (*SurfaceInteraction, bool) {
 	var toVisitOffset, currentNodeIndex int
 	var found bool
 	var surfaceInteraction *SurfaceInteraction
@@ -298,7 +298,7 @@ func NewTriangleBVH(triangles []Triangle, splitFunc splitFunc) *TriangleBVH {
 	}
 }
 
-func (bvh *TriangleBVH) ClosestIntersection(ray Ray, maxDistance float64) (*SurfaceInteraction, bool) {
+func (bvh *TriangleBVH) ClosestIntersection(ray Ray, maxDistance float32) (*SurfaceInteraction, bool) {
 	var toVisitOffset, currentNodeIndex int
 	var found bool
 	var triangle Triangle

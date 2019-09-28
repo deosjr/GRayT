@@ -66,7 +66,7 @@ func TestSub(t *testing.T) {
 func TestTimes(t *testing.T) {
 	for i, tt := range []struct {
 		u    Vector
-		f    float64
+		f    float32
 		want Vector
 	}{
 		{
@@ -96,7 +96,7 @@ func TestDotProduct(t *testing.T) {
 	for i, tt := range []struct {
 		u    Vector
 		v    Vector
-		want float64
+		want float32
 	}{
 		{
 			u:    Vector{0, 0, 0},
@@ -124,7 +124,7 @@ func TestDotProduct(t *testing.T) {
 func TestLength(t *testing.T) {
 	for i, tt := range []struct {
 		u    Vector
-		want float64
+		want float32
 	}{
 		{
 			u:    Vector{0, 0, 0},
@@ -237,7 +237,7 @@ func TestRay(t *testing.T) {
 // floating point precision
 func compareVectors(u, v Vector) bool {
 	for _, d := range Dimensions {
-		if math.Abs(u.Get(d)-v.Get(d)) > 0.00001 {
+		if math.Abs(float64(u.Get(d)-v.Get(d))) > 0.00001 {
 			return false
 		}
 	}

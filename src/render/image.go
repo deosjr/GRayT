@@ -42,7 +42,7 @@ func (f Film) Add(x, y int, c model.Color) {
 
 func (f Film) DivideBySamples(n int) {
 	for i, c := range f.pixels {
-		f.pixels[i] = c.Times(1.0 / float64(n))
+		f.pixels[i] = c.Times(1.0 / float32(n))
 	}
 }
 

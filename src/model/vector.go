@@ -13,7 +13,7 @@ const (
 var Dimensions = []Dimension{X, Y, Z}
 
 type Vector struct {
-	X, Y, Z float64
+	X, Y, Z float32
 }
 
 func VectorFromTo(u, v Vector) Vector {
@@ -36,7 +36,7 @@ func (u Vector) Sub(v Vector) Vector {
 	}
 }
 
-func (u Vector) Times(f float64) Vector {
+func (u Vector) Times(f float32) Vector {
 	return Vector{
 		X: f * u.X,
 		Y: f * u.Y,
@@ -44,12 +44,12 @@ func (u Vector) Times(f float64) Vector {
 	}
 }
 
-func (u Vector) Dot(v Vector) float64 {
+func (u Vector) Dot(v Vector) float32 {
 	return u.X*v.X + u.Y*v.Y + u.Z*v.Z
 }
 
-func (u Vector) Length() float64 {
-	return math.Sqrt(u.Dot(u))
+func (u Vector) Length() float32 {
+	return float32(math.Sqrt(float64(u.Dot(u))))
 }
 
 func (u Vector) Normalize() Vector {
@@ -69,7 +69,7 @@ func (u Vector) Cross(v Vector) Vector {
 	}
 }
 
-func (u Vector) Get(i Dimension) float64 {
+func (u Vector) Get(i Dimension) float32 {
 	switch i {
 	case X:
 		return u.X
@@ -92,6 +92,6 @@ func NewRay(o, d Vector) Ray {
 	}
 }
 
-func PointFromRay(r Ray, d float64) Vector {
+func PointFromRay(r Ray, d float32) Vector {
 	return r.Origin.Add(r.Direction.Times(d))
 }

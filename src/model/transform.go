@@ -6,7 +6,7 @@ import "math"
 var identity = ScaleUniform(1.0)
 
 // row-major order matrix
-type matrix4x4 [4][4]float64
+type matrix4x4 [4][4]float32
 
 type Transform struct {
 	// store both matrix and its inverse
@@ -97,13 +97,13 @@ func Translate(delta Vector) Transform {
 	}
 }
 
-func ScaleUniform(x float64) Transform {
+func ScaleUniform(x float32) Transform {
 	return Scale(x, x, x)
 }
 
 //TODO: source of divisionByZero NaNs
 // error handling? test!
-func Scale(x, y, z float64) Transform {
+func Scale(x, y, z float32) Transform {
 	if x == 0 || y == 0 || z == 0 {
 		fmt.Println("SCALING BY ZERO")
 	}
@@ -125,8 +125,8 @@ func Scale(x, y, z float64) Transform {
 
 // coordinate system: left-handed
 func RotateX(theta float64) Transform {
-	sinTheta := math.Sin(theta)
-	cosTheta := math.Cos(theta)
+	sinTheta := float32(math.Sin(theta))
+	cosTheta := float32(math.Cos(theta))
 	m := matrix4x4{
 		{1, 0, 0, 0},
 		{0, cosTheta, -sinTheta, 0},
@@ -137,8 +137,8 @@ func RotateX(theta float64) Transform {
 }
 
 func RotateY(theta float64) Transform {
-	sinTheta := math.Sin(theta)
-	cosTheta := math.Cos(theta)
+	sinTheta := float32(math.Sin(theta))
+	cosTheta := float32(math.Cos(theta))
 	m := matrix4x4{
 		{cosTheta, 0, -sinTheta, 0},
 		{0, 1, 0, 0},
@@ -149,8 +149,8 @@ func RotateY(theta float64) Transform {
 }
 
 func RotateZ(theta float64) Transform {
-	sinTheta := math.Sin(theta)
-	cosTheta := math.Cos(theta)
+	sinTheta := float32(math.Sin(theta))
+	cosTheta := float32(math.Cos(theta))
 	m := matrix4x4{
 		{cosTheta, -sinTheta, 0, 0},
 		{sinTheta, cosTheta, 0, 0},
@@ -162,8 +162,8 @@ func RotateZ(theta float64) Transform {
 
 func Rotate(theta float64, axis Vector) Transform {
 	v := axis.Normalize()
-	s := math.Sin(theta)
-	c := math.Cos(theta)
+	s := float32(math.Sin(theta))
+	c := float32(math.Cos(theta))
 	minC := 1 - c
 	m := matrix4x4{
 		{minC*v.X*v.X + c, minC*v.X*v.Y - v.Z*s, minC*v.Z*v.X + v.Y*s, 0},
@@ -196,7 +196,7 @@ func (m matrix4x4) transpose() matrix4x4 {
 	}
 }
 
-func (m matrix4x4) determinant() float64 {
+func (m matrix4x4) determinant() float32 {
 	return (m[0][0]*m[1][1]*m[2][2]*m[3][3] - m[0][0]*m[1][1]*m[2][3]*m[3][2] +
 		m[0][0]*m[1][2]*m[2][3]*m[3][1] - m[0][0]*m[1][2]*m[2][1]*m[3][3] +
 		m[0][0]*m[1][3]*m[2][1]*m[3][2] - m[0][0]*m[1][3]*m[2][2]*m[3][1] -

@@ -99,7 +99,7 @@ func pointInShadowWhitted(light Light, point Vector, as AccelerationStructure) b
 	return false
 }
 
-func pointInShadow(point, segment Vector, maxDistance float64, as AccelerationStructure) bool {
+func pointInShadow(point, segment Vector, maxDistance float32, as AccelerationStructure) bool {
 	shadowRay := NewRay(point, segment)
 	if _, ok := as.ClosestIntersection(shadowRay, maxDistance); ok {
 		return true
@@ -194,7 +194,7 @@ func (pt *pathTracerNEE) GetRayColor(ray Ray, scene *Scene, depth int) Color {
 	dist := l.Length()
 	lightCos := nl.Dot(l.Normalize().Times(-1))
 	if lightFacing > 0 && lightCos > 0 && !pointInShadow(si.Point, l, dist, si.as) {
-		lightPDF := 1.0 / float64(len(scene.Emitters))
+		lightPDF := 1.0 / float32(len(scene.Emitters))
 		solidAngle := (lightCos * light.Area()) / (dist * dist * lightPDF)
 		lightColor := light.GetMaterial().(*RadiantMaterial).Color
 		direct = lightColor.Times(solidAngle).Product(brdf).Times(lightFacing)
@@ -218,15 +218,15 @@ func randomInHemisphere(random *rand.Rand, normal Vector) Vector {
 	// samples from hemisphere with z-axis = up direction
 	z := random.Float64()
 	det := 1 - z*z
-	r := 0.0
+	var r float64 = 0.0
 	if det > 0 {
 		r = math.Sqrt(det)
 	}
 	phi := 2 * math.Pi * random.Float64()
-	v := Vector{r * math.Cos(phi), r * math.Sin(phi), z}
+	v := Vector{float32(r * math.Cos(phi)), float32(r * math.Sin(phi)), float32(z)}
 
 	ez := Vector{0, 0, 1}
 	rotationVector := ez.Cross(normal)
-	theta := math.Acos(ez.Dot(normal))
+	theta := math.Acos(float64(ez.Dot(normal)))
 	return Rotate(theta, rotationVector).Vector(v)
 }

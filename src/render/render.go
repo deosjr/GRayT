@@ -31,21 +31,21 @@ const antiAliasing = true
 func (w worker) work(tracer model.Tracer) {
 	random := tracer.Random()
 	for q := range w.in {
-		x, y := float64(q.x), float64(q.y)
-		xvar, yvar := 0.5, 0.5
+		x, y := float32(q.x), float32(q.y)
+		var xvar, yvar float32 = 0.5, 0.5
 		ray := w.scene.Camera.PixelRay(x+xvar, y+yvar)
 		color := model.NewColor(0, 0, 0)
 		for i := 0; i < w.samples; i++ {
 			// anti-aliasing: first sample is exact middle of pixel
 			// rest is randomly sampled
 			if antiAliasing && i != 0 {
-				xvar, yvar = random.Float64(), random.Float64()
+				xvar, yvar = random.Float32(), random.Float32()
 				ray = w.scene.Camera.PixelRay(x+xvar, y+yvar)
 			}
 			sampleColor := tracer.GetRayColor(ray, w.scene, 0)
 			color = color.Add(sampleColor)
 		}
-		color = color.Times(1.0 / float64(w.samples))
+		color = color.Times(1.0 / float32(w.samples))
 		w.out <- answer{q.x, q.y, color}
 	}
 }

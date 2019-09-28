@@ -23,13 +23,13 @@ func NewPlane(p Vector, u, v Vector, m Material) Plane {
 func (p Plane) Bound(Transform) AABB {
 	return NewAABB(
 		Vector{
-			-math.MaxFloat64,
-			-math.MaxFloat64,
-			-math.MaxFloat64},
+			-math.MaxFloat32,
+			-math.MaxFloat32,
+			-math.MaxFloat32},
 		Vector{
-			math.MaxFloat64,
-			math.MaxFloat64,
-			math.MaxFloat64},
+			math.MaxFloat32,
+			math.MaxFloat32,
+			math.MaxFloat32},
 	)
 }
 

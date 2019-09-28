@@ -12,7 +12,7 @@ func (material) IsLight() bool {
 }
 
 type SurfaceInteraction struct {
-	distance float64
+	distance float32
 	ray      Ray
 	Point    Vector
 	normal   Vector
@@ -23,7 +23,7 @@ type SurfaceInteraction struct {
 	tracer   Tracer
 }
 
-func NewSurfaceInteraction(o Object, d float64, n Vector, r Ray) *SurfaceInteraction {
+func NewSurfaceInteraction(o Object, d float32, n Vector, r Ray) *SurfaceInteraction {
 	return &SurfaceInteraction{
 		object:   o,
 		distance: d,

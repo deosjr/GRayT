@@ -5,11 +5,11 @@ package model
 // setting to 0.1 or 0.5 shows shadows; setting too big gives weirdness
 // see https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-shading/ligth-and-shadows
 // on shadow bias
-var ERROR_MARGIN = 1E-10
+var ERROR_MARGIN float32 = 1E-3
 
 type AccelerationStructure interface {
 	GetObjects() []Object
-	ClosestIntersection(ray Ray, maxDistance float64) (*SurfaceInteraction, bool)
+	ClosestIntersection(ray Ray, maxDistance float32) (*SurfaceInteraction, bool)
 }
 
 type NaiveAcceleration struct {
@@ -25,7 +25,7 @@ func (na NaiveAcceleration) GetObjects() []Object {
 }
 
 // Try and hit ALL objects EVERY time
-func (na *NaiveAcceleration) ClosestIntersection(ray Ray, maxDistance float64) (*SurfaceInteraction, bool) {
+func (na *NaiveAcceleration) ClosestIntersection(ray Ray, maxDistance float32) (*SurfaceInteraction, bool) {
 	var found bool
 	var surfaceInteraction *SurfaceInteraction
 	distance := maxDistance

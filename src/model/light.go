@@ -3,14 +3,14 @@ package model
 import "math"
 
 type Light interface {
-	Intensity(distance float64) float64
+	Intensity(distance float32) float32
 	Color() Color
 	GetLightSegment(p Vector) Vector
 }
 
 type light struct {
 	color     Color
-	intensity float64
+	intensity float32
 }
 
 func (l light) Color() Color {
@@ -22,7 +22,7 @@ type PointLight struct {
 	origin Vector
 }
 
-func NewPointLight(o Vector, c Color, i float64) PointLight {
+func NewPointLight(o Vector, c Color, i float32) PointLight {
 	return PointLight{
 		origin: o,
 		light: light{
@@ -32,7 +32,7 @@ func NewPointLight(o Vector, c Color, i float64) PointLight {
 	}
 }
 
-func (l PointLight) Intensity(r float64) float64 {
+func (l PointLight) Intensity(r float32) float32 {
 	return l.intensity / (4 * math.Pi * r * r)
 }
 
@@ -45,7 +45,7 @@ type DistantLight struct {
 	direction Vector
 }
 
-func NewDistantLight(d Vector, c Color, i float64) DistantLight {
+func NewDistantLight(d Vector, c Color, i float32) DistantLight {
 	return DistantLight{
 		// d is direction of light rays
 		// we want to store direction towards light source
@@ -58,7 +58,7 @@ func NewDistantLight(d Vector, c Color, i float64) DistantLight {
 	}
 }
 
-func (l DistantLight) Intensity(r float64) float64 {
+func (l DistantLight) Intensity(r float32) float32 {
 	return l.intensity
 }
 

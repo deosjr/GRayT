@@ -7,42 +7,38 @@ type AABB struct {
 	Pmin, Pmax Vector
 }
 
+// TODO: simd
+func min(p1, p2 Vector) Vector {
+	xmin := float32(math.Min(float64(p1.X), float64(p2.X)))
+	ymin := float32(math.Min(float64(p1.Y), float64(p2.Y)))
+	zmin := float32(math.Min(float64(p1.Z), float64(p2.Z)))
+	return Vector{xmin, ymin, zmin}
+}
+func max(p1, p2 Vector) Vector {
+	xmax := float32(math.Max(float64(p1.X), float64(p2.X)))
+	ymax := float32(math.Max(float64(p1.Y), float64(p2.Y)))
+	zmax := float32(math.Max(float64(p1.Z), float64(p2.Z)))
+	return Vector{xmax, ymax, zmax}
+}
+
 func NewAABB(p1, p2 Vector) AABB {
 	return AABB{
-		Pmin: Vector{
-			math.Min(p1.X, p2.X),
-			math.Min(p1.Y, p2.Y),
-			math.Min(p1.Z, p2.Z)},
-		Pmax: Vector{
-			math.Max(p1.X, p2.X),
-			math.Max(p1.Y, p2.Y),
-			math.Max(p1.Z, p2.Z)},
+		Pmin: min(p1, p2),
+		Pmax: max(p1, p2),
 	}
 }
 
 func (b AABB) AddPoint(p Vector) AABB {
 	return AABB{
-		Pmin: Vector{
-			math.Min(b.Pmin.X, p.X),
-			math.Min(b.Pmin.Y, p.Y),
-			math.Min(b.Pmin.Z, p.Z)},
-		Pmax: Vector{
-			math.Max(b.Pmax.X, p.X),
-			math.Max(b.Pmax.Y, p.Y),
-			math.Max(b.Pmax.Z, p.Z)},
+		Pmin: min(b.Pmin, p),
+		Pmax: max(b.Pmax, p),
 	}
 }
 
 func (b AABB) AddAABB(b2 AABB) AABB {
 	return AABB{
-		Pmin: Vector{
-			math.Min(b.Pmin.X, b2.Pmin.X),
-			math.Min(b.Pmin.Y, b2.Pmin.Y),
-			math.Min(b.Pmin.Z, b2.Pmin.Z)},
-		Pmax: Vector{
-			math.Max(b.Pmax.X, b2.Pmax.X),
-			math.Max(b.Pmax.Y, b2.Pmax.Y),
-			math.Max(b.Pmax.Z, b2.Pmax.Z)},
+		Pmin: min(b.Pmin, b2.Pmin),
+		Pmax: max(b.Pmax, b2.Pmax),
 	}
 }
 
@@ -54,8 +50,9 @@ func (b AABB) Centroid() Vector {
 // TODO: either optimise or check assumptions on NaN / divide by zero (inf) logic
 // This function is one of the main bottlenecks
 // writing the dimension loop explicitly saves a lot of time
-func (b AABB) Intersect(ray Ray) (tMin float64, hit bool) {
-	t0, t1 := 0.0, math.MaxFloat64
+func (b AABB) Intersect(ray Ray) (tMin float32, hit bool) {
+	var t0 float32 = 0.0
+	var t1 float32 = math.MaxFloat32
 	invRayDir := 1 / ray.Direction.X
 	tNear := (b.Pmin.X - ray.Origin.X) * invRayDir
 	tFar := (b.Pmax.X - ray.Origin.X) * invRayDir

@@ -5,10 +5,10 @@ import "math"
 type Sphere struct {
 	object
 	Center Vector
-	Radius float64
+	Radius float32
 }
 
-func NewSphere(o Vector, r float64, m Material) Sphere {
+func NewSphere(o Vector, r float32, m Material) Sphere {
 	return Sphere{
 		object: object{m},
 		Center: o,
@@ -44,7 +44,7 @@ func (s Sphere) Intersect(r Ray) (*SurfaceInteraction, bool) {
 	}
 
 	// only return closest intersection point
-	d := -loc - math.Sqrt(det)
+	d := -loc - float32(math.Sqrt(float64(det)))
 	if d <= 0 {
 		return nil, false
 	}

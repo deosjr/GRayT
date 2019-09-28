@@ -30,7 +30,7 @@ func triangleBound(p0, p1, p2 Vector, t Transform) AABB {
 }
 
 // Moller-Trumbore intersection algorithm
-func triangleIntersect(p0, p1, p2 Vector, ray Ray) (float64, bool) {
+func triangleIntersect(p0, p1, p2 Vector, ray Ray) (float32, bool) {
 	e1 := p1.Sub(p0)
 	e2 := p2.Sub(p0)
 	pvec := ray.Direction.Cross(e2)
@@ -78,7 +78,7 @@ func (t TriangleInMesh) Intersect(r Ray) (*SurfaceInteraction, bool) {
 	n := triangleSurfaceNormal(p0, p1, p2)
 	return NewSurfaceInteraction(t, d, n, r), true
 }
-func (t TriangleInMesh) IntersectOptimized(r Ray) (float64, bool) {
+func (t TriangleInMesh) IntersectOptimized(r Ray) (float32, bool) {
 	p0, p1, p2 := t.points()
 	d, ok := triangleIntersect(p0, p1, p2, r)
 	if !ok {
@@ -144,7 +144,7 @@ func (t Triangle) Intersect(r Ray) (*SurfaceInteraction, bool) {
 	n := triangleSurfaceNormal(t.P0, t.P1, t.P2)
 	return NewSurfaceInteraction(t, d, n, r), true
 }
-func (t Triangle) IntersectOptimized(r Ray) (float64, bool) {
+func (t Triangle) IntersectOptimized(r Ray) (float32, bool) {
 	d, ok := triangleIntersect(t.P0, t.P1, t.P2, r)
 	if !ok {
 		return 0, false
@@ -158,7 +158,7 @@ func (t Triangle) SurfaceNormal(Vector) Vector {
 func (t Triangle) Sample(random *rand.Rand) Vector {
 	u := t.P1.Sub(t.P0)
 	v := t.P2.Sub(t.P0)
-	a, b := random.Float64(), random.Float64()
+	a, b := random.Float32(), random.Float32()
 	if a+b > 1 {
 		a, b = 1-a, 1-b
 	}
@@ -166,10 +166,10 @@ func (t Triangle) Sample(random *rand.Rand) Vector {
 }
 
 // Heron's formula
-func (t Triangle) Area() float64 {
+func (t Triangle) Area() float32 {
 	a := t.P1.Sub(t.P0).Length()
 	b := t.P2.Sub(t.P0).Length()
 	c := t.P1.Sub(t.P2).Length()
 	s := (a + b + c) / 2
-	return math.Sqrt(s * (s - a) * (s - b) * (s - c))
+	return float32(math.Sqrt(float64(s * (s - a) * (s - b) * (s - c))))
 }

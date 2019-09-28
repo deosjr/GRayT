@@ -8,7 +8,7 @@ import (
 // Triangle normals have been changed to reflect this
 
 type Camera interface {
-	PixelRay(x, y float64) Ray
+	PixelRay(x, y float32) Ray
 	Width() int
 	Height() int
 	LookAt(from, to, up Vector)
@@ -52,11 +52,11 @@ func (c *projectiveCamera) LookAt(from, to, up Vector) {
 
 func (c *projectiveCamera) cameraTransforms(w, h uint) {
 	c.w, c.h = w, h
-	aspectRatio := float64(w) / float64(h)
+	aspectRatio := float32(w) / float32(h)
 
 	// assumption: screenWindow is (-1,-1) to (1,1)
 	// scale to aspectRatio
-	var pMinX, pMaxX, pMinY, pMaxY float64
+	var pMinX, pMaxX, pMinY, pMaxY float32
 	if aspectRatio > 1.0 {
 		pMinX = -aspectRatio
 		pMaxX = aspectRatio
@@ -71,7 +71,7 @@ func (c *projectiveCamera) cameraTransforms(w, h uint) {
 
 	ulhc := Translate(Vector{-pMinX, -pMaxY, 0})
 	ndc := Scale(1.0/(pMaxX-pMinX), 1.0/(pMinY-pMaxY), 1)
-	resolution := Scale(float64(w), float64(h), 1)
+	resolution := Scale(float32(w), float32(h), 1)
 	c.screenToRaster = resolution.Mul(ndc.Mul(ulhc))
 	c.rasterToScreen = c.screenToRaster.Inverse()
 	c.rasterToCamera = c.cameraToScreen.Inverse().Mul(c.rasterToScreen)
@@ -81,11 +81,11 @@ type OrthographicCamera struct {
 	projectiveCamera
 }
 
-func orthographic(zNear, zFar float64) Transform {
+func orthographic(zNear, zFar float32) Transform {
 	return Scale(1, 1, 1.0/(zFar-zNear)).Mul(Translate(Vector{0, 0, -zNear}))
 }
 
-func (c *OrthographicCamera) PixelRay(x, y float64) Ray {
+func (c *OrthographicCamera) PixelRay(x, y float32) Ray {
 	pCamera := c.rasterToCamera.Point(Vector{x, y, 0})
 	r := NewRay(pCamera, Vector{0, 0, 1})
 	return c.cameraToWorld.Ray(r)
@@ -105,24 +105,24 @@ type PerspectiveCamera struct {
 	projectiveCamera
 }
 
-func perspective(fov, n, f float64) Transform {
+func perspective(fov, n, f float32) Transform {
 	persp := matrix4x4{
 		{1, 0, 0, 0},
 		{0, 1, 0, 0},
 		{0, 0, f / (f - n), -f * n / (f - n)},
 		{0, 0, 1, 0},
 	}
-	invTanAng := 1.0 / math.Tan(fov/2.0)
+	invTanAng := 1.0 / float32(math.Tan(float64(fov/2.0)))
 	return Scale(invTanAng, invTanAng, 1).Mul(NewTransform(persp))
 }
 
-func (c *PerspectiveCamera) PixelRay(x, y float64) Ray {
+func (c *PerspectiveCamera) PixelRay(x, y float32) Ray {
 	pCamera := c.rasterToCamera.Point(Vector{x, y, 0})
 	r := NewRay(Vector{0, 0, 0}, pCamera)
 	return c.cameraToWorld.Ray(r)
 }
 
-func NewPerspectiveCamera(w, h uint, fov float64) *PerspectiveCamera {
+func NewPerspectiveCamera(w, h uint, fov float32) *PerspectiveCamera {
 	c := &PerspectiveCamera{
 		projectiveCamera: projectiveCamera{
 			cameraToScreen: perspective(fov, 1e-2, 1000.0),
