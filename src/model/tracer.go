@@ -55,7 +55,7 @@ func (wrt whittedRayTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color 
 	color := NewColor(0, 0, 0)
 	material := si.object.GetMaterial()
 	for _, light := range scene.Lights {
-		if pointInShadow(light, si.Point, si.as) {
+		if pointInShadowWhitted(light, si.Point, si.as) {
 			continue
 		}
 		facingRatio := si.normal.Dot(si.incident.Times(-1))
@@ -88,10 +88,19 @@ func (wrt whittedRayTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color 
 	return color
 }
 
-func pointInShadow(light Light, point Vector, as AccelerationStructure) bool {
+// TODO: revise, maybe merge
+func pointInShadowWhitted(light Light, point Vector, as AccelerationStructure) bool {
 	lightSegment := light.GetLightSegment(point)
 	shadowRay := NewRay(point, lightSegment)
 	maxDistance := lightSegment.Length()
+	if _, ok := as.ClosestIntersection(shadowRay, maxDistance); ok {
+		return true
+	}
+	return false
+}
+
+func pointInShadow(point, segment Vector, maxDistance float64, as AccelerationStructure) bool {
+	shadowRay := NewRay(point, segment)
 	if _, ok := as.ClosestIntersection(shadowRay, maxDistance); ok {
 		return true
 	}
@@ -127,18 +136,80 @@ func (pt *pathTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color {
 		return si.object.GetMaterial().(*RadiantMaterial).Color
 	}
 	surfaceDiffuseColor := si.object.GetColor(si)
+	brdf := surfaceDiffuseColor.Times(INVPI)
 
 	// random new ray
 	randomDirection := randomInHemisphere(pt.random, si.normal)
 	newRay := NewRay(si.Point, randomDirection)
 	cos := si.normal.Dot(randomDirection)
 	recursiveColor := pt.GetRayColor(newRay, scene, depth+1)
-	brdf := surfaceDiffuseColor.Times(INVPI)
 	//pdf := 1.0 / (2.0 * math.Pi)
 	//TODO: albedo? just multiplying with standardalbedo leads to horrible results
 	// probably because light intensity does not make sense yet
 	sampleColor := recursiveColor.Times(cos * pdf).Product(brdf)
 	return sampleColor
+}
+
+type pathTracerNEE struct {
+	tracer
+}
+
+func NewPathTracerNEE() Tracer {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	return &pathTracerNEE{tracer{random: r}}
+}
+
+func (pt *pathTracerNEE) GetRayColor(ray Ray, scene *Scene, depth int) Color {
+	if depth == MAX_RAY_DEPTH {
+		return BLACK
+	}
+
+	si, ok := scene.AccelerationStructure.ClosestIntersection(ray, MAX_RAY_DISTANCE)
+	if !ok {
+		return BLACK
+	}
+
+	si.as = scene.AccelerationStructure
+	si.depth = depth
+	si.tracer = pt
+
+	// only count light if we immediately hit it
+	// direct light sampling counts the rest
+	if si.object.IsLight() {
+		if depth == 0 {
+			return si.object.GetMaterial().(*RadiantMaterial).Color
+		}
+		return BLACK
+	}
+	surfaceDiffuseColor := si.object.GetColor(si)
+	brdf := surfaceDiffuseColor.Times(INVPI)
+
+	// direct light sampling
+	direct := NewColor(0, 0, 0)
+	light := scene.randomEmitter(pt.random)
+	lpoint := light.Sample(pt.random)
+	nl := light.SurfaceNormal(lpoint)
+	l := VectorFromTo(si.Point, lpoint)
+	lightFacing := si.normal.Dot(l.Normalize())
+	dist := l.Length()
+	lightCos := nl.Dot(l.Normalize().Times(-1))
+	if lightFacing > 0 && lightCos > 0 && !pointInShadow(si.Point, l, dist, si.as) {
+		lightPDF := 1.0 / float64(len(scene.Emitters))
+		solidAngle := (lightCos * light.Area()) / (dist * dist * lightPDF)
+		lightColor := light.GetMaterial().(*RadiantMaterial).Color
+		direct = lightColor.Times(solidAngle).Product(brdf).Times(lightFacing)
+	}
+
+	// indirect light sampling: random new ray
+	randomDirection := randomInHemisphere(pt.random, si.normal)
+	newRay := NewRay(si.Point, randomDirection)
+	cos := si.normal.Dot(randomDirection)
+	recursiveColor := pt.GetRayColor(newRay, scene, depth+1)
+	//pdf := 1.0 / (2.0 * math.Pi)
+	//TODO: albedo? just multiplying with standardalbedo leads to horrible results
+	// probably because light intensity does not make sense yet
+	indirect := recursiveColor.Times(cos * pdf).Product(brdf)
+	return direct.Add(indirect)
 }
 
 // this is actually slower than the very naive method before..

@@ -1,10 +1,14 @@
 package model
 
+import "math/rand"
+
 type Scene struct {
 	Objects []Object
-	Lights  []Light
-	Camera  Camera
+	// TODO: consolidate these two
+	Lights   []Light
+	Emitters []Triangle
 
+	Camera                Camera
 	AccelerationStructure AccelerationStructure
 }
 
@@ -25,7 +29,15 @@ func (s *Scene) AddLights(l ...Light) {
 }
 
 func (s *Scene) Precompute() {
+	// TODO: loop over all objects and add emitters to emmiters list
 	s.AccelerationStructure = NewBVH(s.Objects, SplitMiddle)
+}
+
+func (s *Scene) randomEmitter(random *rand.Rand) Triangle {
+	if len(s.Emitters) == 0 {
+		panic("no light in scene!")
+	}
+	return s.Emitters[rand.Intn(len(s.Emitters))]
 }
 
 func SetBackgroundColor(c Color) {

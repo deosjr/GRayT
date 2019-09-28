@@ -1,5 +1,8 @@
 package model
 
+import "math"
+import "math/rand"
+
 // - speed: SIMD instructions
 
 type TriangleMesh struct {
@@ -150,4 +153,23 @@ func (t Triangle) IntersectOptimized(r Ray) (float64, bool) {
 }
 func (t Triangle) SurfaceNormal(Vector) Vector {
 	return triangleSurfaceNormal(t.P0, t.P1, t.P2)
+}
+
+func (t Triangle) Sample(random *rand.Rand) Vector {
+	u := t.P1.Sub(t.P0)
+	v := t.P2.Sub(t.P0)
+	a, b := random.Float64(), random.Float64()
+	if a+b > 1 {
+		a, b = 1-a, 1-b
+	}
+	return t.P0.Add(u.Times(a)).Add(v.Times(b))
+}
+
+// Heron's formula
+func (t Triangle) Area() float64 {
+	a := t.P1.Sub(t.P0).Length()
+	b := t.P2.Sub(t.P0).Length()
+	c := t.P1.Sub(t.P2).Length()
+	s := (a + b + c) / 2
+	return math.Sqrt(s * (s - a) * (s - b) * (s - c))
 }

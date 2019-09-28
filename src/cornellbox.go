@@ -15,18 +15,18 @@ func CornellBox() *m.Scene {
 	scene.AddLights(pointLight)
 
 	// use area light for path tracer
-	intensity := 5.0
+	intensity := 100.0
 	lightMat := &m.RadiantMaterial{Color: m.NewColor(255, 255, 255).Times(intensity)}
 
-	/*
-		light := m.NewQuadrilateral(
-			m.Vector{213, 548.8, 332},
-			m.Vector{343, 548.8, 332},
-			m.Vector{343, 548.8, 227},
-			m.Vector{213, 548.8, 227},
-			lightMat)
-		scene.Add(light.Tesselate())
-	*/
+	light := m.NewQuadrilateral(
+		m.Vector{213, 548.8, 332},
+		m.Vector{343, 548.8, 332},
+		m.Vector{343, 548.8, 227},
+		m.Vector{213, 548.8, 227},
+		lightMat)
+	t1, t2 := light.Tesselate()
+	scene.Add(t1, t2)
+	scene.Emitters = []m.Triangle{t1, t2}
 
 	white := &m.DiffuseMaterial{Color: m.NewColor(186, 186, 186)}
 	green := &m.DiffuseMaterial{Color: m.NewColor(31, 115, 38)}
@@ -45,7 +45,7 @@ func CornellBox() *m.Scene {
 		m.Vector{0.0, 548.8, 0.0},
 		m.Vector{0.0, 548.8, 559.2},
 		m.Vector{556.0, 548.8, 559.2},
-		lightMat) //white
+		white)
 	scene.Add(ceiling.Tesselate())
 
 	backwall := m.NewQuadrilateral(
