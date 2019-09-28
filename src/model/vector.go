@@ -25,17 +25,11 @@ func VectorFromTo(u, v Vector) Vector {
 }
 
 func (u Vector) Add(v Vector) Vector {
-	uf := [4]float32{u.X, u.Y, u.Z, 0}
-	vf := [4]float32{v.X, v.Y, v.Z, 0}
-	f := simd.Add(uf, vf)
-	return Vector{f[0], f[1], f[2]}
-	/*
-		return Vector{
-			X: u.X + v.X,
-			Y: u.Y + v.Y,
-			Z: u.Z + v.Z,
-		}
-	*/
+	return Vector{
+		X: u.X + v.X,
+		Y: u.Y + v.Y,
+		Z: u.Z + v.Z,
+	}
 }
 
 func (u Vector) Sub(v Vector) Vector {
@@ -77,6 +71,20 @@ func (u Vector) Cross(v Vector) Vector {
 		Y: u.Z*v.X - u.X*v.Z,
 		Z: u.X*v.Y - u.Y*v.X,
 	}
+}
+
+func VectorMin(u, v Vector) Vector {
+	uf := [4]float32{u.X, u.Y, u.Z, 0}
+	vf := [4]float32{v.X, v.Y, v.Z, 0}
+	f := simd.Min(uf, vf)
+	return Vector{f[0], f[1], f[2]}
+}
+
+func VectorMax(u, v Vector) Vector {
+	uf := [4]float32{u.X, u.Y, u.Z, 0}
+	vf := [4]float32{v.X, v.Y, v.Z, 0}
+	f := simd.Max(uf, vf)
+	return Vector{f[0], f[1], f[2]}
 }
 
 func (u Vector) Get(i Dimension) float32 {

@@ -7,38 +7,24 @@ type AABB struct {
 	Pmin, Pmax Vector
 }
 
-// TODO: simd
-func min(p1, p2 Vector) Vector {
-	xmin := float32(math.Min(float64(p1.X), float64(p2.X)))
-	ymin := float32(math.Min(float64(p1.Y), float64(p2.Y)))
-	zmin := float32(math.Min(float64(p1.Z), float64(p2.Z)))
-	return Vector{xmin, ymin, zmin}
-}
-func max(p1, p2 Vector) Vector {
-	xmax := float32(math.Max(float64(p1.X), float64(p2.X)))
-	ymax := float32(math.Max(float64(p1.Y), float64(p2.Y)))
-	zmax := float32(math.Max(float64(p1.Z), float64(p2.Z)))
-	return Vector{xmax, ymax, zmax}
-}
-
 func NewAABB(p1, p2 Vector) AABB {
 	return AABB{
-		Pmin: min(p1, p2),
-		Pmax: max(p1, p2),
+		Pmin: VectorMin(p1, p2),
+		Pmax: VectorMax(p1, p2),
 	}
 }
 
 func (b AABB) AddPoint(p Vector) AABB {
 	return AABB{
-		Pmin: min(b.Pmin, p),
-		Pmax: max(b.Pmax, p),
+		Pmin: VectorMin(b.Pmin, p),
+		Pmax: VectorMax(b.Pmax, p),
 	}
 }
 
 func (b AABB) AddAABB(b2 AABB) AABB {
 	return AABB{
-		Pmin: min(b.Pmin, b2.Pmin),
-		Pmax: max(b.Pmax, b2.Pmax),
+		Pmin: VectorMin(b.Pmin, b2.Pmin),
+		Pmax: VectorMax(b.Pmax, b2.Pmax),
 	}
 }
 
