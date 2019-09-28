@@ -224,12 +224,12 @@ func TestBVHTraversal(t *testing.T) {
 		},
 	} {
 		tt.want.object = tt.bvh.objects[tt.wantObjectIndex]
-		got, ok := tt.bvh.ClosestIntersection(tt.ray, math.MaxFloat64)
+		got, ok := tt.bvh.ClosestIntersection(tt.ray, math.MaxFloat32)
 		if !ok {
 			t.Errorf("%d) got nil want %#v", i, tt.want)
 			continue
 		}
-		if got.distance != tt.want.distance {
+		if !compareFloat32(got.distance, tt.want.distance) {
 			t.Errorf("%d) got %#v want %#v", i, got, tt.want)
 		}
 	}

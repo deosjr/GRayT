@@ -42,7 +42,7 @@ func Test4x4Multiply(t *testing.T) {
 func Test4x4Determinant(t *testing.T) {
 	for i, tt := range []struct {
 		m1   matrix4x4
-		want float64
+		want float32
 	}{
 		{
 			m1: matrix4x4{
@@ -225,16 +225,16 @@ func TestRotateZ(t *testing.T) {
 
 func TestTransformComposition(t *testing.T) {
 	for i, tt := range []struct {
-		p     Vector
-		t1	Transform
-		t2	Transform
-		want  Vector
+		p    Vector
+		t1   Transform
+		t2   Transform
+		want Vector
 	}{
 		{
-			p:     Vector{1, 0, 0},
-			t1: RotateY(math.Pi/2),
-			t2: Translate(Vector{0,0,1}),
-			want:  Vector{0, 0, 2},
+			p:    Vector{1, 0, 0},
+			t1:   RotateY(math.Pi / 2),
+			t2:   Translate(Vector{0, 0, 1}),
+			want: Vector{0, 0, 2},
 		},
 	} {
 		transform := tt.t2.Mul(tt.t1)

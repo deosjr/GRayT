@@ -8,7 +8,7 @@ import (
 func TestCameraPixelRay(t *testing.T) {
 	for i, tt := range []struct {
 		c             Camera
-		x, y          int
+		x, y          float32
 		from, to, up  Vector
 		wantOrigin    Vector
 		wantDirection Vector
@@ -40,10 +40,10 @@ func TestCameraPixelRay(t *testing.T) {
 	} {
 		tt.c.LookAt(tt.from, tt.to, tt.up)
 		got := tt.c.PixelRay(tt.x, tt.y)
-		if got.Origin != tt.wantOrigin {
+		if !compareVectors(got.Origin, tt.wantOrigin) {
 			t.Errorf("%d) got origin %v want %v", i, got.Origin, tt.wantOrigin)
 		}
-		if got.Direction != tt.wantDirection {
+		if !compareVectors(got.Direction, tt.wantDirection) {
 			t.Errorf("%d) got direction %v want %v", i, got.Direction, tt.wantDirection)
 		}
 	}

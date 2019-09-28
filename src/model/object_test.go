@@ -9,7 +9,7 @@ func TestObjectIntersect(t *testing.T) {
 	for i, tt := range []struct {
 		o         Object
 		r         Ray
-		want      float64
+		want      float32
 		wantTruth bool
 	}{
 		{

@@ -6,7 +6,7 @@ func TestSphereIntersect(t *testing.T) {
 	for i, tt := range []struct {
 		s         Sphere
 		r         Ray
-		want      float64
+		want      float32
 		wantTruth bool
 	}{
 		{
@@ -54,8 +54,8 @@ func TestSphereIntersect(t *testing.T) {
 			t.Errorf("%d) incorrect bool value; want %v", i, tt.wantTruth)
 			continue
 		}
-		if got.distance != tt.want {
-			t.Errorf("%d) got %v want %v", i, got, tt.want)
+		if !compareFloat32(got.distance, tt.want) {
+			t.Errorf("%d) got %v want %v", i, got.distance, tt.want)
 		}
 	}
 }
@@ -84,7 +84,7 @@ func TestSphereSurfaceNormal(t *testing.T) {
 		},
 	} {
 		got := tt.s.SurfaceNormal(tt.v)
-		if got != tt.want {
+		if !compareVectors(got, tt.want) {
 			t.Errorf("%d) got %v want %v", i, got, tt.want)
 		}
 	}

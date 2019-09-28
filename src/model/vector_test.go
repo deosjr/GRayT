@@ -86,7 +86,7 @@ func TestTimes(t *testing.T) {
 		},
 	} {
 		got := tt.u.Times(tt.f)
-		if got != tt.want {
+		if !compareVectors(got, tt.want) {
 			t.Errorf("%d) got %v want %v", i, got, tt.want)
 		}
 	}
@@ -161,7 +161,7 @@ func TestNormalize(t *testing.T) {
 		},
 	} {
 		got := tt.u.Normalize()
-		if got != tt.want {
+		if !compareVectors(got, tt.want) {
 			t.Errorf("%d) got %v want %v", i, got, tt.want)
 		}
 	}
@@ -190,7 +190,7 @@ func TestCrossProduct(t *testing.T) {
 		},
 	} {
 		got := tt.u.Cross(tt.v)
-		if got != tt.want {
+		if !compareVectors(got, tt.want) {
 			t.Errorf("%d) got %v want %v", i, got, tt.want)
 		}
 	}
@@ -228,7 +228,7 @@ func TestRay(t *testing.T) {
 		},
 	} {
 		got := NewRay(tt.o, tt.d)
-		if got != tt.want {
+		if !compareVectors(got.Origin, tt.want.Origin) || !compareVectors(got.Direction, tt.want.Direction) {
 			t.Errorf("%d) got %v want %v", i, got, tt.want)
 		}
 	}
@@ -237,9 +237,16 @@ func TestRay(t *testing.T) {
 // floating point precision
 func compareVectors(u, v Vector) bool {
 	for _, d := range Dimensions {
-		if math.Abs(float64(u.Get(d)-v.Get(d))) > 0.00001 {
+		if !compareFloat32(u.Get(d), v.Get(d)) {
 			return false
 		}
+	}
+	return true
+}
+
+func compareFloat32(a, b float32) bool {
+	if math.Abs(float64(a-b)) > 0.00001 {
+		return false
 	}
 	return true
 }

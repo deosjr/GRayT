@@ -6,7 +6,7 @@ func TestPlaneIntersect(t *testing.T) {
 	for i, tt := range []struct {
 		p         Plane
 		r         Ray
-		want      float64
+		want      float32
 		wantTruth bool
 	}{
 		{
@@ -42,7 +42,7 @@ func TestPlaneIntersect(t *testing.T) {
 			t.Errorf("%d) incorrect bool value; want %v", i, tt.wantTruth)
 			continue
 		}
-		if got.distance != tt.want {
+		if !compareFloat32(got.distance, tt.want) {
 			t.Errorf("%d) got %v want %v", i, got, tt.want)
 		}
 	}

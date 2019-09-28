@@ -6,7 +6,7 @@ func TestTriangleIntersect(t *testing.T) {
 	for i, tt := range []struct {
 		t         Triangle
 		r         Ray
-		want      float64
+		want      float32
 		wantTruth bool
 	}{
 		{

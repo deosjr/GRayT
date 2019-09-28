@@ -1,6 +1,10 @@
 package model
 
-import "math"
+import (
+	"math"
+
+	"github.com/deosjr/GRayT/src/simd"
+)
 
 type Dimension int
 
@@ -21,11 +25,17 @@ func VectorFromTo(u, v Vector) Vector {
 }
 
 func (u Vector) Add(v Vector) Vector {
-	return Vector{
-		X: u.X + v.X,
-		Y: u.Y + v.Y,
-		Z: u.Z + v.Z,
-	}
+	uf := [4]float32{u.X, u.Y, u.Z, 0}
+	vf := [4]float32{v.X, v.Y, v.Z, 0}
+	f := simd.Add(uf, vf)
+	return Vector{f[0], f[1], f[2]}
+	/*
+		return Vector{
+			X: u.X + v.X,
+			Y: u.Y + v.Y,
+			Z: u.Z + v.Z,
+		}
+	*/
 }
 
 func (u Vector) Sub(v Vector) Vector {
