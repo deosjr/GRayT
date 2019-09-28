@@ -55,7 +55,7 @@ func RenderNaive(scene *model.Scene, numWorkers int) Film {
 }
 
 func RenderWithPathTracer(scene *model.Scene, numWorkers, numSamples int) Film {
-	return render(scene, numWorkers, model.NewPathTracer, numSamples)
+	return render(scene, numWorkers, model.NewPathTracerNEE, numSamples)
 }
 
 func render(scene *model.Scene, numWorkers int, newTracerFunc func() model.Tracer, numSamples int) Film {

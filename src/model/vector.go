@@ -58,7 +58,7 @@ func (u Vector) Normalize() Vector {
 	if l == 0 {
 		return Vector{0, 0, 0}
 	}
-	return u.Times(1.0 / u.Length())
+	return u.Times(1.0 / l)
 }
 
 func (u Vector) Cross(v Vector) Vector {
