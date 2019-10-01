@@ -32,60 +32,30 @@ func (b AABB) Centroid() Vector {
 	return b.Pmin.Add(b.Pmax).Times(0.5)
 }
 
-// Unoptimised, analytic solution for now
-// TODO: either optimise or check assumptions on NaN / divide by zero (inf) logic
-// This function is one of the main bottlenecks
-// writing the dimension loop explicitly saves a lot of time
 func (b AABB) Intersect(ray Ray) (tMin float32, hit bool) {
 	var t0 float32 = 0.0
 	var t1 float32 = math.MaxFloat32
-	invRayDir := 1 / ray.Direction.X
-	tNear := (b.Pmin.X - ray.Origin.X) * invRayDir
-	tFar := (b.Pmax.X - ray.Origin.X) * invRayDir
-	if tNear > tFar {
-		tNear, tFar = tFar, tNear
-	}
-	// TODO: correct for error margin in tFar
-	if tNear > t0 {
-		t0 = tNear
-	}
-	if tFar < t1 {
-		t1 = tFar
-	}
-	if t0 > t1 {
-		return 0, false
-	}
-	invRayDir = 1 / ray.Direction.Y
-	tNear = (b.Pmin.Y - ray.Origin.Y) * invRayDir
-	tFar = (b.Pmax.Y - ray.Origin.Y) * invRayDir
-	if tNear > tFar {
-		tNear, tFar = tFar, tNear
-	}
-	// TODO: correct for error margin in tFar
-	if tNear > t0 {
-		t0 = tNear
-	}
-	if tFar < t1 {
-		t1 = tFar
-	}
-	if t0 > t1 {
-		return 0, false
-	}
-	invRayDir = 1 / ray.Direction.Z
-	tNear = (b.Pmin.Z - ray.Origin.Z) * invRayDir
-	tFar = (b.Pmax.Z - ray.Origin.Z) * invRayDir
-	if tNear > tFar {
-		tNear, tFar = tFar, tNear
-	}
-	// TODO: correct for error margin in tFar
-	if tNear > t0 {
-		t0 = tNear
-	}
-	if tFar < t1 {
-		t1 = tFar
-	}
-	if t0 > t1 {
-		return 0, false
+	invRayDirs := [3]float32{1.0 / ray.Direction.X, 1.0 / ray.Direction.Y, 1.0 / ray.Direction.Z}
+	rayOrigins := [3]float32{ray.Origin.X, ray.Origin.Y, ray.Origin.Z}
+	bPmins := [3]float32{b.Pmin.X, b.Pmin.Y, b.Pmin.Z}
+	bPmaxs := [3]float32{b.Pmax.X, b.Pmax.Y, b.Pmax.Z}
+
+	for dim := 0; dim < 3; dim++ {
+		tNear := (bPmins[dim] - rayOrigins[dim]) * invRayDirs[dim]
+		tFar := (bPmaxs[dim] - rayOrigins[dim]) * invRayDirs[dim]
+		if tNear > tFar {
+			tNear, tFar = tFar, tNear
+		}
+		// TODO: correct for error margin in tFar
+		if tNear > t0 {
+			t0 = tNear
+		}
+		if tFar < t1 {
+			t1 = tFar
+		}
+		if t0 > t1 {
+			return 0, false
+		}
 	}
 	return t0, true
 }
