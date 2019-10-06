@@ -203,77 +203,76 @@ TEXT ·TriangleIntersect(SB), NOSPLIT, $0-80
 	MOVUPS    p1+16(FP), X1
 	MOVUPS    p2+32(FP), X2
 	MOVUPS    ro+48(FP), X3
-	MOVUPS    rd+64(FP), X4
 	// p1, p2, ro overwritten 
 	SUBPS     X0, X1 // e1
 	SUBPS     X0, X2 // e2
 	SUBPS     X0, X3 // tvec
 
+	MOVUPS    rd+64(FP), X0
 	// rd cross e2
-	MOVAPS    X4, X5
-	MOVAPS    X2, X0
-	SHUFPS    $0xc9, X5, X5 // 1 2 0 3
-	SHUFPS    $0xd2, X0, X0 // 2 0 1 3 
-	MULPS     X0, X5
-	MOVAPS    X4, X0
-	MOVAPS    X2, X6
+	MOVAPS    X2, X4
+	SHUFPS    $0xc9, X0, X0 // 1 2 0 3
+	SHUFPS    $0xd2, X4, X4 // 2 0 1 3 
+	MULPS     X0, X4
+	MOVUPS    rd+64(FP), X0
+	MOVAPS    X2, X5
 	SHUFPS    $0xd2, X0, X0 // 2 0 1 3
-	SHUFPS    $0xc9, X6, X6 // 1 2 0 3
-	MULPS     X6, X0
-	SUBPS     X0, X5 // pvec
+	SHUFPS    $0xc9, X5, X5 // 1 2 0 3
+	MULPS     X5, X0
+	SUBPS     X0, X4 // pvec
 
 	// e1 dot pvec
-	MOVAPS    X1, X6
-	DPPS      $0xf1, X5, X6 // det
-	MOVAPS    X6, X8
+	MOVAPS    X1, X5
+	DPPS      $0xf1, X4, X5 // det
+	MOVAPS    X5, X7
 	MOVAPS    epsilon<>(SB), X0
-	CMPPS     X0, X8, 2 // epsilon leq det
+	CMPPS     X0, X7, 2 // epsilon leq det
 	MOVAPS    minepsilon<>(SB), X0
-	CMPPS     X6, X0, 2 // det leq -epsilon
-	ORPS      X0, X8
+	CMPPS     X5, X0, 2 // det leq -epsilon
+	ORPS      X0, X7
 
-	RCPPS     X6, X6 // invdet
+	RCPPS     X5, X5 // invdet
 
 	// pvec dot tvec * invdet, pvec overwritten
-	DPPS      $0xf1, X3, X5
-	MULPS     X6, X5 // u
+	DPPS      $0xf1, X3, X4
+	MULPS     X5, X4 // u
 	XORPS     X0, X0
-	MOVAPS    X5, X7
-	CMPPS     X0, X7, 2 // 0 leq u
-	ANDPS     X7, X8
-    MOVAPS    one<>(SB), X7
-	CMPPS     X5, X7, 2 // u leq 1
-	ANDPS     X7, X8
+	MOVAPS    X4, X6
+	CMPPS     X0, X6, 2 // 0 leq u
+	ANDPS     X6, X7
+    MOVAPS    one<>(SB), X6
+	CMPPS     X4, X6, 2 // u leq 1
+	ANDPS     X6, X7
 
 	// tvec cross e1, both overwritten
 	// tvec in X3, e1 in X1
 	MOVAPS    X3, X0
-	MOVAPS    X1, X7
-
+	MOVAPS    X1, X6
 	SHUFPS    $0xc9, X3, X3
 	SHUFPS    $0xd2, X1, X1
 	MULPS     X1, X3
 	SHUFPS    $0xd2, X0, X0
-	SHUFPS    $0xc9, X7, X7
-	MULPS     X7, X0
+	SHUFPS    $0xc9, X6, X6
+	MULPS     X6, X0
 	SUBPS     X0, X3 // qvec
 
+	MOVUPS    rd+64(FP), X1
 	// rd dot qvec * invdet, rd overwritten
-	DPPS      $0xf1, X3, X4
-	MULPS     X6, X4 // v
+	DPPS      $0xf1, X3, X1
+	MULPS     X5, X1 // v
 	XORPS     X0, X0
-	MOVAPS    X4, X7
-	CMPPS     X0, X7, 2 // 0 leq v
-	ANDPS     X7, X8
+	MOVAPS    X1, X6
+	CMPPS     X0, X6, 2 // 0 leq v
+	ANDPS     X6, X7
 	MOVAPS    one<>(SB), X0
-	ADDPS     X5, X4
-	CMPPS     X4, X0, 2 // u+v leq 1
-	ANDPS     X0, X8
+	ADDPS     X4, X1
+	CMPPS     X1, X0, 2 // u+v leq 1
+	ANDPS     X0, X7
 
 	// e2 dot qvec * invdet
 	DPPS      $0xf1, X2, X3
-	MULPS     X6, X3 // t
-	ANDPS     X8, X3 // apply mask
+	MULPS     X5, X3 // t
+	ANDPS     X7, X3 // apply mask
 	// wtf: movups returns correct but breaks benchmark
 	// movd does NOT return correct answer...
 	//MOVUPS    X3, ret+80(FP)
@@ -296,4 +295,34 @@ TEXT ·Triangle4Intersect(SB), NOSPLIT, $0-240
 	MOVUPS    rdx+192(FP), X12
 	MOVUPS    rdy+208(FP), X13
 	MOVUPS    rdz+224(FP), X14
+
+	SUBPS     X0, X3
+	SUBPS     X1, X4
+	SUBPS     X2, X5 // e1
+	SUBPS     X0, X6
+	SUBPS     X1, X7
+	SUBPS     X2, X8 // e2
+	SUBPS     X0, X9
+	SUBPS     X1, X10
+	SUBPS     X2, X11 // tvec
+
+	// rd cross e2
+	MOVAPS    X13, X0
+	MULPS     X8, X0
+	MOVAPS    X14, X15
+	MULPS     X7, X15
+	SUBPS     X15, X0
+
+	MOVAPS    X14, X1
+	MULPS     X6, X1
+	MOVAPS    X12, X15
+	MULPS     X8, X15
+	SUBPS     X15, X1
+
+	MOVAPS    X12, X2
+	MULPS     X7, X2
+	MOVAPS    X13, X15
+	MULPS     X6, X15
+	SUBPS     X15, X2 // pvec
+
 	RET
