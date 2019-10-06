@@ -1,7 +1,10 @@
 package simd
 
-import "math"
-import "testing"
+import (
+	"math"
+	"math/rand"
+	"testing"
+)
 
 // testing three different implementations:
 // - vectors as [4]float32 with last value 0, using sse instructions with go assembly
@@ -85,11 +88,49 @@ func (u testVector) Cross(v testVector) testVector {
 	}
 }
 
-func BenchmarkCrossStruct(b *testing.B) {
+// benchmarking dot product
+func BenchmarkDotSimd(b *testing.B) {
+	u := testVector{1, 2, 3}
+	v := testVector{1, 2, 3}
+	uf := [4]float32{u.X, u.Y, u.Z, 0}
+	vf := [4]float32{v.X, v.Y, v.Z, 0}
+	for i := 0; i < b.N; i++ {
+		Dot(uf, vf)
+	}
+}
+
+func TestDotProductSimd(t *testing.T) {
+	u := testVector{1, 2, 3}
+	v := testVector{1, 2, 3}
+	uf := [4]float32{u.X, u.Y, u.Z, 0}
+	vf := [4]float32{v.X, v.Y, v.Z, 0}
+	got := Dot(uf, vf)
+	if got != 14.0 {
+		t.Errorf("got %f but wanted %f", got, 14.0)
+	}
+}
+
+func (u testVArray) Dot(v testVArray) float32 {
+	return u[0]*v[0] + u[1]*v[1] + u[2]*v[2]
+}
+
+func BenchmarkDotArray(b *testing.B) {
+	u := testVArray([4]float32{1, 2, 3, 0})
+	v := testVArray([4]float32{1, 2, 3, 0})
+	for i := 0; i < b.N; i++ {
+		u.Dot(v)
+	}
+}
+
+func (u testVector) Dot(v testVector) float32 {
+	return u.X*v.X + u.Y*v.Y + u.Z*v.Z
+}
+
+func BenchmarkDotStruct(b *testing.B) {
 	u := testVector{1, 2, 3}
 	v := testVector{1, 2, 3}
 	for i := 0; i < b.N; i++ {
-		u.Cross(v)
+		u.Dot(v)
 	}
 }
 
@@ -300,6 +341,30 @@ func box4intersectSimd(cube1, cube2, cube3, cube4 testCube, rayOrigin, rayDirect
 	return t0, t0 != 0.0
 }
 
+func Benchmark4BoxIntersectSimdNoConversion(b *testing.B) {
+	rayOrigin := testVector{0, 0, 0}
+	rayDirection := testVector{1, 1, 1}
+	cube1 := testCube{mins: testVector{2, 2, 2}, maxs: testVector{3, 3, 3}}
+	cube2 := testCube{mins: testVector{2, 2, 2}, maxs: testVector{3, 3, 3}}
+	cube3 := testCube{mins: testVector{2, 2, 2}, maxs: testVector{3, 3, 3}}
+	cube4 := testCube{mins: testVector{2, 2, 2}, maxs: testVector{3, 3, 3}}
+	o4x := [4]float32{rayOrigin.X, rayOrigin.X, rayOrigin.X, rayOrigin.X}
+	o4y := [4]float32{rayOrigin.Y, rayOrigin.Y, rayOrigin.Y, rayOrigin.Y}
+	o4z := [4]float32{rayOrigin.Z, rayOrigin.Z, rayOrigin.Z, rayOrigin.Z}
+	d4x := [4]float32{rayDirection.X, rayDirection.X, rayDirection.X, rayDirection.X}
+	d4y := [4]float32{rayDirection.Y, rayDirection.Y, rayDirection.Y, rayDirection.Y}
+	d4z := [4]float32{rayDirection.Z, rayDirection.Z, rayDirection.Z, rayDirection.Z}
+	min4x := [4]float32{cube1.mins.X, cube2.mins.X, cube3.mins.X, cube4.mins.X}
+	min4y := [4]float32{cube1.mins.Y, cube2.mins.Y, cube3.mins.Y, cube4.mins.Y}
+	min4z := [4]float32{cube1.mins.Z, cube2.mins.Z, cube3.mins.Z, cube4.mins.Z}
+	max4x := [4]float32{cube1.maxs.X, cube2.maxs.X, cube3.maxs.X, cube4.maxs.X}
+	max4y := [4]float32{cube1.maxs.Y, cube2.maxs.Y, cube3.maxs.Y, cube4.maxs.Y}
+	max4z := [4]float32{cube1.maxs.Z, cube2.maxs.Z, cube3.maxs.Z, cube4.maxs.Z}
+	for i := 0; i < b.N; i++ {
+		Box4Intersect(o4x, o4y, o4z, d4x, d4y, d4z, min4x, min4y, min4z, max4x, max4y, max4z)
+	}
+}
+
 func Benchmark4BoxIntersectSimd(b *testing.B) {
 	rayOrigin := testVector{0, 0, 0}
 	rayDirection := testVector{1, 1, 1}
@@ -324,5 +389,192 @@ func Test4BoxSimd(t *testing.T) {
 	}
 	if math.Abs(float64(got-want)) > 0.001 {
 		t.Errorf("got %f but want %f as t0", got, want)
+	}
+}
+
+// benchmarking normalize function
+func (u testVector) normalize() testVector {
+	l := float32(math.Sqrt(float64(u.X*u.X + u.Y*u.Y + u.Z*u.Z)))
+	if l == 0 {
+		return testVector{0, 0, 0}
+	}
+	r := 1.0 / l
+	return testVector{u.X * r, u.Y * r, u.Z * r}
+}
+
+func normalize4(a, b, c, d testVector) (e, f, g, h testVector) {
+	x4 := [4]float32{a.X, b.X, c.X, d.X}
+	y4 := [4]float32{a.Y, b.Y, c.Y, d.Y}
+	z4 := [4]float32{a.Z, b.Z, c.Z, d.Z}
+	Normalize4(x4, y4, z4)
+	e = testVector{x4[0], y4[0], z4[0]}
+	f = testVector{x4[1], y4[1], z4[1]}
+	g = testVector{x4[2], y4[2], z4[2]}
+	h = testVector{x4[3], y4[3], z4[3]}
+	return
+}
+
+func BenchmarkNormalizeStruct(b *testing.B) {
+	v := testVector{4, 3, 2}
+	for i := 0; i < b.N; i++ {
+		v.normalize()
+	}
+}
+
+func BenchmarkNormalizeSimd(b *testing.B) {
+	v := testVector{4, 3, 2}
+	for i := 0; i < b.N; i++ {
+		vf := [4]float32{v.X, v.Y, v.Z, 0}
+		Normalize(vf)
+	}
+}
+
+func Benchmark4NormalizeStruct(b *testing.B) {
+	v1 := testVector{rand.Float32(), rand.Float32(), rand.Float32()}
+	v2 := testVector{rand.Float32(), rand.Float32(), rand.Float32()}
+	v3 := testVector{rand.Float32(), rand.Float32(), rand.Float32()}
+	v4 := testVector{rand.Float32(), rand.Float32(), rand.Float32()}
+	for i := 0; i < b.N; i++ {
+		v1.normalize()
+		v2.normalize()
+		v3.normalize()
+		v4.normalize()
+	}
+}
+
+func Benchmark4NormalizeSimd(b *testing.B) {
+	v1 := testVector{rand.Float32(), rand.Float32(), rand.Float32()}
+	v2 := testVector{rand.Float32(), rand.Float32(), rand.Float32()}
+	v3 := testVector{rand.Float32(), rand.Float32(), rand.Float32()}
+	v4 := testVector{rand.Float32(), rand.Float32(), rand.Float32()}
+	for i := 0; i < b.N; i++ {
+		normalize4(v1, v2, v3, v4)
+	}
+}
+
+type testTriangle struct {
+	p0, p1, p2 testVector
+}
+
+// Moller-Trumbore intersection algorithm
+func (t testTriangle) intersect(rayOrigin, rayDirection testVector) (float32, bool) {
+	e1 := t.p1.Sub(t.p0)
+	e2 := t.p2.Sub(t.p0)
+	pvec := rayDirection.Cross(e2)
+	det := e1.Dot(pvec)
+
+	if det < 1e-8 && det > -1e-8 {
+		return 0, false
+	}
+	inv_det := 1.0 / det
+
+	tvec := rayOrigin.Sub(t.p0)
+	u := tvec.Dot(pvec) * inv_det
+	if u < 0 || u > 1 {
+		return 0, false
+	}
+
+	qvec := tvec.Cross(e1)
+	v := rayDirection.Dot(qvec) * inv_det
+	if v < 0 || u+v > 1 {
+		return 0, false
+	}
+	return e2.Dot(qvec) * inv_det, true
+}
+
+func (u testVector) Sub(v testVector) testVector {
+	return testVector{
+		X: u.X - v.X,
+		Y: u.Y - v.Y,
+		Z: u.Z - v.Z,
+	}
+}
+
+func TestTriangleIntersect(t *testing.T) {
+	for _, tt := range []struct {
+		ro testVector
+		rd testVector
+		p0 testVector
+		p1 testVector
+		p2 testVector
+	}{
+		{
+			ro: testVector{0, 0, 0},
+			rd: testVector{0, 0, -1},
+			p0: testVector{-1, 0, -1},
+			p1: testVector{1, 0, -1},
+			p2: testVector{1, 1, -1},
+		},
+		{
+			ro: testVector{5, 5, 5},
+			rd: testVector{0, 0, -1},
+			p0: testVector{-1, 0, -1},
+			p1: testVector{1, 0, -1},
+			p2: testVector{1, 1, -1},
+		},
+	} {
+		triangle := testTriangle{tt.p0, tt.p1, tt.p2}
+		out, hit := triangle.intersect(tt.ro, tt.rd)
+
+		rof := [4]float32{tt.ro.X, tt.ro.Y, tt.ro.Z, 0}
+		rdf := [4]float32{tt.rd.X, tt.rd.Y, tt.rd.Z, 0}
+		p0f := [4]float32{tt.p0.X, tt.p0.Y, tt.p0.Z, 0}
+		p1f := [4]float32{tt.p1.X, tt.p1.Y, tt.p1.Z, 0}
+		p2f := [4]float32{tt.p2.X, tt.p2.Y, tt.p2.Z, 0}
+		outf := TriangleIntersect(p0f, p1f, p2f, rof, rdf)
+		hitf := outf != 0.0
+
+		// comment in when testing the sse.s code
+		// commented out to be able to do benchmarks
+		if hitf != hit {
+			//	t.Errorf("%d): got %v want %v", i, hitf, hit)
+		}
+		if hit && math.Abs(float64(out-outf)) > 0.001 {
+			//	t.Errorf("%d): got %e want %e", i, outf, out)
+		}
+	}
+}
+
+func BenchmarkTriangleIntersectStruct(b *testing.B) {
+	ro := testVector{0, 0, 0}
+	rd := testVector{0, 0, -1}
+	p0 := testVector{-1, 0, -1}
+	p1 := testVector{1, 0, -1}
+	p2 := testVector{1, 1, -1}
+	triangle := testTriangle{p0, p1, p2}
+	for i := 0; i < b.N; i++ {
+		triangle.intersect(ro, rd)
+	}
+}
+
+func BenchmarkTriangleIntersectSimd(b *testing.B) {
+	ro := testVector{0, 0, 0}
+	rd := testVector{0, 0, -1}
+	p0 := testVector{-1, 0, -1}
+	p1 := testVector{1, 0, -1}
+	p2 := testVector{1, 1, -1}
+	for i := 0; i < b.N; i++ {
+		rof := [4]float32{ro.X, ro.Y, ro.Z, 0}
+		rdf := [4]float32{rd.X, rd.Y, rd.Z, 0}
+		p0f := [4]float32{p0.X, p0.Y, p0.Z, 0}
+		p1f := [4]float32{p1.X, p1.Y, p1.Z, 0}
+		p2f := [4]float32{p2.X, p2.Y, p2.Z, 0}
+		TriangleIntersect(p0f, p1f, p2f, rof, rdf)
+	}
+}
+
+func BenchmarkTriangleIntersectNoConversionSimd(b *testing.B) {
+	ro := testVector{0, 0, 0}
+	rd := testVector{0, 0, -1}
+	p0 := testVector{-1, 0, -1}
+	p1 := testVector{1, 0, -1}
+	p2 := testVector{1, 1, -1}
+	rof := [4]float32{ro.X, ro.Y, ro.Z, 0}
+	rdf := [4]float32{rd.X, rd.Y, rd.Z, 0}
+	p0f := [4]float32{p0.X, p0.Y, p0.Z, 0}
+	p1f := [4]float32{p1.X, p1.Y, p1.Z, 0}
+	p2f := [4]float32{p2.X, p2.Y, p2.Z, 0}
+	for i := 0; i < b.N; i++ {
+		TriangleIntersect(p0f, p1f, p2f, rof, rdf)
 	}
 }
