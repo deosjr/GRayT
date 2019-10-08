@@ -491,7 +491,7 @@ func (u testVector) Sub(v testVector) testVector {
 }
 
 func TestTriangleIntersect(t *testing.T) {
-	for _, tt := range []struct {
+	for i, tt := range []struct {
 		ro testVector
 		rd testVector
 		p0 testVector
@@ -512,6 +512,13 @@ func TestTriangleIntersect(t *testing.T) {
 			p1: testVector{1, 0, -1},
 			p2: testVector{1, 1, -1},
 		},
+		{
+			ro: testVector{0, 0, 0},
+			rd: testVector{0, 0, -1},
+			p0: testVector{-2, 0, -2},
+			p1: testVector{2, 0, -2},
+			p2: testVector{2, 2, -2},
+		},
 	} {
 		triangle := testTriangle{tt.p0, tt.p1, tt.p2}
 		out, hit := triangle.intersect(tt.ro, tt.rd)
@@ -524,13 +531,11 @@ func TestTriangleIntersect(t *testing.T) {
 		outf := TriangleIntersect(p0f, p1f, p2f, rof, rdf)
 		hitf := outf != 0.0
 
-		// comment in when testing the sse.s code
-		// commented out to be able to do benchmarks
 		if hitf != hit {
-			//	t.Errorf("%d): got %v want %v", i, hitf, hit)
+			t.Errorf("%d): got %t want %t", i, hitf, hit)
 		}
 		if hit && math.Abs(float64(out-outf)) > 0.001 {
-			//	t.Errorf("%d): got %e want %e", i, outf, out)
+			t.Errorf("%d): got %e want %e", i, outf, out)
 		}
 	}
 }
@@ -576,5 +581,135 @@ func BenchmarkTriangleIntersectNoConversionSimd(b *testing.B) {
 	p2f := [4]float32{p2.X, p2.Y, p2.Z, 0}
 	for i := 0; i < b.N; i++ {
 		TriangleIntersect(p0f, p1f, p2f, rof, rdf)
+	}
+}
+
+func Test4TriangleIntersect(t *testing.T) {
+	triangles := [4]testTriangle{
+		{
+			p0: testVector{-1, 0, -1},
+			p1: testVector{1, 0, -1},
+			p2: testVector{1, 1, -1},
+		},
+		{
+			p0: testVector{-2, 0, -2},
+			p1: testVector{2, 0, -2},
+			p2: testVector{2, 2, -2},
+		},
+		{
+			p0: testVector{-1, 0, -1},
+			p1: testVector{1, 0, -1},
+			p2: testVector{1, 1, -1},
+		},
+		{
+			p0: testVector{-1, 0, -1},
+			p1: testVector{1, 0, -1},
+			p2: testVector{1, 1, -1},
+		},
+	}
+	ro := testVector{0, 0, 0}
+	rd := testVector{0, 0, -1}
+	out := [4]float32{}
+	hit := [4]bool{}
+	var p0x, p0y, p0z, p1x, p1y, p1z, p2x, p2y, p2z [4]float32
+	for i, tr := range triangles {
+		out[i], hit[i] = tr.intersect(ro, rd)
+		p0x[i] = tr.p0.X
+		p0y[i] = tr.p0.Y
+		p0z[i] = tr.p0.Z
+		p1x[i] = tr.p1.X
+		p1y[i] = tr.p1.Y
+		p1z[i] = tr.p1.Z
+		p2x[i] = tr.p2.X
+		p2y[i] = tr.p2.Y
+		p2z[i] = tr.p2.Z
+	}
+	rox := [4]float32{ro.X, ro.X, ro.X, ro.X}
+	roy := [4]float32{ro.Y, ro.Y, ro.Y, ro.Y}
+	roz := [4]float32{ro.Z, ro.Z, ro.Z, ro.Z}
+	rdx := [4]float32{rd.X, rd.X, rd.X, rd.X}
+	rdy := [4]float32{rd.Y, rd.Y, rd.Y, rd.Y}
+	rdz := [4]float32{rd.Z, rd.Z, rd.Z, rd.Z}
+	outf := Triangle4Intersect(p0x, p0y, p0z, p1x, p1y, p1z, p2x, p2y, p2z, rox, roy, roz, rdx, rdy, rdz)
+	for i := 0; i < 4; i++ {
+		hitf := outf[i] != 0.0
+
+		if hitf != hit[i] {
+			t.Errorf("%d): got %v want %v", i, hitf, hit[i])
+		}
+		if hit[i] && math.Abs(float64(out[i]-outf[i])) > 0.001 {
+			t.Errorf("%d): got %e want %e", i, outf[i], out[i])
+		}
+	}
+}
+
+func Benchmark4TriangleStruct(b *testing.B) {
+	ro := testVector{0, 0, 0}
+	rd := testVector{0, 0, -1}
+	p0 := testVector{-1, 0, -1}
+	p1 := testVector{1, 0, -1}
+	p2 := testVector{1, 1, -1}
+	tr := testTriangle{p0, p1, p2}
+	triangles := [4]testTriangle{tr, tr, tr, tr}
+	for i := 0; i < b.N; i++ {
+		for _, tr := range triangles {
+			tr.intersect(ro, rd)
+		}
+	}
+}
+
+func Benchmark4TriangleIntersectSimdNoConversion(b *testing.B) {
+	ro := testVector{0, 0, 0}
+	rd := testVector{0, 0, -1}
+	p0 := testVector{-1, 0, -1}
+	p1 := testVector{1, 0, -1}
+	p2 := testVector{1, 1, -1}
+	tr := testTriangle{p0, p1, p2}
+	triangles := [4]testTriangle{tr, tr, tr, tr}
+	rox := [4]float32{ro.X, ro.X, ro.X, ro.X}
+	roy := [4]float32{ro.Y, ro.Y, ro.Y, ro.Y}
+	roz := [4]float32{ro.Z, ro.Z, ro.Z, ro.Z}
+	rdx := [4]float32{rd.X, rd.X, rd.X, rd.X}
+	rdy := [4]float32{rd.Y, rd.Y, rd.Y, rd.Y}
+	rdz := [4]float32{rd.Z, rd.Z, rd.Z, rd.Z}
+	p0x := [4]float32{triangles[0].p0.X, triangles[1].p0.X, triangles[2].p0.X, triangles[3].p0.X}
+	p0y := [4]float32{triangles[0].p0.Y, triangles[1].p0.Y, triangles[2].p0.Y, triangles[3].p0.Y}
+	p0z := [4]float32{triangles[0].p0.Z, triangles[1].p0.Z, triangles[2].p0.Z, triangles[3].p0.Z}
+	p1x := [4]float32{triangles[0].p1.X, triangles[1].p1.X, triangles[2].p1.X, triangles[3].p1.X}
+	p1y := [4]float32{triangles[0].p1.Y, triangles[1].p1.Y, triangles[2].p1.Y, triangles[3].p1.Y}
+	p1z := [4]float32{triangles[0].p1.Z, triangles[1].p1.Z, triangles[2].p1.Z, triangles[3].p1.Z}
+	p2x := [4]float32{triangles[0].p2.X, triangles[1].p2.X, triangles[2].p2.X, triangles[3].p2.X}
+	p2y := [4]float32{triangles[0].p2.Y, triangles[1].p2.Y, triangles[2].p2.Y, triangles[3].p2.Y}
+	p2z := [4]float32{triangles[0].p2.Z, triangles[1].p2.Z, triangles[2].p2.Z, triangles[3].p2.Z}
+	for i := 0; i < b.N; i++ {
+		Triangle4Intersect(p0x, p0y, p0z, p1x, p1y, p1z, p2x, p2y, p2z, rox, roy, roz, rdx, rdy, rdz)
+	}
+}
+
+func Benchmark4TriangleIntersectSimd(b *testing.B) {
+	ro := testVector{0, 0, 0}
+	rd := testVector{0, 0, -1}
+	p0 := testVector{-1, 0, -1}
+	p1 := testVector{1, 0, -1}
+	p2 := testVector{1, 1, -1}
+	tr := testTriangle{p0, p1, p2}
+	triangles := [4]testTriangle{tr, tr, tr, tr}
+	for i := 0; i < b.N; i++ {
+		rox := [4]float32{ro.X, ro.X, ro.X, ro.X}
+		roy := [4]float32{ro.Y, ro.Y, ro.Y, ro.Y}
+		roz := [4]float32{ro.Z, ro.Z, ro.Z, ro.Z}
+		rdx := [4]float32{rd.X, rd.X, rd.X, rd.X}
+		rdy := [4]float32{rd.Y, rd.Y, rd.Y, rd.Y}
+		rdz := [4]float32{rd.Z, rd.Z, rd.Z, rd.Z}
+		p0x := [4]float32{triangles[0].p0.X, triangles[1].p0.X, triangles[2].p0.X, triangles[3].p0.X}
+		p0y := [4]float32{triangles[0].p0.Y, triangles[1].p0.Y, triangles[2].p0.Y, triangles[3].p0.Y}
+		p0z := [4]float32{triangles[0].p0.Z, triangles[1].p0.Z, triangles[2].p0.Z, triangles[3].p0.Z}
+		p1x := [4]float32{triangles[0].p1.X, triangles[1].p1.X, triangles[2].p1.X, triangles[3].p1.X}
+		p1y := [4]float32{triangles[0].p1.Y, triangles[1].p1.Y, triangles[2].p1.Y, triangles[3].p1.Y}
+		p1z := [4]float32{triangles[0].p1.Z, triangles[1].p1.Z, triangles[2].p1.Z, triangles[3].p1.Z}
+		p2x := [4]float32{triangles[0].p2.X, triangles[1].p2.X, triangles[2].p2.X, triangles[3].p2.X}
+		p2y := [4]float32{triangles[0].p2.Y, triangles[1].p2.Y, triangles[2].p2.Y, triangles[3].p2.Y}
+		p2z := [4]float32{triangles[0].p2.Z, triangles[1].p2.Z, triangles[2].p2.Z, triangles[3].p2.Z}
+		Triangle4Intersect(p0x, p0y, p0z, p1x, p1y, p1z, p2x, p2y, p2z, rox, roy, roz, rdx, rdy, rdz)
 	}
 }

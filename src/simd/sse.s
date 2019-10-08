@@ -186,6 +186,8 @@ DATA epsilon<>+0x08(SB)/4, $0x322bcc77
 DATA epsilon<>+0x0c(SB)/4, $0x322bcc77
 GLOBL epsilon<>(SB), (NOPTR+RODATA), $16
 
+// TODO could be made from epsilon * -0
+// only more efficient if -0 calculated on the fly (bitshift?)
 DATA minepsilon<>+0x00(SB)/4, $0xb22bcc77
 DATA minepsilon<>+0x04(SB)/4, $0xb22bcc77
 DATA minepsilon<>+0x08(SB)/4, $0xb22bcc77
@@ -225,10 +227,10 @@ TEXT ·TriangleIntersect(SB), NOSPLIT, $0-80
 	MOVAPS    X1, X5
 	DPPS      $0xf1, X4, X5 // det
 	MOVAPS    X5, X7
-	MOVAPS    epsilon<>(SB), X0
-	CMPPS     X0, X7, 2 // epsilon leq det
 	MOVAPS    minepsilon<>(SB), X0
-	CMPPS     X5, X0, 2 // det leq -epsilon
+	CMPPS     X0, X7, 2 // det leq -epsilon
+	MOVAPS    epsilon<>(SB), X0
+	CMPPS     X5, X0, 2 // epsilon leq det
 	ORPS      X0, X7
 
 	RCPPS     X5, X5 // invdet
@@ -238,14 +240,13 @@ TEXT ·TriangleIntersect(SB), NOSPLIT, $0-80
 	MULPS     X5, X4 // u
 	XORPS     X0, X0
 	MOVAPS    X4, X6
-	CMPPS     X0, X6, 2 // 0 leq u
-	ANDPS     X6, X7
-    MOVAPS    one<>(SB), X6
-	CMPPS     X4, X6, 2 // u leq 1
+	CMPPS     X4, X0, 2 // 0 leq u
+	ANDPS     X0, X7
+    MOVAPS    one<>(SB), X0
+	CMPPS     X0, X6, 2 // u leq 1
 	ANDPS     X6, X7
 
 	// tvec cross e1, both overwritten
-	// tvec in X3, e1 in X1
 	MOVAPS    X3, X0
 	MOVAPS    X1, X6
 	SHUFPS    $0xc9, X3, X3
@@ -261,21 +262,17 @@ TEXT ·TriangleIntersect(SB), NOSPLIT, $0-80
 	DPPS      $0xf1, X3, X1
 	MULPS     X5, X1 // v
 	XORPS     X0, X0
-	MOVAPS    X1, X6
-	CMPPS     X0, X6, 2 // 0 leq v
-	ANDPS     X6, X7
+	CMPPS     X1, X0, 2 // 0 leq v
+	ANDPS     X0, X7
 	MOVAPS    one<>(SB), X0
 	ADDPS     X4, X1
-	CMPPS     X1, X0, 2 // u+v leq 1
-	ANDPS     X0, X7
+	CMPPS     X0, X1, 2 // u+v leq 1
+	ANDPS     X1, X7
 
 	// e2 dot qvec * invdet
 	DPPS      $0xf1, X2, X3
 	MULPS     X5, X3 // t
 	ANDPS     X7, X3 // apply mask
-	// wtf: movups returns correct but breaks benchmark
-	// movd does NOT return correct answer...
-	//MOVUPS    X3, ret+80(FP)
 	MOVD      X3, ret+80(FP)
 	RET
 
@@ -309,7 +306,7 @@ TEXT ·Triangle4Intersect(SB), NOSPLIT, $0-240
 	// rd cross e2
 	MOVAPS    X13, X0
 	MULPS     X8, X0
-	MOVAPS    X14, X15
+	MOVAPS    X14,X15
 	MULPS     X7, X15
 	SUBPS     X15, X0
 
@@ -321,8 +318,93 @@ TEXT ·Triangle4Intersect(SB), NOSPLIT, $0-240
 
 	MOVAPS    X12, X2
 	MULPS     X7, X2
-	MOVAPS    X13, X15
+	MOVAPS    X13,X15
 	MULPS     X6, X15
 	SUBPS     X15, X2 // pvec
 
+	// we can now reuse X12-X15 registers:
+	// rd can be read in again when we need it at the end
+	// e1 dot pvec
+	MOVAPS    X3, X12
+	MULPS     X0, X12
+	MOVAPS    X4, X15
+	MULPS     X1, X15
+	ADDPS     X15,X12
+	MOVAPS    X5, X15
+	MULPS     X2, X15
+	ADDPS     X15,X12 // det
+
+	MOVAPS    X12,X13
+	MOVAPS    minepsilon<>(SB), X15
+	CMPPS     X15,X13, 2 // det leq -epsilon
+	MOVAPS    epsilon<>(SB), X15
+	CMPPS     X12,X15, 2 // epsilon leq det
+	ORPS      X15,X13
+
+	RCPPS     X12,X12 //invdet
+
+	// pvec dot tvec * invdet, pvec overwritten
+	MULPS     X9, X0
+	MULPS     X10, X1
+	MULPS     X11, X2
+	ADDPS     X0, X1
+	ADDPS     X1, X2
+	MULPS     X12, X2 // u
+	XORPS     X0, X0
+	MOVAPS    X2, X14 // u (since I want X2 for qvecZ)
+	CMPPS     X2, X0, 2 // 0 leq u
+	ANDPS     X0, X13
+	MOVAPS    one<>(SB), X1
+	CMPPS     X1, X2, 2 // u leq 1
+	ANDPS     X2, X13
+
+	// tvec cross e1, both overwritten
+	// tvec in 9-11, e1 in 3-5
+	MOVAPS    X10, X0
+	MULPS     X5, X0
+	MOVAPS    X11, X1
+	MULPS     X4, X1
+	SUBPS     X1, X0
+
+	MOVAPS    X11, X1
+	MULPS     X3, X1
+	MOVAPS    X9, X2
+	MULPS     X5, X2
+	SUBPS     X2, X1
+
+	MOVAPS    X9, X2
+	MULPS     X4, X2
+	MOVAPS    X10,X15
+	MULPS     X3, X15
+	SUBPS     X15, X2 // qvec
+
+	// rd dot qvec * invdet
+	MOVUPS    rdx+192(FP), X3
+	MULPS     X0, X3
+	MOVUPS    rdy+208(FP), X4
+	MULPS     X1, X4
+	ADDPS     X4, X3
+	MOVUPS    rdz+224(FP), X4
+	MULPS     X2, X4
+	ADDPS     X4, X3
+	MULPS     X12,X3 // v
+	XORPS     X4, X4
+	CMPPS     X3, X4, 2 // 0 leq v
+	ANDPS     X4, X13
+	MOVAPS    one<>(SB), X4
+	ADDPS     X14, X3
+	CMPPS     X4, X3, 2 // u+v leq 1
+	ANDPS     X3, X13
+
+	// e2 dot qvec * invdet
+	// e2 in X6-X8, qvec in X0-X2
+	MULPS     X6, X0
+	MULPS     X7, X1
+	MULPS     X8, X2
+	ADDPS     X0, X1
+	ADDPS     X1, X2
+	MULPS     X12, X2 // t
+	ANDPS     X13, X2 // apply mask
+
+	MOVUPS    X2, ret+240(FP)
 	RET
