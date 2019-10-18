@@ -30,14 +30,14 @@ func (s *Scene) AddLights(l ...Light) {
 
 func (s *Scene) Precompute() {
 	// TODO: loop over all objects and add emitters to emmiters list
-	s.AccelerationStructure = NewBVH(s.Objects, SplitMiddle)
+	s.AccelerationStructure = NewBVH(s.Objects, SplitSurfaceAreaHeuristic)
 }
 
 func (s *Scene) randomEmitter(random *rand.Rand) Triangle {
 	if len(s.Emitters) == 0 {
 		panic("no light in scene!")
 	}
-	return s.Emitters[rand.Intn(len(s.Emitters))]
+	return s.Emitters[random.Intn(len(s.Emitters))]
 }
 
 func SetBackgroundColor(c Color) {

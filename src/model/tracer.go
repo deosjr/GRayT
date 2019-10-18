@@ -195,7 +195,7 @@ func (pt *pathTracerNEE) GetRayColor(ray Ray, scene *Scene, depth int) Color {
 	lightCos := nl.Dot(l.Normalize().Times(-1))
 	if lightFacing > 0 && lightCos > 0 && !pointInShadow(si.Point, l, dist, si.as) {
 		lightPDF := 1.0 / float32(len(scene.Emitters))
-		solidAngle := (lightCos * light.Area()) / (dist * dist * lightPDF)
+		solidAngle := (lightCos * light.SurfaceArea()) / (dist * dist * lightPDF)
 		lightColor := light.GetMaterial().(*RadiantMaterial).Color
 		direct = lightColor.Times(solidAngle).Product(brdf).Times(lightFacing)
 	}

@@ -38,6 +38,7 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
+	fmt.Println("Creating scene...")
 	scene := CornellBox()
 	fmt.Println("Rendering...")
 

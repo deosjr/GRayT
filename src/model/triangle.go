@@ -1,9 +1,9 @@
 package model
 
-import "math"
-import "math/rand"
-
-// - speed: SIMD instructions
+import (
+	"math"
+	"math/rand"
+)
 
 type TriangleMesh struct {
 	vertices map[int64]Vector
@@ -166,7 +166,7 @@ func (t Triangle) Sample(random *rand.Rand) Vector {
 }
 
 // Heron's formula
-func (t Triangle) Area() float32 {
+func (t Triangle) SurfaceArea() float32 {
 	a := t.P1.Sub(t.P0).Length()
 	b := t.P2.Sub(t.P0).Length()
 	c := t.P1.Sub(t.P2).Length()

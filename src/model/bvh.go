@@ -1,5 +1,9 @@
 package model
 
+import (
+	"sort"
+)
+
 // Bounded Volume Hierarchy
 type BVH struct {
 	objects []Object
@@ -9,12 +13,6 @@ type BVH struct {
 func (bvh *BVH) GetObjects() []Object {
 	return bvh.objects
 }
-
-// A split function reorders the objects in the objects list
-// between [start, end) and returns a split index called mid
-// additional parameters are the axis dimension to split on
-// and the bounding box of centroids of all objects between start-end
-type splitFunc func(objects []objectInfo, start, end int, axis Dimension, bounds AABB) int
 
 type bvhNode interface {
 	getBounds() AABB
@@ -137,9 +135,13 @@ func recursiveBuildBVH(objectInfos []objectInfo, start, end int, objs, total *in
 		return newBVHLeaf(offset, numObjects, bounds)
 	}
 
-	mid := splitFunc(objectInfos, start, end, dim, centroidBounds)
-	c1 := recursiveBuildBVH(objectInfos, start, mid, objs, total, objectOrder, splitFunc, depth-1)
-	c2 := recursiveBuildBVH(objectInfos, mid, end, objs, total, objectOrder, splitFunc, depth-1)
+	splitIndex, createLeaf := splitFunc(objectInfos, start, end, dim, bounds, centroidBounds)
+	if createLeaf {
+		offset := updateWithObjects(objectInfos, start, end, objs, objectOrder)
+		return newBVHLeaf(offset, numObjects, bounds)
+	}
+	c1 := recursiveBuildBVH(objectInfos, start, splitIndex, objs, total, objectOrder, splitFunc, depth-1)
+	c2 := recursiveBuildBVH(objectInfos, splitIndex, end, objs, total, objectOrder, splitFunc, depth-1)
 	return newBVHInterior(dim, c1, c2)
 }
 
@@ -153,11 +155,18 @@ func updateWithObjects(objectInfos []objectInfo, start, end int, objs *int, orde
 	return firstOffset
 }
 
+// A split function reorders the objects in the objects list
+// between [start, end) and returns a split index called mid
+// it also returns a bool param indicating whether to just create a leaf node instead
+// additional parameters are the axis dimension to split on
+// and the bounding box of centroids of all objects between start-end
+type splitFunc func(objects []objectInfo, start, end int, axis Dimension, bounds, centroidBounds AABB) (index int, createLeaf bool)
+
 // Find middle of bounding box along the axis
 // order objectInfos by everything less than middle along the axis
 // followed by everything greater than the middle along the axis.
 // Return index of smallest node greater than middle
-func SplitMiddle(objectInfos []objectInfo, start, end int, dim Dimension, centroidBounds AABB) int {
+func SplitMiddle(objectInfos []objectInfo, start, end int, dim Dimension, bounds, centroidBounds AABB) (int, bool) {
 	axisMid := (centroidBounds.Pmin.Get(dim) + centroidBounds.Pmax.Get(dim)) / 2
 	// partition with pivot = axisMid
 	i, j := start-1, end
@@ -175,7 +184,113 @@ func SplitMiddle(objectInfos []objectInfo, start, end int, dim Dimension, centro
 		}
 		objectInfos[i], objectInfos[j] = objectInfos[j], objectInfos[i]
 	}
-	return i
+	return i, false
+}
+
+type byCentroidDim struct {
+	dim Dimension
+	oi  []objectInfo
+}
+
+func (s byCentroidDim) Len() int {
+	return len(s.oi)
+}
+func (s byCentroidDim) Swap(i, j int) {
+	s.oi[i], s.oi[j] = s.oi[j], s.oi[i]
+}
+func (s byCentroidDim) Less(i, j int) bool {
+	return s.oi[i].centroid.Get(s.dim) < s.oi[j].centroid.Get(s.dim)
+}
+
+// TODO: pbrt uses C++ std::nth_element, which does a partial sort in O(n)
+// for now we will just sort the subarray
+func SplitEqualCounts(objectInfos []objectInfo, start, end int, dim Dimension, bounds, centroidBounds AABB) (int, bool) {
+	sort.Sort(byCentroidDim{dim: dim, oi: objectInfos[start:end]})
+	mid := (start + end) / 2
+	return mid, false
+}
+
+type bucketInfo struct {
+	count  int
+	bounds AABB
+}
+
+const nBuckets int = 12
+
+func SplitSurfaceAreaHeuristic(objectInfos []objectInfo, start, end int, dim Dimension, bounds, centroidBounds AABB) (int, bool) {
+	nPrimitives := end - start
+	if nPrimitives <= 4 {
+		return SplitEqualCounts(objectInfos, start, end, dim, bounds, centroidBounds)
+	}
+	// initialize buckets for SAH partition
+	buckets := make([]bucketInfo, nBuckets)
+	bucketMapping := make([]int, nPrimitives)
+	for i := start; i < end; i++ {
+		b := int(float32(nBuckets) * centroidBounds.Offset(objectInfos[i].centroid).Get(dim))
+		if b == nBuckets {
+			b = nBuckets - 1
+		}
+		bucketMapping[i-start] = b
+		bucket := buckets[b]
+		if bucket.count == 0 {
+			bucket.bounds = objectInfos[i].bounds
+		} else {
+			bucket.bounds = bucket.bounds.AddAABB(objectInfos[i].bounds)
+		}
+		bucket.count = bucket.count + 1
+		buckets[b] = bucket
+	}
+	// compute costs for splitting after each bucket
+	// doesn't consider last bucket since splitting on it achieves nothing
+	// estimated intersection cost = 1 and traversal cost = 1/8 or 0.125
+	cost := make([]float32, nBuckets-1)
+	for i := 0; i < nBuckets-1; i++ {
+		b0 := buckets[0].bounds
+		count0 := buckets[0].count
+		for j := 1; j <= i; j++ {
+			b0 = b0.AddAABB(buckets[j].bounds)
+			count0 += buckets[j].count
+		}
+		b1 := buckets[i+1].bounds
+		count1 := buckets[i+1].count
+		for j := i + 2; j < nBuckets; j++ {
+			b1 = b1.AddAABB(buckets[j].bounds)
+			count1 += buckets[j].count
+		}
+		cost[i] = 0.125 + (float32(count0)*b0.SurfaceArea()+float32(count1)*b1.SurfaceArea())/bounds.SurfaceArea()
+	}
+	// find bucket to split at that minimizes SAH metric
+	minCost := cost[0]
+	minCostSplitBucket := 0
+	for i := 1; i < nBuckets-1; i++ {
+		if cost[i] < minCost {
+			minCost = cost[i]
+			minCostSplitBucket = i
+		}
+	}
+	// either create leaf or split primitives at selected SAH bucket
+	leafCost := float32(nPrimitives)
+	if minCost >= leafCost {
+		return 0, true
+	}
+	// partition on bucket <= minCostSplitBucket
+	i, j := start-1, end
+	for {
+		i++
+		for bucketMapping[i-start] <= minCostSplitBucket {
+			i++
+		}
+		j--
+		for bucketMapping[j-start] > minCostSplitBucket {
+			j--
+		}
+		if i >= j {
+			break
+		}
+		objectInfos[i], objectInfos[j] = objectInfos[j], objectInfos[i]
+		bucketMapping[i-start], bucketMapping[j-start] = bucketMapping[j-start], bucketMapping[i-start]
+	}
+	return i, false
 }
 
 type optimisedBVHNode struct {

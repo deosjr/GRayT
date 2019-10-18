@@ -60,6 +60,29 @@ func (b AABB) Intersect(ray Ray) (tMin float32, hit bool) {
 	return t0, true
 }
 
+func (b AABB) SurfaceArea() float32 {
+	d := b.Pmax.Sub(b.Pmin)
+	return 2 * (d.X*d.Y + d.Y*d.Z + d.X*d.Z)
+}
+
+// used in surface area heuristic: maps a centroid's relative position
+// to the box's min and max corners between 0 and 1
+// assumption is that p lies within b
+func (b AABB) Offset(p Vector) Vector {
+	o := p.Sub(b.Pmin)
+	// guarding against division by 0
+	if b.Pmax.X > b.Pmin.X {
+		o.X = o.X / (b.Pmax.X - b.Pmin.X)
+	}
+	if b.Pmax.Y > b.Pmin.Y {
+		o.Y = o.Y / (b.Pmax.Y - b.Pmin.Y)
+	}
+	if b.Pmax.Z > b.Pmin.Z {
+		o.Z = o.Z / (b.Pmax.Z - b.Pmin.Z)
+	}
+	return o
+}
+
 // TODO: check efficiency
 func (b AABB) MaximumExtent() Dimension {
 	xExtent := b.Pmax.X - b.Pmin.X
@@ -116,7 +139,7 @@ func (c Cuboid) Tesselate() Object {
 	return NewTriangleComplexObject(triangles)
 }
 
-func (c Cuboid) TesselateInsideOut() Object {
+func (c Cuboid) TesselateInsideOut() []Triangle {
 	pmin := c.cuboid.Pmin
 	pmax := c.cuboid.Pmax
 
@@ -137,7 +160,7 @@ func (c Cuboid) TesselateInsideOut() Object {
 	triangles[6], triangles[7] = QuadrilateralToTriangles(p8, p7, p3, p4, c.material)
 	triangles[8], triangles[9] = QuadrilateralToTriangles(p5, p8, p4, p1, c.material)
 	triangles[10], triangles[11] = QuadrilateralToTriangles(p7, p8, p5, p6, c.material)
-	return NewTriangleComplexObject(triangles)
+	return triangles
 }
 
 //   P1           P2
