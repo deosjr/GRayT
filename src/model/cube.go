@@ -115,7 +115,7 @@ func NewCuboid(aabb AABB, m Material) Cuboid {
 // let P5 - P8 be the bottom quadrilateral
 // P1 corresponding to P5 etc
 
-func (c Cuboid) Tesselate() Object {
+func (c Cuboid) Tesselate() []Triangle {
 	pmin := c.cuboid.Pmin
 	pmax := c.cuboid.Pmax
 
@@ -136,7 +136,7 @@ func (c Cuboid) Tesselate() Object {
 	triangles[6], triangles[7] = QuadrilateralToTriangles(p4, p3, p7, p8, c.material)
 	triangles[8], triangles[9] = QuadrilateralToTriangles(p1, p4, p8, p5, c.material)
 	triangles[10], triangles[11] = QuadrilateralToTriangles(p6, p5, p8, p7, c.material)
-	return NewTriangleComplexObject(triangles)
+	return triangles
 }
 
 func (c Cuboid) TesselateInsideOut() []Triangle {

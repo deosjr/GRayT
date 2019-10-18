@@ -5,7 +5,7 @@ package model
 // setting to 0.1 or 0.5 shows shadows; setting too big gives weirdness
 // see https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-shading/ligth-and-shadows
 // on shadow bias
-var ERROR_MARGIN float32 = 1E-3
+var ERROR_MARGIN float32 = 1e-3
 
 type AccelerationStructure interface {
 	GetObjects() []Object

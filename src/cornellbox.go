@@ -18,6 +18,8 @@ func CornellBox() *m.Scene {
 	var intensity float32 = 100.0
 	lightMat := &m.RadiantMaterial{Color: m.NewColor(255, 255, 255).Times(intensity)}
 
+	triangles := []m.Triangle{}
+
 	// light Y just lower than ceiling, otherwise we collide
 	light := m.NewQuadrilateral(
 		m.Vector{213, 548.7, 332},
@@ -26,7 +28,7 @@ func CornellBox() *m.Scene {
 		m.Vector{213, 548.7, 227},
 		lightMat)
 	t1, t2 := light.Tesselate()
-	scene.Add(t1, t2)
+	triangles = append(triangles, t1, t2)
 	scene.Emitters = []m.Triangle{t1, t2}
 
 	white := &m.DiffuseMaterial{Color: m.NewColor(186, 186, 186)}
@@ -39,7 +41,8 @@ func CornellBox() *m.Scene {
 		m.Vector{552.8, 0.0, 0.0},
 		m.Vector{549.6, 0.0, 559.2},
 		white)
-	scene.Add(floor.Tesselate())
+	t1, t2 = floor.Tesselate()
+	triangles = append(triangles, t1, t2)
 
 	ceiling := m.NewQuadrilateral(
 		m.Vector{556.0, 548.8, 0.0},
@@ -47,7 +50,8 @@ func CornellBox() *m.Scene {
 		m.Vector{0.0, 548.8, 559.2},
 		m.Vector{556.0, 548.8, 559.2},
 		white)
-	scene.Add(ceiling.Tesselate())
+	t1, t2 = ceiling.Tesselate()
+	triangles = append(triangles, t1, t2)
 
 	backwall := m.NewQuadrilateral(
 		m.Vector{0.0, 548.8, 559.2},
@@ -55,7 +59,8 @@ func CornellBox() *m.Scene {
 		m.Vector{549.6, 0.0, 559.2},
 		m.Vector{556.0, 548.8, 559.2},
 		white)
-	scene.Add(backwall.Tesselate())
+	t1, t2 = backwall.Tesselate()
+	triangles = append(triangles, t1, t2)
 
 	rightwall := m.NewQuadrilateral(
 		m.Vector{0.0, 548.8, 0.0},
@@ -63,14 +68,16 @@ func CornellBox() *m.Scene {
 		m.Vector{0.0, 0.0, 559.2},
 		m.Vector{0.0, 548.8, 559.2},
 		green)
-	scene.Add(rightwall.Tesselate())
+	t1, t2 = rightwall.Tesselate()
+	triangles = append(triangles, t1, t2)
 
 	leftwall := m.NewQuadrilateral(m.Vector{556.0, 548.8, 559.2},
 		m.Vector{549.6, 0.0, 559.2},
 		m.Vector{552.8, 0.0, 0.0},
 		m.Vector{556.0, 548.8, 0.0},
 		red)
-	scene.Add(leftwall.Tesselate())
+	t1, t2 = leftwall.Tesselate()
+	triangles = append(triangles, t1, t2)
 
 	//shortblock
 	shortblock1 := m.NewQuadrilateral(
@@ -79,35 +86,36 @@ func CornellBox() *m.Scene {
 		m.Vector{130, 165, 65},
 		m.Vector{290, 165, 114},
 		white)
-	scene.Add(shortblock1.Tesselate())
 	shortblock2 := m.NewQuadrilateral(
 		m.Vector{240, 165, 272},
 		m.Vector{290, 165, 114},
 		m.Vector{290, 0, 114},
 		m.Vector{240, 0, 272},
 		white)
-	scene.Add(shortblock2.Tesselate())
 	shortblock3 := m.NewQuadrilateral(
 		m.Vector{290, 165, 114},
 		m.Vector{130, 165, 65},
 		m.Vector{130, 0, 65},
 		m.Vector{290, 0, 114},
 		white)
-	scene.Add(shortblock3.Tesselate())
 	shortblock4 := m.NewQuadrilateral(
 		m.Vector{130, 165, 65},
 		m.Vector{82, 165, 225},
 		m.Vector{82, 0, 225},
 		m.Vector{130, 0, 65},
 		white)
-	scene.Add(shortblock4.Tesselate())
 	shortblock5 := m.NewQuadrilateral(
 		m.Vector{82, 165, 225},
 		m.Vector{240, 165, 272},
 		m.Vector{240, 0, 272},
 		m.Vector{82, 0, 225},
 		white)
-	scene.Add(shortblock5.Tesselate())
+	t1, t2 = shortblock1.Tesselate()
+	t3, t4 := shortblock2.Tesselate()
+	t5, t6 := shortblock3.Tesselate()
+	t7, t8 := shortblock4.Tesselate()
+	t9, t10 := shortblock5.Tesselate()
+	triangles = append(triangles, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)
 
 	//tallblock
 	tallblock1 := m.NewQuadrilateral(
@@ -116,36 +124,38 @@ func CornellBox() *m.Scene {
 		m.Vector{423, 330, 247},
 		m.Vector{472, 330, 406},
 		white)
-	scene.Add(tallblock1.Tesselate())
 	tallblock2 := m.NewQuadrilateral(
 		m.Vector{472, 330, 406},
 		m.Vector{423, 330, 247},
 		m.Vector{423, 0, 247},
 		m.Vector{472, 0, 406},
 		white)
-	scene.Add(tallblock2.Tesselate())
 	tallblock3 := m.NewQuadrilateral(
 		m.Vector{314, 330, 456},
 		m.Vector{472, 330, 406},
 		m.Vector{472, 0, 406},
 		m.Vector{314, 0, 456},
 		white)
-	scene.Add(tallblock3.Tesselate())
 	tallblock4 := m.NewQuadrilateral(
 		m.Vector{265, 330, 296},
 		m.Vector{314, 330, 456},
 		m.Vector{314, 0, 456},
 		m.Vector{265, 0, 296},
 		white)
-	scene.Add(tallblock4.Tesselate())
 	tallblock5 := m.NewQuadrilateral(
 		m.Vector{423, 330, 247},
 		m.Vector{265, 330, 296},
 		m.Vector{265, 0, 296},
 		m.Vector{423, 0, 247},
 		white)
-	scene.Add(tallblock5.Tesselate())
+	t1, t2 = tallblock1.Tesselate()
+	t3, t4 = tallblock2.Tesselate()
+	t5, t6 = tallblock3.Tesselate()
+	t7, t8 = tallblock4.Tesselate()
+	t9, t10 = tallblock5.Tesselate()
+	triangles = append(triangles, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)
 
+	scene.Add(m.NewTriangleComplexObject(triangles))
 	scene.Precompute()
 
 	from, to := m.Vector{278, 273, -800}, m.Vector{278, 273, -799}
