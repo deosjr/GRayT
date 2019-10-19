@@ -97,6 +97,16 @@ func (b AABB) MaximumExtent() Dimension {
 	return Z
 }
 
+func boundsToSimd(b1, b2, b3, b4 AABB) ([4]float32,[4]float32,[4]float32,[4]float32,[4]float32,[4]float32) {
+		min4x := [4]float32{b1.Pmin.X, b2.Pmin.X, b3.Pmin.X, b4.Pmin.X}
+		min4y := [4]float32{b1.Pmin.Y, b2.Pmin.Y, b3.Pmin.Y, b4.Pmin.Y}
+		min4z := [4]float32{b1.Pmin.Z, b2.Pmin.Z, b3.Pmin.Z, b4.Pmin.Z}
+		max4x := [4]float32{b1.Pmax.X, b2.Pmax.X, b3.Pmax.X, b4.Pmax.X}
+		max4y := [4]float32{b1.Pmax.Y, b2.Pmax.Y, b3.Pmax.Y, b4.Pmax.Y}
+		max4z := [4]float32{b1.Pmax.Z, b2.Pmax.Z, b3.Pmax.Z, b4.Pmax.Z}
+		return min4x, min4y, min4z, max4x, max4y, max4z
+} 
+
 // any cuboid is just an axis-aligned box with a rotation
 type Cuboid struct {
 	cuboid   AABB

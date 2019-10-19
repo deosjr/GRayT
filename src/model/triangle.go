@@ -173,3 +173,16 @@ func (t Triangle) SurfaceArea() float32 {
 	s := (a + b + c) / 2
 	return float32(math.Sqrt(float64(s * (s - a) * (s - b) * (s - c))))
 }
+
+func trianglesToSimd(t1, t2, t3, t4 Triangle) ([4]float32,[4]float32,[4]float32,[4]float32,[4]float32,[4]float32,[4]float32,[4]float32,[4]float32) {
+		p0x := [4]float32{t1.P0.X, t2.P0.X, t3.P0.X, t4.P0.X}
+		p0y := [4]float32{t1.P0.Y, t2.P0.Y, t3.P0.Y, t4.P0.Y}
+		p0z := [4]float32{t1.P0.Z, t2.P0.Z, t3.P0.Z, t4.P0.Z}
+		p1x := [4]float32{t1.P1.X, t2.P1.X, t3.P1.X, t4.P1.X}
+		p1y := [4]float32{t1.P1.Y, t2.P1.Y, t3.P1.Y, t4.P1.Y}
+		p1z := [4]float32{t1.P1.Z, t2.P1.Z, t3.P1.Z, t4.P1.Z}
+		p2x := [4]float32{t1.P2.X, t2.P2.X, t3.P2.X, t4.P2.X}
+		p2y := [4]float32{t1.P2.Y, t2.P2.Y, t3.P2.Y, t4.P2.Y}
+		p2z := [4]float32{t1.P2.Z, t2.P2.Z, t3.P2.Z, t4.P2.Z}
+		return p0x, p0y, p0z, p1x, p1y, p1z, p2x, p2y, p2z
+} 

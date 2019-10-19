@@ -1,7 +1,10 @@
 package model
 
 import (
+	"math"
 	"sort"
+
+	"github.com/deosjr/GRayT/src/simd"
 )
 
 // Bounded Volume Hierarchy
@@ -69,9 +72,6 @@ type objectInfo struct {
 	centroid Vector
 }
 
-// max recursion depth, see recursiveBuildBVH function
-var maxDepth = 10
-
 func NewBVH(objects []Object, splitFunc splitFunc) *BVH {
 	objectInfos := make([]objectInfo, len(objects))
 	for i, o := range objects {
@@ -84,7 +84,7 @@ func NewBVH(objects []Object, splitFunc splitFunc) *BVH {
 	}
 	objectOrder := make([]int, len(objects))
 	total, numObjects := 0, 0
-	root := recursiveBuildBVH(objectInfos, 0, len(objectInfos), &numObjects, &total, objectOrder, splitFunc, maxDepth)
+	root := recursiveBuildBVH(objectInfos, 0, len(objectInfos), &numObjects, &total, objectOrder, splitFunc)
 	orderedObjects := make([]Object, len(objects))
 	for i, p := range objectOrder {
 		orderedObjects[i] = objects[p]
@@ -104,10 +104,7 @@ func NewBVH(objects []Object, splitFunc splitFunc) *BVH {
 // the total so far of nodes created, the list of object indices to order
 // and a function to split on, and returns the node that represents the
 // range [start, end) and updated total
-// TODO: max recursion depth added as a fix to this function causing stack overflow
-// this probably happens when objects overlap, not sure why though.
-// underlying cause should be found and fixed instead
-func recursiveBuildBVH(objectInfos []objectInfo, start, end int, objs, total *int, objectOrder []int, splitFunc splitFunc, depth int) bvhNode {
+func recursiveBuildBVH(objectInfos []objectInfo, start, end int, objs, total *int, objectOrder []int, splitFunc splitFunc) bvhNode {
 	*total++
 	bounds := objectInfos[start].bounds
 	for i := start + 1; i < end; i++ {
@@ -115,8 +112,8 @@ func recursiveBuildBVH(objectInfos []objectInfo, start, end int, objs, total *in
 	}
 	numObjects := end - start
 
-	// Only one object remaining, return a leaf node or recursion depth reached
-	if numObjects == 1 || depth == 0 {
+	// Only one object remaining, return a leaf node
+	if numObjects == 1 {
 		offset := updateWithObjects(objectInfos, start, end, objs, objectOrder)
 		return newBVHLeaf(offset, numObjects, bounds)
 	}
@@ -140,8 +137,8 @@ func recursiveBuildBVH(objectInfos []objectInfo, start, end int, objs, total *in
 		offset := updateWithObjects(objectInfos, start, end, objs, objectOrder)
 		return newBVHLeaf(offset, numObjects, bounds)
 	}
-	c1 := recursiveBuildBVH(objectInfos, start, splitIndex, objs, total, objectOrder, splitFunc, depth-1)
-	c2 := recursiveBuildBVH(objectInfos, splitIndex, end, objs, total, objectOrder, splitFunc, depth-1)
+	c1 := recursiveBuildBVH(objectInfos, start, splitIndex, objs, total, objectOrder, splitFunc)
+	c2 := recursiveBuildBVH(objectInfos, splitIndex, end, objs, total, objectOrder, splitFunc)
 	return newBVHInterior(dim, c1, c2)
 }
 
@@ -217,9 +214,21 @@ type bucketInfo struct {
 
 const nBuckets int = 12
 
+func Split4SurfaceAreaHeuristic(objectInfos []objectInfo, start, end int, dim Dimension, bounds, centroidBounds AABB) (int, bool) {
+	return splitSurfaceAreaHeuristic(objectInfos, start, end, dim, bounds, centroidBounds, true)
+}
+
 func SplitSurfaceAreaHeuristic(objectInfos []objectInfo, start, end int, dim Dimension, bounds, centroidBounds AABB) (int, bool) {
+	return splitSurfaceAreaHeuristic(objectInfos, start, end, dim, bounds, centroidBounds, false)
+}
+
+// force4 boolean switches between the mbvh optimized version and default version of SAH split
+func splitSurfaceAreaHeuristic(objectInfos []objectInfo, start, end int, dim Dimension, bounds, centroidBounds AABB, force4 bool) (int, bool) {
 	nPrimitives := end - start
 	if nPrimitives <= 4 {
+		if force4 {
+			return 0, true
+		}
 		return SplitEqualCounts(objectInfos, start, end, dim, bounds, centroidBounds)
 	}
 	// initialize buckets for SAH partition
@@ -257,7 +266,11 @@ func SplitSurfaceAreaHeuristic(objectInfos []objectInfo, start, end int, dim Dim
 			b1 = b1.AddAABB(buckets[j].bounds)
 			count1 += buckets[j].count
 		}
-		cost[i] = 0.125 + (float32(count0)*b0.SurfaceArea()+float32(count1)*b1.SurfaceArea())/bounds.SurfaceArea()
+		if count0%4 != 0 && count1%4 != 0 {
+			cost[i] = math.MaxFloat32
+		} else {
+			cost[i] = 0.125 + (float32(count0)*b0.SurfaceArea()+float32(count1)*b1.SurfaceArea())/bounds.SurfaceArea()
+		}
 	}
 	// find bucket to split at that minimizes SAH metric
 	minCost := cost[0]
@@ -269,9 +282,11 @@ func SplitSurfaceAreaHeuristic(objectInfos []objectInfo, start, end int, dim Dim
 		}
 	}
 	// either create leaf or split primitives at selected SAH bucket
-	leafCost := float32(nPrimitives)
-	if minCost >= leafCost {
-		return 0, true
+	if !force4 {
+		leafCost := float32(nPrimitives)
+		if minCost >= leafCost {
+			return 0, true
+		}
 	}
 	// partition on bucket <= minCostSplitBucket
 	i, j := start-1, end
@@ -371,7 +386,6 @@ func (bvh *BVH) ClosestIntersection(ray Ray, maxDistance float32) (*SurfaceInter
 }
 
 // Bounded Volume Hierarchy for triangles only!
-// TODO: mBVH: 4-ary tree
 type TriangleBVH struct {
 	triangles []Triangle
 	nodes     []optimisedBVHNode
@@ -397,7 +411,7 @@ func NewTriangleBVH(triangles []Triangle, splitFunc splitFunc) *TriangleBVH {
 	}
 	triangleOrder := make([]int, len(triangles))
 	total, numTriangles := 0, 0
-	root := recursiveBuildBVH(objectInfos, 0, len(objectInfos), &numTriangles, &total, triangleOrder, splitFunc, maxDepth)
+	root := recursiveBuildBVH(objectInfos, 0, len(objectInfos), &numTriangles, &total, triangleOrder, splitFunc)
 	orderedTriangles := make([]Triangle, len(triangles))
 	for i, p := range triangleOrder {
 		orderedTriangles[i] = triangles[p]
@@ -452,6 +466,217 @@ func (bvh *TriangleBVH) ClosestIntersection(ray Ray, maxDistance float32) (*Surf
 			toVisitOffset--
 			currentNodeIndex = nodesToVisit[toVisitOffset]
 		}
+	}
+	if !found {
+		return nil, false
+	}
+	normal := triangle.SurfaceNormal(PointFromRay(ray, distance))
+	return NewSurfaceInteraction(triangle, distance, normal, ray), true
+}
+
+// Bounded Volume Hierarchy for triangles only, simd optimized
+type Triangle4BVH struct {
+	triangles []Triangle
+	nodes     []bvh4Node
+}
+
+func (bvh *Triangle4BVH) GetObjects() []Object {
+	objects := make([]Object, len(bvh.triangles))
+	for i, t := range bvh.triangles {
+		objects[i] = t
+	}
+	return objects
+}
+
+func NewTriangle4BVH(triangles []Triangle) *Triangle4BVH {
+	objectInfos := make([]objectInfo, len(triangles))
+	for i, o := range triangles {
+		aabb := o.Bound(identity)
+		objectInfos[i] = objectInfo{
+			index:    i,
+			bounds:   aabb,
+			centroid: aabb.Centroid(),
+		}
+	}
+	triangleOrder := make([]int, len(triangles))
+	total, numTriangles := 0, 0
+	binaryRoot := recursiveBuildBVH(objectInfos, 0, len(objectInfos), &numTriangles, &total, triangleOrder, Split4SurfaceAreaHeuristic)
+	orderedTriangles := make([]Triangle, len(triangles))
+	for i, p := range triangleOrder {
+		orderedTriangles[i] = triangles[p]
+	}
+
+	nodes := make([]bvh4Node, total)
+	offset := 0
+	convertTo4mbvhInterior(binaryRoot.(bvhInterior), orderedTriangles, nodes, &offset)
+
+	return &Triangle4BVH{
+		triangles: orderedTriangles,
+		nodes:     nodes,
+	}
+}
+
+type bvh4Node interface {
+	isLeaf() bool
+}
+
+type bvh4Interior struct {
+	// NOTE: offset -1 means empty node
+	childOffsets [4]int
+	// boundsData in simd
+	min4x [4]float32
+	min4y [4]float32
+	min4z [4]float32
+	max4x [4]float32
+	max4y [4]float32
+	max4z [4]float32
+	// TODO: traversalOrder
+}
+
+func (bvh4Interior) isLeaf() bool {
+	return false
+}
+
+type bvh4Leaf struct {
+	firstOffset  int
+	numTriangles int
+	// triangleData in simd
+	p0x [4]float32
+	p0y [4]float32
+	p0z [4]float32
+	p1x [4]float32
+	p1y [4]float32
+	p1z [4]float32
+	p2x [4]float32
+	p2y [4]float32
+	p2z [4]float32
+}
+
+func (bvh4Leaf) isLeaf() bool {
+	return false
+}
+
+// converts bvh to 4-mbvh according to Multi Bounding Volume Hierarchies - Ernst, Greiner 2008
+// also flattens the tree into a node list
+func convertTo4mbvhInterior(node bvhInterior, triangles []Triangle, nodes []bvh4Node, offset *int) int {
+	myOffset := *offset
+	*offset++
+	nc1 := node.children[0]
+	o1, b1, o2, b2 := convertTo4mbvhIntermediate(nc1, triangles, nodes, offset)
+	nc2 := node.children[1]
+	o3, b3, o4, b4 := convertTo4mbvhIntermediate(nc2, triangles, nodes, offset)
+	childOffsets := [4]int{o1, o2, o3, o4}
+	min4x, min4y, min4z, max4x, max4y, max4z := boundsToSimd(b1, b2, b3, b4)
+	nodes[myOffset] = bvh4Interior{
+		childOffsets: childOffsets,
+		min4x:        min4x,
+		min4y:        min4y,
+		min4z:        min4z,
+		max4x:        max4x,
+		max4y:        max4y,
+		max4z:        max4z,
+	}
+	return myOffset
+}
+
+func convertTo4mbvhIntermediate(node bvhNode, triangles []Triangle, nodes []bvh4Node, offset *int) (int, AABB, int, AABB) {
+	switch n := node.(type) {
+	case bvhLeaf:
+		o := convertTo4mbvhLeaf(n, triangles, nodes, offset)
+		return o, n.getBounds(), -1, AABB{}
+	case bvhInterior:
+		var o1, o2 int
+		nc1 := n.children[0]
+		b1 := nc1.getBounds()
+		switch n1 := nc1.(type) {
+		case bvhLeaf:
+			o1 = convertTo4mbvhLeaf(n1, triangles, nodes, offset)
+		case bvhInterior:
+			o1 = convertTo4mbvhInterior(n1, triangles, nodes, offset)
+		}
+		nc2 := n.children[1]
+		b2 := nc2.getBounds()
+		switch n2 := nc2.(type) {
+		case bvhLeaf:
+			o2 = convertTo4mbvhLeaf(n2, triangles, nodes, offset)
+		case bvhInterior:
+			o2 = convertTo4mbvhInterior(n2, triangles, nodes, offset)
+		}
+		return o1, b1, o2, b2
+	}
+	panic("convert to 4-mbvh: assumptions failed!")
+	return 0, AABB{}, 0, AABB{}
+}
+
+func convertTo4mbvhLeaf(node bvhLeaf, triangles []Triangle, nodes []bvh4Node, offset *int) int {
+	trs := [4]Triangle{}
+	for i := 0; i < node.numObjects; i++ {
+		trs[i] = triangles[node.firstOffset+i]
+	}
+	p0x, p0y, p0z, p1x, p1y, p1z, p2x, p2y, p2z := trianglesToSimd(trs[0], trs[1], trs[2], trs[3])
+
+	myOffset := *offset
+	nodes[myOffset] = bvh4Leaf{
+		firstOffset:  node.firstOffset,
+		numTriangles: node.numObjects,
+		p0x:          p0x,
+		p0y:          p0y,
+		p0z:          p0z,
+		p1x:          p1x,
+		p1y:          p1y,
+		p1z:          p1z,
+		p2x:          p2x,
+		p2y:          p2y,
+		p2z:          p2z,
+	}
+	*offset++
+	return myOffset
+}
+
+func (bvh *Triangle4BVH) ClosestIntersection(ray Ray, maxDistance float32) (*SurfaceInteraction, bool) {
+	rox, roy, roz, rdx, rdy, rdz := ray.toSimd()
+	var toVisitOffset, currentNodeIndex int
+	var found bool
+	var triangle Triangle
+	distance := maxDistance
+	nodesToVisit := make([]int, 64)
+	for {
+		n := bvh.nodes[currentNodeIndex].(bvh4Interior)
+		boxTs := simd.Box4Intersect(rox, roy, roz, rdx, rdy, rdz, n.min4x, n.min4y, n.min4z, n.max4x, n.max4y, n.max4z)
+		// TODO: traversal order
+		for i := 0; i < 4; i++ {
+			boxT := boxTs[i]
+			if boxT == 0 || boxT > distance {
+				continue
+			}
+			offset := n.childOffsets[i]
+			// empty child node
+			if offset == -1 {
+				continue
+			}
+			child := bvh.nodes[offset]
+			switch c := child.(type) {
+			case bvh4Leaf:
+				ts := simd.Triangle4Intersect(c.p0x, c.p0y, c.p0z, c.p1x, c.p1y, c.p1z, c.p2x, c.p2y, c.p2z, rox, roy, roz, rdx, rdy, rdz)
+				for j := 0; j < c.numTriangles; j++ {
+					t := ts[j]
+					if t == 0 || t > distance || t <= ERROR_MARGIN {
+						continue
+					}
+					triangle = bvh.triangles[c.firstOffset+j]
+					found = true
+					distance = t
+				}
+			case bvh4Interior:
+				nodesToVisit[toVisitOffset] = offset
+				toVisitOffset++
+			}
+		}
+		if toVisitOffset == 0 {
+			break
+		}
+		toVisitOffset--
+		currentNodeIndex = nodesToVisit[toVisitOffset]
 	}
 	if !found {
 		return nil, false

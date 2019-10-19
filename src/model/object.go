@@ -68,7 +68,8 @@ func NewTriangleComplexObject(triangles []Triangle) Object {
 		panic("invalid triangles, cant be empty")
 	}
 	return &ComplexObject{
-		as: NewTriangleBVH(triangles, SplitMiddle),
+		//as: NewTriangleBVH(triangles, SplitSurfaceAreaHeuristic),
+		as: NewTriangle4BVH(triangles),
 	}
 }
 
