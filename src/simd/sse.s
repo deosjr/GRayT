@@ -179,19 +179,19 @@ TEXT ·Normalize4(SB), NOSPLIT, $0-48
 	MOVUPS    X5, ret+80(FP)
 	RET
 
-// epsilon = 1e-3 in float32 notation
-DATA epsilon<>+0x00(SB)/4, $0x3a83126f
-DATA epsilon<>+0x04(SB)/4, $0x3a83126f
-DATA epsilon<>+0x08(SB)/4, $0x3a83126f
-DATA epsilon<>+0x0c(SB)/4, $0x3a83126f
+// epsilon = 1e-8 in float32 notation
+DATA epsilon<>+0x00(SB)/4, $0x322bcc77
+DATA epsilon<>+0x04(SB)/4, $0x322bcc77
+DATA epsilon<>+0x08(SB)/4, $0x322bcc77
+DATA epsilon<>+0x0c(SB)/4, $0x322bcc77
 GLOBL epsilon<>(SB), (NOPTR+RODATA), $16
 
 // TODO could be made from epsilon * -0
 // only more efficient if -0 calculated on the fly (bitshift?)
-DATA minepsilon<>+0x00(SB)/4, $0xba83126f
-DATA minepsilon<>+0x04(SB)/4, $0xba83126f
-DATA minepsilon<>+0x08(SB)/4, $0xba83126f
-DATA minepsilon<>+0x0c(SB)/4, $0xba83126f
+DATA minepsilon<>+0x00(SB)/4, $0xb22bcc77
+DATA minepsilon<>+0x04(SB)/4, $0xb22bcc77
+DATA minepsilon<>+0x08(SB)/4, $0xb22bcc77
+DATA minepsilon<>+0x0c(SB)/4, $0xb22bcc77
 GLOBL minepsilon<>(SB), (NOPTR+RODATA), $16
 
 DATA one<>+0x00(SB)/4, $0x3f800000
