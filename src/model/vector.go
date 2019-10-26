@@ -114,7 +114,7 @@ func PointFromRay(r Ray, d float32) Vector {
 	return r.Origin.Add(r.Direction.Times(d))
 }
 
-func (r Ray) toSimd() ([4]float32,[4]float32,[4]float32,[4]float32,[4]float32,[4]float32) {
+func (r Ray) toSimd() ([4]float32, [4]float32, [4]float32, [4]float32, [4]float32, [4]float32) {
 	rox := [4]float32{r.Origin.X, r.Origin.X, r.Origin.X, r.Origin.X}
 	roy := [4]float32{r.Origin.Y, r.Origin.Y, r.Origin.Y, r.Origin.Y}
 	roz := [4]float32{r.Origin.Z, r.Origin.Z, r.Origin.Z, r.Origin.Z}
