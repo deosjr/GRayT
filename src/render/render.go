@@ -10,10 +10,8 @@ import (
 //   - memory: use protobuff ?
 
 type worker struct {
-	scene   *model.Scene
-	in      chan question
-	out     chan answer
-	samples int
+	in  chan question
+	out chan answer
 }
 
 type question struct {
@@ -25,55 +23,66 @@ type answer struct {
 	color model.Color
 }
 
-// TODO: pass as parameter
-const antiAliasing = true
+func (w worker) work(params Params) {
+	tracer := getTracer(params.TracerType)
+	if params.TracerType == model.WhittedStyle {
+		params.NumSamples = 1
+	}
 
-func (w worker) work(tracer model.Tracer) {
 	random := tracer.Random()
 	for q := range w.in {
 		x, y := float32(q.x), float32(q.y)
 		var xvar, yvar float32 = 0.5, 0.5
-		ray := w.scene.Camera.PixelRay(x+xvar, y+yvar)
+		ray := params.Scene.Camera.PixelRay(x+xvar, y+yvar)
 		color := model.NewColor(0, 0, 0)
-		for i := 0; i < w.samples; i++ {
+		for i := 0; i < params.NumSamples; i++ {
 			// anti-aliasing: first sample is exact middle of pixel
 			// rest is randomly sampled
-			if antiAliasing && i != 0 {
+			if params.AntiAliasing && i != 0 {
 				xvar, yvar = random.Float32(), random.Float32()
-				ray = w.scene.Camera.PixelRay(x+xvar, y+yvar)
+				ray = params.Scene.Camera.PixelRay(x+xvar, y+yvar)
 			}
-			sampleColor := tracer.GetRayColor(ray, w.scene, 0)
+			sampleColor := tracer.GetRayColor(ray, params.Scene, 0)
 			color = color.Add(sampleColor)
 		}
-		color = color.Times(1.0 / float32(w.samples))
+		color = color.Times(1.0 / float32(params.NumSamples))
 		w.out <- answer{q.x, q.y, color}
 	}
 }
 
-func RenderNaive(scene *model.Scene, numWorkers int) Film {
-	return render(scene, numWorkers, model.NewWhittedRayTracer, 1)
+type Params struct {
+	Scene        *model.Scene
+	NumWorkers   int
+	NumSamples   int
+	TracerType   model.TracerType
+	AntiAliasing bool
 }
 
-func RenderWithPathTracer(scene *model.Scene, numWorkers, numSamples int) Film {
-	return render(scene, numWorkers, model.NewPathTracerNEE, numSamples)
+func getTracer(tt model.TracerType) model.Tracer {
+	switch tt {
+	case model.WhittedStyle:
+		return model.NewWhittedRayTracer()
+	case model.Path:
+		return model.NewPathTracer()
+	case model.PathNextEventEstimate:
+		return model.NewPathTracerNEE()
+	}
+	return nil
 }
 
-func render(scene *model.Scene, numWorkers int, newTracerFunc func() model.Tracer, numSamples int) Film {
-	w, h := scene.Camera.Width(), scene.Camera.Height()
+func Render(params Params) Film {
+	w, h := params.Scene.Camera.Width(), params.Scene.Camera.Height()
 	img := newFilm(w, h)
 
-	inputChannel := make(chan question, numWorkers)
-	outputChannel := make(chan answer, numWorkers)
+	inputChannel := make(chan question, params.NumWorkers)
+	outputChannel := make(chan answer, params.NumWorkers)
 
-	for i := 0; i < numWorkers; i++ {
+	for i := 0; i < params.NumWorkers; i++ {
 		worker := worker{
-			scene:   scene,
-			in:      inputChannel,
-			out:     outputChannel,
-			samples: numSamples,
+			in:  inputChannel,
+			out: outputChannel,
 		}
-		tracer := newTracerFunc()
-		go worker.work(tracer)
+		go worker.work(params)
 	}
 
 	go func() {

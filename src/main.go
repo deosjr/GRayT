@@ -12,10 +12,8 @@ import (
 )
 
 var (
-	width      uint = 1200
-	height     uint = 1200
-	numWorkers      = 10
-	numSamples      = 200
+	width  uint = 1200
+	height uint = 1200
 
 	ex = m.Vector{1, 0, 0}
 	ey = m.Vector{0, 1, 0}
@@ -42,9 +40,16 @@ func main() {
 	scene := CornellBox()
 	fmt.Println("Rendering...")
 
+	params := render.Params{
+		Scene:        scene,
+		NumWorkers:   10,
+		NumSamples:   200,
+		AntiAliasing: true,
+		TracerType:   m.WhittedStyle,
+	}
+
 	// aw := render.NewAVI("out.avi", width, height)
-	film := render.RenderWithPathTracer(scene, numWorkers, numSamples)
-	//	film := render.RenderNaive(scene, numWorkers)
+	film := render.Render(params)
 	film.SaveAsPNG("out.png")
 
 	if *memprofile != "" {

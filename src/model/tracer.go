@@ -29,6 +29,14 @@ func (t tracer) Random() *rand.Rand {
 	return t.random
 }
 
+type TracerType uint
+
+const (
+	WhittedStyle TracerType = iota
+	Path
+	PathNextEventEstimate
+)
+
 type whittedRayTracer struct {
 	tracer
 }
