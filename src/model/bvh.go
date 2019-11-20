@@ -435,7 +435,7 @@ func (bvh *TriangleBVH) ClosestIntersection(ray Ray, maxDistance float32) (*Surf
 	nodesToVisit := make([]int, 64)
 	for {
 		node := bvh.nodes[currentNodeIndex]
-		if tMin, hit := node.bounds.Intersect(ray); hit && tMin < maxDistance {
+		if tMin, hit := node.bounds.Intersect(ray); hit && tMin < distance {
 			if node.numObjects > 0 {
 				// this is a leaf node
 				for i := 0; i < node.numObjects; i++ {
@@ -508,7 +508,12 @@ func NewTriangle4BVH(triangles []Triangle) *Triangle4BVH {
 
 	nodes := make([]bvh4Node, total)
 	offset := 0
-	convertTo4mbvhInterior(binaryRoot.(bvhInterior), orderedTriangles, nodes, &offset)
+	switch root := binaryRoot.(type) {
+	case bvhInterior:
+		convertTo4mbvhInterior(root, orderedTriangles, nodes, &offset)
+	case bvhLeaf:
+		convertTo4mbvhLeaf(root, orderedTriangles, nodes, &offset)
+	}
 
 	return &Triangle4BVH{
 		triangles: orderedTriangles,
@@ -641,35 +646,48 @@ func (bvh *Triangle4BVH) ClosestIntersection(ray Ray, maxDistance float32) (*Sur
 	distance := maxDistance
 	nodesToVisit := make([]int, 64)
 	for {
-		n := bvh.nodes[currentNodeIndex].(bvh4Interior)
-		boxTs := simd.Box4Intersect(rox, roy, roz, rdx, rdy, rdz, n.min4x, n.min4y, n.min4z, n.max4x, n.max4y, n.max4z)
-		// TODO: traversal order
-		for i := 0; i < 4; i++ {
-			boxT := boxTs[i]
-			if boxT == 0 || boxT > distance {
-				continue
-			}
-			offset := n.childOffsets[i]
-			// empty child node
-			if offset == -1 {
-				continue
-			}
-			child := bvh.nodes[offset]
-			switch c := child.(type) {
-			case bvh4Leaf:
-				ts := simd.Triangle4Intersect(c.p0x, c.p0y, c.p0z, c.p1x, c.p1y, c.p1z, c.p2x, c.p2y, c.p2z, rox, roy, roz, rdx, rdy, rdz)
-				for j := 0; j < c.numTriangles; j++ {
-					t := ts[j]
-					if t == 0 || t > distance || t <= ERROR_MARGIN {
-						continue
-					}
-					triangle = bvh.triangles[c.firstOffset+j]
-					found = true
-					distance = t
+		switch n := bvh.nodes[currentNodeIndex].(type) {
+		case bvh4Leaf:
+			ts := simd.Triangle4Intersect(n.p0x, n.p0y, n.p0z, n.p1x, n.p1y, n.p1z, n.p2x, n.p2y, n.p2z, rox, roy, roz, rdx, rdy, rdz)
+			for j := 0; j < n.numTriangles; j++ {
+				t := ts[j]
+				if t == 0 || t >= distance || t <= ERROR_MARGIN {
+					continue
 				}
-			case bvh4Interior:
-				nodesToVisit[toVisitOffset] = offset
-				toVisitOffset++
+				triangle = bvh.triangles[n.firstOffset+j]
+				found = true
+				distance = t
+			}
+		case bvh4Interior:
+			boxTs := simd.Box4Intersect(rox, roy, roz, rdx, rdy, rdz, n.min4x, n.min4y, n.min4z, n.max4x, n.max4y, n.max4z)
+			// TODO: traversal order
+			for i := 0; i < 4; i++ {
+				boxT := boxTs[i]
+				if boxT == 0 || boxT > distance {
+					continue
+				}
+				offset := n.childOffsets[i]
+				// empty child node
+				if offset == -1 {
+					continue
+				}
+				child := bvh.nodes[offset]
+				switch c := child.(type) {
+				case bvh4Leaf:
+					ts := simd.Triangle4Intersect(c.p0x, c.p0y, c.p0z, c.p1x, c.p1y, c.p1z, c.p2x, c.p2y, c.p2z, rox, roy, roz, rdx, rdy, rdz)
+					for j := 0; j < c.numTriangles; j++ {
+						t := ts[j]
+						if t == 0 || t >= distance || t <= ERROR_MARGIN {
+							continue
+						}
+						triangle = bvh.triangles[c.firstOffset+j]
+						found = true
+						distance = t
+					}
+				case bvh4Interior:
+					nodesToVisit[toVisitOffset] = offset
+					toVisitOffset++
+				}
 			}
 		}
 		if toVisitOffset == 0 {

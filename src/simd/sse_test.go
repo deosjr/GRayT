@@ -519,6 +519,22 @@ func TestTriangleIntersect(t *testing.T) {
 			p1: testVector{2, 0, -2},
 			p2: testVector{2, 2, -2},
 		},
+		// 2 randomly generated test cases that fail on rounding errors
+		// when using RCPPS
+		{
+			p0: testVector{X: -281.573, Y: 410.15726, Z: -141.82341},
+			p1: testVector{X: 351.67438, Y: 434.09607, Z: 440.06393},
+			p2: testVector{X: -125.7391, Y: -127.68364, Z: 318.1397},
+			ro: testVector{X: 174.38438, Y: 304.48764, Z: 272.30704},
+			rd: testVector{X: 0.2938059, Y: -0.20797282, Z: 0.9329659},
+		},
+		{
+			p0: testVector{X: -63.931763, Y: -56.17392, Z: -442.17444},
+			p1: testVector{X: -420.88693, Y: -469.2147, Z: 304.75366},
+			p2: testVector{X: -396.92105, Y: 244.8274, Z: -53.85065},
+			ro: testVector{X: -114.9804, Y: -66.87874, Z: 238.39647},
+			rd: testVector{X: -0.7497336, Y: -0.6617179, Z: -0.0053925477},
+		},
 	} {
 		triangle := testTriangle{tt.p0, tt.p1, tt.p2}
 		out, hit := triangle.intersect(tt.ro, tt.rd)
@@ -585,60 +601,123 @@ func BenchmarkTriangleIntersectNoConversionSimd(b *testing.B) {
 }
 
 func Test4TriangleIntersect(t *testing.T) {
-	triangles := [4]testTriangle{
+	for d, tt := range []struct {
+		triangles [4]testTriangle
+		ro        testVector
+		rd        testVector
+	}{
 		{
-			p0: testVector{-1, 0, -1},
-			p1: testVector{1, 0, -1},
-			p2: testVector{1, 1, -1},
+			triangles: [4]testTriangle{
+				{
+					p0: testVector{-1, 0, -1},
+					p1: testVector{1, 0, -1},
+					p2: testVector{1, 1, -1},
+				},
+				{
+					p0: testVector{-2, 0, -2},
+					p1: testVector{2, 0, -2},
+					p2: testVector{2, 2, -2},
+				},
+				{
+					p0: testVector{-1, 0, -1},
+					p1: testVector{1, 0, -1},
+					p2: testVector{1, 1, -1},
+				},
+				{
+					p0: testVector{-1, 0, -1},
+					p1: testVector{1, 0, -1},
+					p2: testVector{1, 1, -1},
+				},
+			},
+			ro: testVector{0, 0, 0},
+			rd: testVector{0, 0, -1},
+		},
+		// 2 randomly generated tests that fail rounding errors
+		// when using RCPPS
+		{
+			triangles: [4]testTriangle{
+				{
+					p0: testVector{X: -460.37598, Y: -324.83853, Z: 33.135204},
+					p1: testVector{X: -299.03824, Y: 229.80937, Z: 30.185402},
+					p2: testVector{X: 280.91913, Y: 301.7894, Z: 316.75595},
+				},
+				{
+					p0: testVector{X: 154.19307, Y: -309.96835, Z: 367.1002},
+					p1: testVector{X: 132.89345, Y: -417.66684, Z: -19.636272},
+					p2: testVector{X: 220.65219, Y: -303.69104, Z: 69.31779},
+				},
+				{
+					p0: testVector{X: -281.573, Y: 410.15726, Z: -141.82341},
+					p1: testVector{X: 351.67438, Y: 434.09607, Z: 440.06393},
+					p2: testVector{X: -125.7391, Y: -127.68364, Z: 318.1397},
+				},
+				{
+					p0: testVector{X: -87.283554, Y: 354.5092, Z: 102.55295},
+					p1: testVector{X: -248.82996, Y: 164.36073, Z: 357.0556},
+					p2: testVector{X: 274.93723, Y: 408.07104, Z: -367.10382},
+				},
+			},
+			ro: testVector{X: 174.38438, Y: 304.48764, Z: 272.30704},
+			rd: testVector{X: 0.2938059, Y: -0.20797282, Z: 0.9329659},
 		},
 		{
-			p0: testVector{-2, 0, -2},
-			p1: testVector{2, 0, -2},
-			p2: testVector{2, 2, -2},
+			triangles: [4]testTriangle{
+				{
+					p0: testVector{X: -63.931763, Y: -56.17392, Z: -442.17444},
+					p1: testVector{X: -420.88693, Y: -469.2147, Z: 304.75366},
+					p2: testVector{X: -396.92105, Y: 244.8274, Z: -53.85065},
+				},
+				{
+					p0: testVector{X: -435.83505, Y: -152.09586, Z: 348.71805},
+					p1: testVector{X: 262.57355, Y: 355.4922, Z: 183.94792},
+					p2: testVector{X: -308.7444, Y: -129.70721, Z: -449.11},
+				},
+				{
+					p0: testVector{X: 335.11725, Y: -427.42883, Z: 373.0301},
+					p1: testVector{X: 472.27707, Y: 99.24653, Z: -127.22689},
+					p2: testVector{X: 466.58768, Y: -464.82974, Z: -466.27313},
+				},
+				{
+					p0: testVector{X: 496.35965, Y: -27.85486, Z: -202.64835},
+					p1: testVector{X: -351.3991, Y: -428.6788, Z: 364.8578},
+					p2: testVector{X: 57.72078, Y: 35.152046, Z: 78.13752},
+				},
+			},
+			ro: testVector{X: -114.9804, Y: -66.87874, Z: 238.39647},
+			rd: testVector{X: -0.7497336, Y: -0.6617179, Z: -0.0053925477},
 		},
-		{
-			p0: testVector{-1, 0, -1},
-			p1: testVector{1, 0, -1},
-			p2: testVector{1, 1, -1},
-		},
-		{
-			p0: testVector{-1, 0, -1},
-			p1: testVector{1, 0, -1},
-			p2: testVector{1, 1, -1},
-		},
-	}
-	ro := testVector{0, 0, 0}
-	rd := testVector{0, 0, -1}
-	out := [4]float32{}
-	hit := [4]bool{}
-	var p0x, p0y, p0z, p1x, p1y, p1z, p2x, p2y, p2z [4]float32
-	for i, tr := range triangles {
-		out[i], hit[i] = tr.intersect(ro, rd)
-		p0x[i] = tr.p0.X
-		p0y[i] = tr.p0.Y
-		p0z[i] = tr.p0.Z
-		p1x[i] = tr.p1.X
-		p1y[i] = tr.p1.Y
-		p1z[i] = tr.p1.Z
-		p2x[i] = tr.p2.X
-		p2y[i] = tr.p2.Y
-		p2z[i] = tr.p2.Z
-	}
-	rox := [4]float32{ro.X, ro.X, ro.X, ro.X}
-	roy := [4]float32{ro.Y, ro.Y, ro.Y, ro.Y}
-	roz := [4]float32{ro.Z, ro.Z, ro.Z, ro.Z}
-	rdx := [4]float32{rd.X, rd.X, rd.X, rd.X}
-	rdy := [4]float32{rd.Y, rd.Y, rd.Y, rd.Y}
-	rdz := [4]float32{rd.Z, rd.Z, rd.Z, rd.Z}
-	outf := Triangle4Intersect(p0x, p0y, p0z, p1x, p1y, p1z, p2x, p2y, p2z, rox, roy, roz, rdx, rdy, rdz)
-	for i := 0; i < 4; i++ {
-		hitf := outf[i] != 0.0
-
-		if hitf != hit[i] {
-			t.Errorf("%d): got %v want %v", i, hitf, hit[i])
+	} {
+		out := [4]float32{}
+		hit := [4]bool{}
+		var p0x, p0y, p0z, p1x, p1y, p1z, p2x, p2y, p2z [4]float32
+		for i, tr := range tt.triangles {
+			out[i], hit[i] = tr.intersect(tt.ro, tt.rd)
+			p0x[i] = tr.p0.X
+			p0y[i] = tr.p0.Y
+			p0z[i] = tr.p0.Z
+			p1x[i] = tr.p1.X
+			p1y[i] = tr.p1.Y
+			p1z[i] = tr.p1.Z
+			p2x[i] = tr.p2.X
+			p2y[i] = tr.p2.Y
+			p2z[i] = tr.p2.Z
 		}
-		if hit[i] && math.Abs(float64(out[i]-outf[i])) > 0.001 {
-			t.Errorf("%d): got %e want %e", i, outf[i], out[i])
+		rox := [4]float32{tt.ro.X, tt.ro.X, tt.ro.X, tt.ro.X}
+		roy := [4]float32{tt.ro.Y, tt.ro.Y, tt.ro.Y, tt.ro.Y}
+		roz := [4]float32{tt.ro.Z, tt.ro.Z, tt.ro.Z, tt.ro.Z}
+		rdx := [4]float32{tt.rd.X, tt.rd.X, tt.rd.X, tt.rd.X}
+		rdy := [4]float32{tt.rd.Y, tt.rd.Y, tt.rd.Y, tt.rd.Y}
+		rdz := [4]float32{tt.rd.Z, tt.rd.Z, tt.rd.Z, tt.rd.Z}
+		outf := Triangle4Intersect(p0x, p0y, p0z, p1x, p1y, p1z, p2x, p2y, p2z, rox, roy, roz, rdx, rdy, rdz)
+		for i := 0; i < 4; i++ {
+			hitf := outf[i] != 0.0
+
+			if hitf != hit[i] {
+				t.Errorf("%d-%d): got %v want %v", d, i, hitf, hit[i])
+			}
+			if hit[i] && math.Abs(float64(out[i]-outf[i])) > 0.001 {
+				t.Errorf("%d-%d): got %e want %e", d, i, outf[i], out[i])
+			}
 		}
 	}
 }

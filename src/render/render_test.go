@@ -23,8 +23,15 @@ func sampleScene(b *testing.B) *model.Scene {
 }
 
 func benchmarkScene(scene *model.Scene, numWorkers int, b *testing.B) {
+	params := Params{
+		Scene:        scene,
+		NumWorkers:   numWorkers,
+		NumSamples:   1,
+		AntiAliasing: false,
+		TracerType:   model.WhittedStyle,
+	}
 	for i := 0; i < b.N; i++ {
-		RenderNaive(scene, numWorkers)
+		Render(params)
 	}
 }
 

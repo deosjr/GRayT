@@ -67,7 +67,7 @@ func TestRecursiveBuild(t *testing.T) {
 	} {
 		gotTotal, prims := 0, 0
 		gotOrder := make([]int, len(tt.objects))
-		gotTree := recursiveBuildBVH(tt.objects, 0, len(tt.objects), &prims, &gotTotal, gotOrder, tt.splitFunc, 10)
+		gotTree := recursiveBuildBVH(tt.objects, 0, len(tt.objects), &prims, &gotTotal, gotOrder, tt.splitFunc)
 		if gotTotal != tt.wantTotal {
 			t.Errorf("%d) TOTAL: got %#v want %#v", i, gotTotal, tt.wantTotal)
 		}
@@ -229,6 +229,193 @@ func TestBVHTraversal(t *testing.T) {
 			t.Errorf("%d) got nil want %#v", i, tt.want)
 			continue
 		}
+		if !reflect.DeepEqual(tt.want.object, got.object) {
+			t.Errorf("%d) got %#v want %#v", i, got, tt.want)
+		}
+		if !compareFloat32(got.distance, tt.want.distance) {
+			t.Errorf("%d) got %#v want %#v", i, got, tt.want)
+		}
+	}
+}
+
+func TestTriangle4BVH(t *testing.T) {
+	for i, tt := range []struct {
+		triangles []Triangle
+		want      []bvh4Node
+	}{
+		{
+			triangles: []Triangle{
+				{
+					P0: Vector{-1, -1, -1},
+					P1: Vector{1, 1, 1},
+					P2: Vector{-1, 1, 1},
+				},
+			},
+			want: []bvh4Node{
+				bvh4Leaf{
+					firstOffset:  0,
+					numTriangles: 1,
+					p0x:          [4]float32{-1, 0, 0, 0},
+					p0y:          [4]float32{-1, 0, 0, 0},
+					p0z:          [4]float32{-1, 0, 0, 0},
+					p1x:          [4]float32{1, 0, 0, 0},
+					p1y:          [4]float32{1, 0, 0, 0},
+					p1z:          [4]float32{1, 0, 0, 0},
+					p2x:          [4]float32{-1, 0, 0, 0},
+					p2y:          [4]float32{1, 0, 0, 0},
+					p2z:          [4]float32{1, 0, 0, 0},
+				},
+			},
+		},
+		{
+			triangles: []Triangle{
+				{
+					P0: Vector{-1, -1, -1},
+					P1: Vector{1, 1, 1},
+					P2: Vector{-1, 1, 1},
+				},
+				{
+					P0: Vector{-2, -2, -2},
+					P1: Vector{2, 2, 2},
+					P2: Vector{-2, 2, 2},
+				},
+				{
+					P0: Vector{-3, -3, -3},
+					P1: Vector{3, 3, 3},
+					P2: Vector{-3, 3, 3},
+				},
+				{
+					P0: Vector{-3, 0, -5},
+					P1: Vector{-1, 2, -3},
+					P2: Vector{-2, 1, -4},
+				},
+				{
+					P0: Vector{1, -1, -3},
+					P1: Vector{3, 1, -1},
+					P2: Vector{2, 0, -2},
+				},
+			},
+			want: []bvh4Node{
+				bvh4Interior{
+					childOffsets: [4]int{1, -1, 2, -1},
+					min4x:        [4]float32{-3, 0, -3, 0},
+					min4y:        [4]float32{0, 0, -3, 0},
+					min4z:        [4]float32{-5, 0, -3, 0},
+					max4x:        [4]float32{-1, 0, 3, 0},
+					max4y:        [4]float32{2, 0, 3, 0},
+					max4z:        [4]float32{-3, 0, 3, 0},
+				},
+				bvh4Leaf{
+					firstOffset:  0,
+					numTriangles: 1,
+					p0x:          [4]float32{-3, 0, 0, 0},
+					p0y:          [4]float32{0, 0, 0, 0},
+					p0z:          [4]float32{-5, 0, 0, 0},
+					p1x:          [4]float32{-1, 0, 0, 0},
+					p1y:          [4]float32{2, 0, 0, 0},
+					p1z:          [4]float32{-3, 0, 0, 0},
+					p2x:          [4]float32{-2, 0, 0, 0},
+					p2y:          [4]float32{1, 0, 0, 0},
+					p2z:          [4]float32{-4, 0, 0, 0},
+				},
+				bvh4Leaf{
+					firstOffset:  1,
+					numTriangles: 4,
+					p0x:          [4]float32{-2, -3, -1, 1},
+					p0y:          [4]float32{-2, -3, -1, -1},
+					p0z:          [4]float32{-2, -3, -1, -3},
+					p1x:          [4]float32{2, 3, 1, 3},
+					p1y:          [4]float32{2, 3, 1, 1},
+					p1z:          [4]float32{2, 3, 1, -1},
+					p2x:          [4]float32{-2, -3, -1, 2},
+					p2y:          [4]float32{2, 3, 1, 0},
+					p2z:          [4]float32{2, 3, 1, -2},
+				},
+			},
+		},
+	} {
+		got := NewTriangle4BVH(tt.triangles)
+		if !reflect.DeepEqual(got.nodes, tt.want) {
+			t.Errorf("%d) TREE: got %#v want %#v", i, got.nodes, tt.want)
+		}
+	}
+}
+
+func TestTriangle4BVHTraversal(t *testing.T) {
+	for i, tt := range []struct {
+		triangles       []Triangle
+		ray             Ray
+		want            SurfaceInteraction
+		wantObjectIndex int
+	}{
+		{
+			triangles: []Triangle{
+				{
+					P0: Vector{-1, 0, 1},
+					P1: Vector{1, 0, 1},
+					P2: Vector{1, 1, 1},
+				},
+			},
+			ray: NewRay(Vector{0, 0, 0}, Vector{0, 0, 1}),
+			want: SurfaceInteraction{
+				distance: 1,
+				// normal:   Vector{0, 0, -1},
+			},
+			wantObjectIndex: 0,
+		},
+		{
+			triangles: []Triangle{
+				{
+					P0: Vector{-1, 0, 1},
+					P1: Vector{1, 0, 1},
+					P2: Vector{1, 1, 1},
+				},
+				{
+					P0: Vector{-1, -1, -1},
+					P1: Vector{1, 1, 1},
+					P2: Vector{-1, 1, 1},
+				},
+				{
+					P0: Vector{-2, -2, -2},
+					P1: Vector{2, 2, 2},
+					P2: Vector{-2, 2, 2},
+				},
+				{
+					P0: Vector{-3, -3, -3},
+					P1: Vector{3, 3, 3},
+					P2: Vector{-3, 3, 3},
+				},
+				{
+					P0: Vector{-3, 0, -5},
+					P1: Vector{-1, 2, -3},
+					P2: Vector{-2, 1, -4},
+				},
+				{
+					P0: Vector{1, -1, -3},
+					P1: Vector{3, 1, -1},
+					P2: Vector{2, 0, -2},
+				},
+			},
+			ray: NewRay(Vector{0, 0, 0}, Vector{0, 0, 1}),
+			want: SurfaceInteraction{
+				distance: 1,
+				// normal:   Vector{0, 0, -1},
+			},
+			wantObjectIndex: 0,
+		},
+	} {
+		bvh := NewTriangle4BVH(tt.triangles)
+		tt.want.object = bvh.triangles[tt.wantObjectIndex]
+		got, ok := bvh.ClosestIntersection(tt.ray, math.MaxFloat32)
+		if !ok {
+			t.Errorf("%d) got nil want %#v", i, tt.want)
+			continue
+		}
+		/*
+			if !reflect.DeepEqual(tt.want.object, got.object) {
+				t.Errorf("%d) got %#v want %#v", i, got, tt.want)
+			}
+		*/
 		if !compareFloat32(got.distance, tt.want.distance) {
 			t.Errorf("%d) got %#v want %#v", i, got, tt.want)
 		}

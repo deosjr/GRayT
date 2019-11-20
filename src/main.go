@@ -45,7 +45,7 @@ func main() {
 		NumWorkers:   10,
 		NumSamples:   200,
 		AntiAliasing: true,
-		TracerType:   m.WhittedStyle,
+		TracerType:   m.PathNextEventEstimate,
 	}
 
 	// aw := render.NewAVI("out.avi", width, height)

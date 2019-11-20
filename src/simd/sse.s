@@ -233,7 +233,9 @@ TEXT ·TriangleIntersect(SB), NOSPLIT, $0-80
 	CMPPS     X5, X0, 2 // epsilon leq det
 	ORPS      X0, X7
 
-	RCPPS     X5, X5 // invdet
+	MOVAPS    one<>(SB), X0
+	DIVPS     X5, X0
+	MOVAPS    X0, X5 //invdet
 
 	// pvec dot tvec * invdet, pvec overwritten
 	DPPS      $0xf1, X3, X4
@@ -341,7 +343,9 @@ TEXT ·Triangle4Intersect(SB), NOSPLIT, $0-240
 	CMPPS     X12,X15, 2 // epsilon leq det
 	ORPS      X15,X13
 
-	RCPPS     X12,X12 //invdet
+	MOVAPS    one<>(SB), X15
+	DIVPS     X12, X15
+	MOVAPS    X15, X12 //invdet
 
 	// pvec dot tvec * invdet, pvec overwritten
 	MULPS     X9, X0

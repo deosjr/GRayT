@@ -245,7 +245,7 @@ func compareVectors(u, v Vector) bool {
 }
 
 func compareFloat32(a, b float32) bool {
-	if math.Abs(float64(a-b)) > 0.00001 {
+	if math.Abs(float64(a-b)) > 0.001 {
 		return false
 	}
 	return true
