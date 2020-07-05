@@ -276,18 +276,26 @@ func box4intersectStruct(cube1, cube2, cube3, cube4 testCube, rayOrigin, rayDire
 	d, ok := cube1.intersect(rayOrigin, rayDirection)
 	if ok {
 		t0s[0] = d
+	} else {
+		t0s[0] = -1
 	}
 	d, ok = cube2.intersect(rayOrigin, rayDirection)
 	if ok {
 		t0s[1] = d
+	} else {
+		t0s[1] = -1
 	}
 	d, ok = cube3.intersect(rayOrigin, rayDirection)
 	if ok {
 		t0s[2] = d
+	} else {
+		t0s[2] = -1
 	}
 	d, ok = cube4.intersect(rayOrigin, rayDirection)
 	if ok {
 		t0s[3] = d
+	} else {
+		t0s[3] = -1
 	}
 	return t0s
 }

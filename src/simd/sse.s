@@ -82,6 +82,12 @@ DATA one<>+0x08(SB)/4, $0x3f800000
 DATA one<>+0x0c(SB)/4, $0x3f800000
 GLOBL one<>(SB), (NOPTR+RODATA), $16
 
+DATA minusone<>+0x00(SB)/4, $0xbf800000
+DATA minusone<>+0x04(SB)/4, $0xbf800000
+DATA minusone<>+0x08(SB)/4, $0xbf800000
+DATA minusone<>+0x0c(SB)/4, $0xbf800000
+GLOBL minusone<>(SB), (NOPTR+RODATA), $16
+
 // single lane box intersect: t0 and t1 compared outside of this func
 // this function only calculates tNear and tFar
 TEXT ·BoxIntersect(SB), NOSPLIT, $0-64
@@ -168,7 +174,8 @@ TEXT ·Box4Intersect(SB), NOSPLIT, $0-192
 	// then we apply the masks to t0 values
 	ANDPS     X3, X4
 	ANDPS     X4, X5
-	ANDPS     X5, X0
+	MOVAPS    minusone<>(SB), X12
+	VBLENDVPS X5, X0, X12, X0
 	MOVUPS    X0, ret+192(FP)
 	RET
 

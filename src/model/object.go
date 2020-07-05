@@ -67,9 +67,13 @@ func NewTriangleComplexObject(triangles []Triangle) Object {
 	if len(triangles) == 0 {
 		panic("invalid triangles, cant be empty")
 	}
+	if SIMD_ENABLED {
+		return &ComplexObject{
+			as: NewTriangle4BVH(triangles),
+		}
+	}
 	return &ComplexObject{
-		//as: NewTriangleBVH(triangles, SplitSurfaceAreaHeuristic),
-		as: NewTriangle4BVH(triangles),
+		as: NewTriangleBVH(triangles, SplitSurfaceAreaHeuristic),
 	}
 }
 

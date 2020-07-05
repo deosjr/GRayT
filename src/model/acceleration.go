@@ -6,6 +6,7 @@ package model
 // see https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-shading/ligth-and-shadows
 // on shadow bias
 var ERROR_MARGIN float32 = 1e-3
+var SIMD_ENABLED bool = false
 
 type AccelerationStructure interface {
 	GetObjects() []Object

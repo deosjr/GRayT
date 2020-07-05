@@ -676,7 +676,7 @@ func (bvh *Triangle4BVH) ClosestIntersection(ray Ray, maxDistance float32) (*Sur
 			// TODO: traversal order
 			for i := 0; i < 4; i++ {
 				boxT := boxTs[i]
-				if boxT == 0 || boxT > distance {
+				if boxT == -1 || boxT > distance {
 					continue
 				}
 				offset := n.childOffsets[i]
