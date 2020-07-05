@@ -638,6 +638,23 @@ func convertTo4mbvhLeaf(node bvhLeaf, triangles []Triangle, nodes []bvh4Node, of
 	return myOffset
 }
 
+func (n bvh4Leaf) intersect(rox, roy, roz, rdx, rdy, rdz [4]float32, d float32) (int, float32, bool) {
+	ts := simd.Triangle4Intersect(n.p0x, n.p0y, n.p0z, n.p1x, n.p1y, n.p1z, n.p2x, n.p2y, n.p2z, rox, roy, roz, rdx, rdy, rdz)
+	nOffset := 0
+	found := false
+	distance := d
+	for i := 0; i < n.numTriangles; i++ {
+		t := ts[i]
+		if t == 0 || t >= distance || t <= ERROR_MARGIN {
+			continue
+		}
+		nOffset = n.firstOffset + i
+		found = true
+		distance = t
+	}
+	return nOffset, distance, found
+}
+
 func (bvh *Triangle4BVH) ClosestIntersection(ray Ray, maxDistance float32) (*SurfaceInteraction, bool) {
 	rox, roy, roz, rdx, rdy, rdz := ray.toSimd()
 	var toVisitOffset, currentNodeIndex int
@@ -648,13 +665,9 @@ func (bvh *Triangle4BVH) ClosestIntersection(ray Ray, maxDistance float32) (*Sur
 	for {
 		switch n := bvh.nodes[currentNodeIndex].(type) {
 		case bvh4Leaf:
-			ts := simd.Triangle4Intersect(n.p0x, n.p0y, n.p0z, n.p1x, n.p1y, n.p1z, n.p2x, n.p2y, n.p2z, rox, roy, roz, rdx, rdy, rdz)
-			for j := 0; j < n.numTriangles; j++ {
-				t := ts[j]
-				if t == 0 || t >= distance || t <= ERROR_MARGIN {
-					continue
-				}
-				triangle = bvh.triangles[n.firstOffset+j]
+			nOffset, t, ok := n.intersect(rox, roy, roz, rdx, rdy, rdz, distance)
+			if ok {
+				triangle = bvh.triangles[nOffset]
 				found = true
 				distance = t
 			}
@@ -674,13 +687,9 @@ func (bvh *Triangle4BVH) ClosestIntersection(ray Ray, maxDistance float32) (*Sur
 				child := bvh.nodes[offset]
 				switch c := child.(type) {
 				case bvh4Leaf:
-					ts := simd.Triangle4Intersect(c.p0x, c.p0y, c.p0z, c.p1x, c.p1y, c.p1z, c.p2x, c.p2y, c.p2z, rox, roy, roz, rdx, rdy, rdz)
-					for j := 0; j < c.numTriangles; j++ {
-						t := ts[j]
-						if t == 0 || t >= distance || t <= ERROR_MARGIN {
-							continue
-						}
-						triangle = bvh.triangles[c.firstOffset+j]
+					cOffset, t, ok := c.intersect(rox, roy, roz, rdx, rdy, rdz, distance)
+					if ok {
+						triangle = bvh.triangles[cOffset]
 						found = true
 						distance = t
 					}

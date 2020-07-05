@@ -396,9 +396,9 @@ func TestTriangle4BVHTraversal(t *testing.T) {
 					P2: Vector{2, 0, -2},
 				},
 			},
-			ray: NewRay(Vector{0, 0, 0}, Vector{0, 0, 1}),
+			ray: NewRay(Vector{0, 0, -10}, Vector{0, 0, 1}),
 			want: SurfaceInteraction{
-				distance: 1,
+				distance: 10,
 				// normal:   Vector{0, 0, -1},
 			},
 			wantObjectIndex: 0,
