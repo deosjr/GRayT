@@ -4,6 +4,7 @@ import (
 	"math"
 	"math/rand"
 	"testing"
+	"time"
 )
 
 // testing three different implementations:
@@ -271,37 +272,25 @@ func BenchmarkBoxIntersectStruct(b *testing.B) {
 	}
 }
 
-func box4intersectStruct(cube1, cube2, cube3, cube4 testCube, rayOrigin, rayDirection testVector) (float32, bool) {
-	var t0 float32 = 0.0
+func box4intersectStruct(cube1, cube2, cube3, cube4 testCube, rayOrigin, rayDirection testVector) [4]float32 {
+	var t0s [4]float32
 	d, ok := cube1.intersect(rayOrigin, rayDirection)
-	if !ok {
-		return 0.0, false
-	}
-	if t0 < d {
-		t0 = d
+	if ok {
+		t0s[0] = d
 	}
 	d, ok = cube2.intersect(rayOrigin, rayDirection)
-	if !ok {
-		return 0.0, false
-	}
-	if t0 < d {
-		t0 = d
+	if ok {
+		t0s[1] = d
 	}
 	d, ok = cube3.intersect(rayOrigin, rayDirection)
-	if !ok {
-		return 0.0, false
-	}
-	if t0 < d {
-		t0 = d
+	if ok {
+		t0s[2] = d
 	}
 	d, ok = cube4.intersect(rayOrigin, rayDirection)
-	if !ok {
-		return 0.0, false
+	if ok {
+		t0s[3] = d
 	}
-	if t0 < d {
-		t0 = d
-	}
-	return t0, true
+	return t0s
 }
 
 func Benchmark4BoxIntersectStruct(b *testing.B) {
@@ -318,7 +307,7 @@ func Benchmark4BoxIntersectStruct(b *testing.B) {
 // NOTE: building the simd friendly ray data is shared between this and triangle intersects
 // so possibly reduced 5 times (once for box intersects, once for the 4 triangles if its a leaf node)
 // Running ahead of myself (see mBVH paper), for triangle data a cache can be used
-func box4intersectSimd(cube1, cube2, cube3, cube4 testCube, rayOrigin, rayDirection testVector) (float32, bool) {
+func box4intersectSimd(cube1, cube2, cube3, cube4 testCube, rayOrigin, rayDirection testVector) [4]float32 {
 	o4x := [4]float32{rayOrigin.X, rayOrigin.X, rayOrigin.X, rayOrigin.X}
 	o4y := [4]float32{rayOrigin.Y, rayOrigin.Y, rayOrigin.Y, rayOrigin.Y}
 	o4z := [4]float32{rayOrigin.Z, rayOrigin.Z, rayOrigin.Z, rayOrigin.Z}
@@ -331,14 +320,7 @@ func box4intersectSimd(cube1, cube2, cube3, cube4 testCube, rayOrigin, rayDirect
 	max4x := [4]float32{cube1.maxs.X, cube2.maxs.X, cube3.maxs.X, cube4.maxs.X}
 	max4y := [4]float32{cube1.maxs.Y, cube2.maxs.Y, cube3.maxs.Y, cube4.maxs.Y}
 	max4z := [4]float32{cube1.maxs.Z, cube2.maxs.Z, cube3.maxs.Z, cube4.maxs.Z}
-	t0s := Box4Intersect(o4x, o4y, o4z, d4x, d4y, d4z, min4x, min4y, min4z, max4x, max4y, max4z)
-	var t0 float32 = 0.0
-	for _, ti := range t0s {
-		if ti > t0 {
-			t0 = ti
-		}
-	}
-	return t0, t0 != 0.0
+	return Box4Intersect(o4x, o4y, o4z, d4x, d4y, d4z, min4x, min4y, min4z, max4x, max4y, max4z)
 }
 
 func Benchmark4BoxIntersectSimdNoConversion(b *testing.B) {
@@ -375,20 +357,76 @@ func Benchmark4BoxIntersectSimd(b *testing.B) {
 }
 
 func Test4BoxSimd(t *testing.T) {
-	rayOrigin := testVector{0, 0, 0}
-	rayDirection := testVector{1, 1, 1}
-	cube1 := testCube{mins: testVector{2, 2, 2}, maxs: testVector{3, 3, 3}}
-	cube2 := testCube{mins: testVector{2, 2, 2}, maxs: testVector{3, 3, 3}}
-	cube3 := testCube{mins: testVector{2, 2, 2}, maxs: testVector{3, 3, 3}}
-	cube4 := testCube{mins: testVector{2, 2, 2}, maxs: testVector{3, 3, 3}}
-	got, gotHit := box4intersectSimd(cube1, cube2, cube3, cube4, rayOrigin, rayDirection)
-	wantHit := true
-	var want float32 = 2
-	if wantHit != gotHit {
-		t.Error("hit bool incorrect")
+	for d, tt := range []struct {
+		ro testVector
+		rd testVector
+		c1 testCube
+		c2 testCube
+		c3 testCube
+		c4 testCube
+	}{
+		{
+			ro: testVector{0, 0, 0},
+			rd: testVector{1, 1, 1},
+			c1: testCube{mins: testVector{2, 2, 2}, maxs: testVector{3, 3, 3}},
+			c2: testCube{mins: testVector{2, 2, 2}, maxs: testVector{3, 3, 3}},
+			c3: testCube{mins: testVector{2, 2, 2}, maxs: testVector{3, 3, 3}},
+			c4: testCube{mins: testVector{2, 2, 2}, maxs: testVector{3, 3, 3}},
+		},
+		// random generated test, fixed by adding t0=0.0 at start of calculations
+		// i.e. XORPS the first register and add MAXPS with first t0 value
+		{
+			ro: testVector{0, 0, 0},
+			rd: testVector{-3.2323341, -33.804115, 29.499321},
+			c1: testCube{mins: testVector{18.107834, -25.848492, -18.847755}, maxs: testVector{-30.707195, 13.312214, 45.28969}},
+			c2: testCube{mins: testVector{29.642372, -6.9531517, -47.928432}, maxs: testVector{-11.721863, -8.825039, 17.887497}},
+			c3: testCube{mins: testVector{-10.571224, 4.5797653, -24.498928}, maxs: testVector{39.838516, -2.975563, -2.0600662}},
+			c4: testCube{mins: testVector{16.159958, 30.34137, -41.693176}, maxs: testVector{-14.749153, -45.38565, 9.922146}},
+		},
+		// random generated test
+		{
+			ro: testVector{0, 0, 0},
+			rd: testVector{-28.309319, -24.20735, 31.777344},
+			c1: testCube{mins: testVector{33.618423, -12.316433, -12.135181}, maxs: testVector{-35.066486, 12.27599, -6.2505836}},
+			c2: testCube{mins: testVector{-40.74101, 1.7597961, -21.449244}, maxs: testVector{-22.05585, -35.47505, 45.336975}},
+			c3: testCube{mins: testVector{-39.31895, 22.843544, -13.831745}, maxs: testVector{-27.322006, 7.1916885, 9.056133}},
+			c4: testCube{mins: testVector{43.012024, -47.114372, -29.980309}, maxs: testVector{39.411858, 24.975937, 31.67485}},
+		},
+	} {
+		want := box4intersectStruct(tt.c1, tt.c2, tt.c3, tt.c4, tt.ro, tt.rd)
+		got := box4intersectSimd(tt.c1, tt.c2, tt.c3, tt.c4, tt.ro, tt.rd)
+		for i := range want {
+			if math.Abs(float64(got[i]-want[i])) > 0.001 {
+				t.Errorf("%d) got %f but want %f as t0s", d, got, want)
+				break
+			}
+		}
 	}
-	if math.Abs(float64(got-want)) > 0.001 {
-		t.Errorf("got %f but want %f as t0", got, want)
+}
+
+func TestRandom4BoxSimd(t *testing.T) {
+	rand.Seed(time.Now().UTC().UnixNano())
+	f := func() float32 {
+		return rand.Float32()*100 - 50
+	}
+
+	for {
+		rayOrigin := testVector{0, 0, 0}
+		rayDirection := testVector{f(), f(), f()}
+		cube1 := testCube{mins: testVector{f(), f(), f()}, maxs: testVector{f(), f(), f()}}
+		cube2 := testCube{mins: testVector{f(), f(), f()}, maxs: testVector{f(), f(), f()}}
+		cube3 := testCube{mins: testVector{f(), f(), f()}, maxs: testVector{f(), f(), f()}}
+		cube4 := testCube{mins: testVector{f(), f(), f()}, maxs: testVector{f(), f(), f()}}
+
+		got := box4intersectStruct(cube1, cube2, cube3, cube4, rayOrigin, rayDirection)
+
+		gotSimd := box4intersectSimd(cube1, cube2, cube3, cube4, rayOrigin, rayDirection)
+
+		if got != gotSimd {
+			t.Errorf("got %v gotSimd %v", got, gotSimd)
+			t.Errorf("ro %v rd %v c1 %v c2 %v c3 %v c4 %v", rayOrigin, rayDirection, cube1, cube2, cube3, cube4)
+			break
+		}
 	}
 }
 

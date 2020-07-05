@@ -54,13 +54,43 @@ TEXT ·Cross(SB), NOSPLIT, $0-32
 	MOVUPS    X0, ret+32(FP)
 	RET
 
+// t1s is a quadfloat set to max float values
+DATA t1s<>+0x00(SB)/4, $0xffffffff
+DATA t1s<>+0x04(SB)/4, $0xffffffff
+DATA t1s<>+0x08(SB)/4, $0xffffffff
+DATA t1s<>+0x0c(SB)/4, $0xffffffff
+GLOBL t1s<>(SB), (NOPTR+RODATA), $16
+
+// epsilon = 1e-8 in float32 notation
+DATA epsilon<>+0x00(SB)/4, $0x322bcc77
+DATA epsilon<>+0x04(SB)/4, $0x322bcc77
+DATA epsilon<>+0x08(SB)/4, $0x322bcc77
+DATA epsilon<>+0x0c(SB)/4, $0x322bcc77
+GLOBL epsilon<>(SB), (NOPTR+RODATA), $16
+
+// TODO could be made from epsilon * -0
+// only more efficient if -0 calculated on the fly (bitshift?)
+DATA minepsilon<>+0x00(SB)/4, $0xb22bcc77
+DATA minepsilon<>+0x04(SB)/4, $0xb22bcc77
+DATA minepsilon<>+0x08(SB)/4, $0xb22bcc77
+DATA minepsilon<>+0x0c(SB)/4, $0xb22bcc77
+GLOBL minepsilon<>(SB), (NOPTR+RODATA), $16
+
+DATA one<>+0x00(SB)/4, $0x3f800000
+DATA one<>+0x04(SB)/4, $0x3f800000
+DATA one<>+0x08(SB)/4, $0x3f800000
+DATA one<>+0x0c(SB)/4, $0x3f800000
+GLOBL one<>(SB), (NOPTR+RODATA), $16
+
 // single lane box intersect: t0 and t1 compared outside of this func
+// this function only calculates tNear and tFar
 TEXT ·BoxIntersect(SB), NOSPLIT, $0-64
 	MOVUPS    origins+0(FP), X0
-	MOVUPS    directions+16(FP), X1
+	MOVUPS    directions+16(FP), X2
+	MOVAPS    one<>(SB), X1
+	DIVPS     X2, X1
 	MOVUPS    mins+32(FP), X2
 	MOVUPS    maxs+48(FP), X3
-	RCPPS     X1, X1 
 	SUBPS     X0, X2
 	MULPS     X1, X2
 	SUBPS     X0, X3
@@ -72,22 +102,22 @@ TEXT ·BoxIntersect(SB), NOSPLIT, $0-64
 	MOVUPS    X3, ret+80(FP)
 	RET
 
-// t1s is a quadfloat set to max float values
-DATA t1s<>+0x00(SB)/4, $0xffffffff
-DATA t1s<>+0x04(SB)/4, $0xffffffff
-DATA t1s<>+0x08(SB)/4, $0xffffffff
-DATA t1s<>+0x0c(SB)/4, $0xffffffff
-GLOBL t1s<>(SB), (NOPTR+RODATA), $16
-
 // 4 lane box intersect: output is t0 values for the 4 streams
 // t0 is set to 0 if no hit was found
+// reciprocals of X3, X4 and X5 are immediately calculated
 TEXT ·Box4Intersect(SB), NOSPLIT, $0-192
 	MOVUPS    o4x+0(FP), X0
 	MOVUPS    o4y+16(FP), X1
 	MOVUPS    o4z+32(FP), X2
-	MOVUPS    d4x+48(FP), X3
-	MOVUPS    d4y+64(FP), X4
-	MOVUPS    d4z+80(FP), X5
+	MOVAPS    one<>(SB), X3
+	MOVUPS    d4x+48(FP), X4
+	DIVPS     X4, X3
+	MOVAPS    one<>(SB), X4
+	MOVUPS    d4y+64(FP), X5
+	DIVPS     X5, X4
+	MOVAPS    one<>(SB), X5
+	MOVUPS    d4z+80(FP), X6
+	DIVPS     X6, X5
 	MOVUPS    min4x+96(FP), X6
 	MOVUPS    min4y+112(FP), X7
 	MOVUPS    min4z+128(FP), X8
@@ -98,19 +128,18 @@ TEXT ·Box4Intersect(SB), NOSPLIT, $0-192
 
 	// these 3 blocks each create a mask, one for each dimension
 	// in the meantime t0 is constructed
-	RCPPS     X3, X3
 	SUBPS     X0, X6
 	MULPS     X3, X6
 	SUBPS     X0, X9
 	MULPS     X3, X9
-	MOVAPS    X6, X0
 	MINPS     X9, X0
 	MAXPS     X6, X9
+	XORPS     X3, X3
+	MAXPS     X3, X0
 	MINPS     X9, X12
 	MOVAPS    X0, X3
 	CMPPS     X12, X3, 2 
 
-	RCPPS     X4, X4
 	SUBPS     X1, X7
 	MULPS     X4, X7
 	SUBPS     X1, X10
@@ -123,7 +152,6 @@ TEXT ·Box4Intersect(SB), NOSPLIT, $0-192
 	MOVAPS    X0, X4
 	CMPPS     X12, X4, 2 
 
-	RCPPS     X5, X5
 	SUBPS     X2, X8
 	MULPS     X5, X8
 	SUBPS     X2, X11
@@ -178,27 +206,6 @@ TEXT ·Normalize4(SB), NOSPLIT, $0-48
 	MOVUPS    X4, ret+64(FP)
 	MOVUPS    X5, ret+80(FP)
 	RET
-
-// epsilon = 1e-8 in float32 notation
-DATA epsilon<>+0x00(SB)/4, $0x322bcc77
-DATA epsilon<>+0x04(SB)/4, $0x322bcc77
-DATA epsilon<>+0x08(SB)/4, $0x322bcc77
-DATA epsilon<>+0x0c(SB)/4, $0x322bcc77
-GLOBL epsilon<>(SB), (NOPTR+RODATA), $16
-
-// TODO could be made from epsilon * -0
-// only more efficient if -0 calculated on the fly (bitshift?)
-DATA minepsilon<>+0x00(SB)/4, $0xb22bcc77
-DATA minepsilon<>+0x04(SB)/4, $0xb22bcc77
-DATA minepsilon<>+0x08(SB)/4, $0xb22bcc77
-DATA minepsilon<>+0x0c(SB)/4, $0xb22bcc77
-GLOBL minepsilon<>(SB), (NOPTR+RODATA), $16
-
-DATA one<>+0x00(SB)/4, $0x3f800000
-DATA one<>+0x04(SB)/4, $0x3f800000
-DATA one<>+0x08(SB)/4, $0x3f800000
-DATA one<>+0x0c(SB)/4, $0x3f800000
-GLOBL one<>(SB), (NOPTR+RODATA), $16
 
 TEXT ·TriangleIntersect(SB), NOSPLIT, $0-80
 	MOVUPS    p0+0(FP), X0
