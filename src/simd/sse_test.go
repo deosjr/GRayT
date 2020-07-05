@@ -4,7 +4,6 @@ import (
 	"math"
 	"math/rand"
 	"testing"
-	"time"
 )
 
 // testing three different implementations:
@@ -383,7 +382,7 @@ func Test4BoxSimd(t *testing.T) {
 			c3: testCube{mins: testVector{-10.571224, 4.5797653, -24.498928}, maxs: testVector{39.838516, -2.975563, -2.0600662}},
 			c4: testCube{mins: testVector{16.159958, 30.34137, -41.693176}, maxs: testVector{-14.749153, -45.38565, 9.922146}},
 		},
-		// random generated test
+		// random generated test, fixed by fixing typo...
 		{
 			ro: testVector{0, 0, 0},
 			rd: testVector{-28.309319, -24.20735, 31.777344},
@@ -400,32 +399,6 @@ func Test4BoxSimd(t *testing.T) {
 				t.Errorf("%d) got %f but want %f as t0s", d, got, want)
 				break
 			}
-		}
-	}
-}
-
-func TestRandom4BoxSimd(t *testing.T) {
-	rand.Seed(time.Now().UTC().UnixNano())
-	f := func() float32 {
-		return rand.Float32()*100 - 50
-	}
-
-	for {
-		rayOrigin := testVector{0, 0, 0}
-		rayDirection := testVector{f(), f(), f()}
-		cube1 := testCube{mins: testVector{f(), f(), f()}, maxs: testVector{f(), f(), f()}}
-		cube2 := testCube{mins: testVector{f(), f(), f()}, maxs: testVector{f(), f(), f()}}
-		cube3 := testCube{mins: testVector{f(), f(), f()}, maxs: testVector{f(), f(), f()}}
-		cube4 := testCube{mins: testVector{f(), f(), f()}, maxs: testVector{f(), f(), f()}}
-
-		got := box4intersectStruct(cube1, cube2, cube3, cube4, rayOrigin, rayDirection)
-
-		gotSimd := box4intersectSimd(cube1, cube2, cube3, cube4, rayOrigin, rayDirection)
-
-		if got != gotSimd {
-			t.Errorf("got %v gotSimd %v", got, gotSimd)
-			t.Errorf("ro %v rd %v c1 %v c2 %v c3 %v c4 %v", rayOrigin, rayDirection, cube1, cube2, cube3, cube4)
-			break
 		}
 	}
 }

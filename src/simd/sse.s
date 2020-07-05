@@ -132,6 +132,7 @@ TEXT ·Box4Intersect(SB), NOSPLIT, $0-192
 	MULPS     X3, X6
 	SUBPS     X0, X9
 	MULPS     X3, X9
+	MOVAPS    X6, X0
 	MINPS     X9, X0
 	MAXPS     X6, X9
 	XORPS     X3, X3
