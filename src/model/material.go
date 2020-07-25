@@ -34,6 +34,10 @@ func NewSurfaceInteraction(o Object, d float32, n Vector, r Ray) *SurfaceInterac
 	}
 }
 
+func (si *SurfaceInteraction) GetNormal() Vector {
+	return si.normal
+}
+
 type DiffuseMaterial struct {
 	material
 	Color Color
