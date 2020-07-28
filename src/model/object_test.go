@@ -192,7 +192,7 @@ func TestObjectSurfaceNormal(t *testing.T) {
 				Direction: Vector{0, 0, -1},
 			},
 			d:    1.0,
-			want: Vector{0, 0, 1},
+			want: Vector{0, 0, -1},
 		},
 		{
 			o: NewSharedObject(
@@ -212,7 +212,7 @@ func TestObjectSurfaceNormal(t *testing.T) {
 				Direction: Vector{0, 0, -1},
 			},
 			d:    1.0,
-			want: Vector{0, 0, 1},
+			want: Vector{0, 0, -1},
 		},
 	} {
 		si, _ := tt.o.Intersect(tt.r)
