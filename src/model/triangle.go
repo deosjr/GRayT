@@ -56,7 +56,7 @@ func triangleIntersect(p0, p1, p2 Vector, ray Ray) (float32, bool) {
 }
 
 func triangleSurfaceNormal(p0, p1, p2 Vector) Vector {
-	return VectorFromTo(p0, p2).Cross(VectorFromTo(p0, p1)).Normalize() //.Times(-1)
+	return VectorFromTo(p0, p1).Cross(VectorFromTo(p0, p2)).Normalize()
 }
 
 func (t TriangleInMesh) points() (p0, p1, p2 Vector) {
@@ -99,6 +99,8 @@ func NewFace(v0, v1, v2 int64) Face {
 	return Face{v0, v1, v2}
 }
 
+// face-vertex mesh, matches .obj format description
+// TODO: make this work in triangleBVH (triangle interface? slower...)
 func NewTriangleMesh(vertices []Vector, faces []Face, m Material) Object {
 	vertexMap := map[int64]Vector{}
 	for i, v := range vertices {

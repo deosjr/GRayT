@@ -4,9 +4,6 @@ import (
 	"math"
 )
 
-// NOTE: camera no longer looks at z=-1 but z=1 by default
-// Triangle normals have been changed to reflect this
-
 type Camera interface {
 	PixelRay(x, y float32) Ray
 	Width() int
@@ -32,8 +29,8 @@ func (c *projectiveCamera) Height() int {
 
 func (c *projectiveCamera) LookAt(from, to, up Vector) {
 	dir := VectorFromTo(from, to).Normalize()
-	left := up.Normalize().Cross(dir).Normalize()
-	newUp := dir.Cross(left)
+	left := dir.Normalize().Cross(up).Normalize()
+	newUp := left.Cross(dir)
 	cameraToWorld := matrix4x4{
 		{left.X, newUp.X, dir.X, from.X},
 		{left.Y, newUp.Y, dir.Y, from.Y},

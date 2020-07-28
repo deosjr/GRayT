@@ -37,7 +37,7 @@ func main() {
 	}
 
 	fmt.Println("Creating scene...")
-	m.SIMD_ENABLED = false
+	m.SIMD_ENABLED = true
 	scene := CornellBox()
 	fmt.Println("Rendering...")
 
