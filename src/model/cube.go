@@ -203,6 +203,6 @@ func (q Quadrilateral) Tesselate() (Triangle, Triangle) {
 }
 
 func QuadrilateralToTriangles(p1, p2, p3, p4 Vector, m Material) (Triangle, Triangle) {
-	return NewTriangle(p1, p2, p4, m),
-		NewTriangle(p4, p2, p3, m)
+	return NewTriangle(p1, p4, p2, m),
+		NewTriangle(p2, p4, p3, m)
 }
