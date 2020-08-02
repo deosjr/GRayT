@@ -59,3 +59,32 @@ func TestTriangleSurfaceNormal(t *testing.T) {
 		}
 	}
 }
+
+func TestTriangleSurfaceArea(t *testing.T) {
+	for i, tt := range []struct {
+		t    Triangle
+		want float32
+	}{
+		{
+			t: Triangle{
+				P0: Vector{-1, 0, 0},
+				P1: Vector{1, 0, 0},
+				P2: Vector{1, 1, 0},
+			},
+			want: 1,
+		},
+		{
+			t: Triangle{
+				P0: Vector{3, 0, 2},
+				P1: Vector{1, 0, 0},
+				P2: Vector{3, 0, 8},
+			},
+			want: 6,
+		},
+	} {
+		got := tt.t.SurfaceArea()
+		if !compareFloat32(got, tt.want) {
+			t.Errorf("%d) got %v want %v", i, got, tt.want)
+		}
+	}
+}

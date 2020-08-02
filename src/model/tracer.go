@@ -75,6 +75,14 @@ func (wrt whittedRayTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color 
 		switch mat := material.(type) {
 		case *RadiantMaterial:
 			objectColor = mat.Color
+        case *NormalMappingMaterial:
+            // NOTE: normal mapping only wraps diffuse now
+            si.normal = mat.NormalFunc(si)
+			lightSegment := light.GetLightSegment(si.Point)
+			lightRatio := si.normal.Dot(lightSegment.Normalize())
+			factors := standardAlbedo * INVPI * light.Intensity(lightSegment.Length()) * lightRatio
+			lightColor := light.Color().Times(factors)
+			objectColor = mat.WrappedMaterial.(*DiffuseMaterial).Color.Product(lightColor)
 		case *DiffuseMaterial:
 			lightSegment := light.GetLightSegment(si.Point)
 			lightRatio := si.normal.Dot(lightSegment.Normalize())

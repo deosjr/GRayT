@@ -176,6 +176,15 @@ func (t Triangle) SurfaceArea() float32 {
 	return float32(math.Sqrt(float64(s * (s - a) * (s - b) * (s - c))))
 }
 
+// for point P outside triangle T, this might not be very meaningful
+func (t Triangle) Barycentric(p Vector) (float32, float32, float32) {
+    area := t.SurfaceArea()
+    l0 := Triangle{P0:t.P1, P1:t.P2, P2:p}.SurfaceArea() / area
+    l1 := Triangle{P0:t.P2, P1:t.P0, P2:p}.SurfaceArea() / area
+    l2 := Triangle{P0:t.P0, P1:t.P1, P2:p}.SurfaceArea() / area
+    return l0, l1, l2
+}
+
 func trianglesToSimd(t1, t2, t3, t4 Triangle) ([4]float32, [4]float32, [4]float32, [4]float32, [4]float32, [4]float32, [4]float32, [4]float32, [4]float32) {
 	p0x := [4]float32{t1.P0.X, t2.P0.X, t3.P0.X, t4.P0.X}
 	p0y := [4]float32{t1.P0.Y, t2.P0.Y, t3.P0.Y, t4.P0.Y}

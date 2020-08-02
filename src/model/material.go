@@ -38,6 +38,10 @@ func (si *SurfaceInteraction) GetNormal() Vector {
 	return si.normal
 }
 
+func (si *SurfaceInteraction) GetObject() Object {
+	return si.object
+}
+
 type DiffuseMaterial struct {
 	material
 	Color Color
