@@ -56,10 +56,10 @@ type ComplexObject struct {
 
 func NewComplexObject(objects []Object) Object {
 	if len(objects) == 0 {
-		panic("invalid object, cant be empty")
+		panic("invalid objects, cant be empty")
 	}
 	return &ComplexObject{
-		as: NewBVH(objects, SplitMiddle),
+		as: NewBVH(objects, SplitSurfaceAreaHeuristic),
 	}
 }
 

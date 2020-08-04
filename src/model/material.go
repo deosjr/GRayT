@@ -1,5 +1,8 @@
 package model
 
+// TODO: Textures. for starters, diffuse material can be a texture always returning same color
+// PBRT calls this a ConstantTexture. Paves the way for generated texture patterns!
+
 type Material interface {
 	GetColor(*SurfaceInteraction) Color
 	IsLight() bool
@@ -88,6 +91,7 @@ type NormalMappingMaterial struct {
 	NormalFunc      func(*SurfaceInteraction) Vector
 }
 
+// TODO: this is a bit of a hack, no? where should this normal mapping happen?
 func (m *NormalMappingMaterial) GetColor(si *SurfaceInteraction) Color {
 	si.normal = m.NormalFunc(si)
 	return m.WrappedMaterial.GetColor(si)

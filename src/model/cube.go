@@ -129,15 +129,15 @@ func (c Cuboid) Tesselate() []Triangle {
 	pmin := c.cuboid.Pmin
 	pmax := c.cuboid.Pmax
 
-	p1 := Vector{pmin.X, pmax.Y, pmin.Z}
-	p2 := Vector{pmax.X, pmax.Y, pmin.Z}
-	p3 := Vector{pmax.X, pmax.Y, pmax.Z}
-	p4 := Vector{pmin.X, pmax.Y, pmax.Z}
+	p1 := Vector{pmin.X, pmax.Y, pmax.Z}
+	p2 := Vector{pmax.X, pmax.Y, pmax.Z}
+	p3 := Vector{pmax.X, pmax.Y, pmin.Z}
+	p4 := Vector{pmin.X, pmax.Y, pmin.Z}
 
-	p5 := Vector{pmin.X, pmin.Y, pmin.Z}
-	p6 := Vector{pmax.X, pmin.Y, pmin.Z}
-	p7 := Vector{pmax.X, pmin.Y, pmax.Z}
-	p8 := Vector{pmin.X, pmin.Y, pmax.Z}
+	p5 := Vector{pmin.X, pmin.Y, pmax.Z}
+	p6 := Vector{pmax.X, pmin.Y, pmax.Z}
+	p7 := Vector{pmax.X, pmin.Y, pmin.Z}
+	p8 := Vector{pmin.X, pmin.Y, pmin.Z}
 
 	triangles := make([]Triangle, 12)
 	triangles[0], triangles[1] = QuadrilateralToTriangles(p1, p2, p3, p4, c.material)
@@ -153,15 +153,15 @@ func (c Cuboid) TesselateInsideOut() []Triangle {
 	pmin := c.cuboid.Pmin
 	pmax := c.cuboid.Pmax
 
-	p1 := Vector{pmin.X, pmax.Y, pmin.Z}
-	p2 := Vector{pmax.X, pmax.Y, pmin.Z}
-	p3 := Vector{pmax.X, pmax.Y, pmax.Z}
-	p4 := Vector{pmin.X, pmax.Y, pmax.Z}
+	p1 := Vector{pmin.X, pmax.Y, pmax.Z}
+	p2 := Vector{pmax.X, pmax.Y, pmax.Z}
+	p3 := Vector{pmax.X, pmax.Y, pmin.Z}
+	p4 := Vector{pmin.X, pmax.Y, pmin.Z}
 
-	p5 := Vector{pmin.X, pmin.Y, pmin.Z}
-	p6 := Vector{pmax.X, pmin.Y, pmin.Z}
-	p7 := Vector{pmax.X, pmin.Y, pmax.Z}
-	p8 := Vector{pmin.X, pmin.Y, pmax.Z}
+	p5 := Vector{pmin.X, pmin.Y, pmax.Z}
+	p6 := Vector{pmax.X, pmin.Y, pmax.Z}
+	p7 := Vector{pmax.X, pmin.Y, pmin.Z}
+	p8 := Vector{pmin.X, pmin.Y, pmin.Z}
 
 	triangles := make([]Triangle, 12)
 	triangles[0], triangles[1] = QuadrilateralToTriangles(p4, p3, p2, p1, c.material)
@@ -203,6 +203,6 @@ func (q Quadrilateral) Tesselate() (Triangle, Triangle) {
 }
 
 func QuadrilateralToTriangles(p1, p2, p3, p4 Vector, m Material) (Triangle, Triangle) {
-	return NewTriangle(p1, p4, p2, m),
-		NewTriangle(p2, p4, p3, m)
+	return NewTriangle(p1, p2, p4, m),
+		NewTriangle(p2, p3, p4, m)
 }

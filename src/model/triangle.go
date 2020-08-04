@@ -5,16 +5,6 @@ import (
 	"math/rand"
 )
 
-type TriangleMesh struct {
-	vertices map[int64]Vector
-}
-
-type TriangleInMesh struct {
-	object
-	p0, p1, p2 int64
-	mesh       *TriangleMesh
-}
-
 type Triangle struct {
 	object
 	P0 Vector
@@ -59,73 +49,6 @@ func triangleSurfaceNormal(p0, p1, p2 Vector) Vector {
 	return VectorFromTo(p0, p1).Cross(VectorFromTo(p0, p2)).Normalize()
 }
 
-func (t TriangleInMesh) points() (p0, p1, p2 Vector) {
-	p0 = t.mesh.get(t.p0)
-	p1 = t.mesh.get(t.p1)
-	p2 = t.mesh.get(t.p2)
-	return
-}
-func (t TriangleInMesh) Bound(transform Transform) AABB {
-	p0, p1, p2 := t.points()
-	return triangleBound(p0, p1, p2, transform)
-}
-func (t TriangleInMesh) Intersect(r Ray) (*SurfaceInteraction, bool) {
-	p0, p1, p2 := t.points()
-	d, ok := triangleIntersect(p0, p1, p2, r)
-	if !ok {
-		return nil, false
-	}
-	n := triangleSurfaceNormal(p0, p1, p2)
-	return NewSurfaceInteraction(t, d, n, r), true
-}
-func (t TriangleInMesh) IntersectOptimized(r Ray) (float32, bool) {
-	p0, p1, p2 := t.points()
-	d, ok := triangleIntersect(p0, p1, p2, r)
-	if !ok {
-		return 0, false
-	}
-	return d, true
-}
-func (t TriangleInMesh) SurfaceNormal(Vector) Vector {
-	p0, p1, p2 := t.points()
-	return triangleSurfaceNormal(p0, p1, p2)
-}
-
-type Face struct {
-	V0, V1, V2 int64
-}
-
-func NewFace(v0, v1, v2 int64) Face {
-	return Face{v0, v1, v2}
-}
-
-// face-vertex mesh, matches .obj format description
-// TODO: make this work in triangleBVH (triangle interface? slower...)
-func NewTriangleMesh(vertices []Vector, faces []Face, m Material) Object {
-	vertexMap := map[int64]Vector{}
-	for i, v := range vertices {
-		vertexMap[int64(i)] = v
-	}
-	mesh := &TriangleMesh{
-		vertices: vertexMap,
-	}
-	triangles := make([]Object, len(faces))
-	for i, f := range faces {
-		triangles[i] = TriangleInMesh{
-			object: object{m},
-			p0:     f.V0,
-			p1:     f.V1,
-			p2:     f.V2,
-			mesh:   mesh,
-		}
-	}
-	return NewComplexObject(triangles)
-}
-
-func (m *TriangleMesh) get(i int64) Vector {
-	return m.vertices[i]
-}
-
 func NewTriangle(p0, p1, p2 Vector, m Material) Triangle {
 	return Triangle{
 		object: object{m},
@@ -138,6 +61,7 @@ func NewTriangle(p0, p1, p2 Vector, m Material) Triangle {
 func (t Triangle) Bound(transform Transform) AABB {
 	return triangleBound(t.P0, t.P1, t.P2, transform)
 }
+
 func (t Triangle) Intersect(r Ray) (*SurfaceInteraction, bool) {
 	d, ok := triangleIntersect(t.P0, t.P1, t.P2, r)
 	if !ok {
@@ -146,6 +70,7 @@ func (t Triangle) Intersect(r Ray) (*SurfaceInteraction, bool) {
 	n := triangleSurfaceNormal(t.P0, t.P1, t.P2)
 	return NewSurfaceInteraction(t, d, n, r), true
 }
+
 func (t Triangle) IntersectOptimized(r Ray) (float32, bool) {
 	d, ok := triangleIntersect(t.P0, t.P1, t.P2, r)
 	if !ok {
@@ -153,6 +78,7 @@ func (t Triangle) IntersectOptimized(r Ray) (float32, bool) {
 	}
 	return d, true
 }
+
 func (t Triangle) SurfaceNormal(Vector) Vector {
 	return triangleSurfaceNormal(t.P0, t.P1, t.P2)
 }
@@ -168,21 +94,31 @@ func (t Triangle) Sample(random *rand.Rand) Vector {
 }
 
 // Heron's formula
-func (t Triangle) SurfaceArea() float32 {
-	a := t.P1.Sub(t.P0).Length()
-	b := t.P2.Sub(t.P0).Length()
-	c := t.P1.Sub(t.P2).Length()
+func triangleSurfaceArea(p0, p1, p2 Vector) float32 {
+	a := p1.Sub(p0).Length()
+	b := p2.Sub(p0).Length()
+	c := p1.Sub(p2).Length()
 	s := (a + b + c) / 2
 	return float32(math.Sqrt(float64(s * (s - a) * (s - b) * (s - c))))
 }
 
+func (t Triangle) SurfaceArea() float32 {
+    return triangleSurfaceArea(t.P0, t.P1, t.P2)
+}
+
 // for point P outside triangle T, this might not be very meaningful
-func (t Triangle) Barycentric(p Vector) (float32, float32, float32) {
-    area := t.SurfaceArea()
-    l0 := Triangle{P0:t.P1, P1:t.P2, P2:p}.SurfaceArea() / area
-    l1 := Triangle{P0:t.P2, P1:t.P0, P2:p}.SurfaceArea() / area
-    l2 := Triangle{P0:t.P0, P1:t.P1, P2:p}.SurfaceArea() / area
+// TODO: use (and understand) the edge function to compute this more efficiently
+// PBRT does this _in_ the triangle intersect function!
+func barycentric(p0, p1, p2, p Vector) (float32, float32, float32) {
+    area := triangleSurfaceArea(p0, p1, p2)
+    l0 := triangleSurfaceArea(p1, p2, p) / area
+    l1 := triangleSurfaceArea(p2, p0, p) / area
+    l2 := triangleSurfaceArea(p0, p1, p) / area
     return l0, l1, l2
+}
+
+func (t Triangle) Barycentric(p Vector) (float32, float32, float32) {
+    return barycentric(t.P0, t.P1, t.P2, p)
 }
 
 func trianglesToSimd(t1, t2, t3, t4 Triangle) ([4]float32, [4]float32, [4]float32, [4]float32, [4]float32, [4]float32, [4]float32, [4]float32, [4]float32) {
