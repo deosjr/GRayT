@@ -63,7 +63,9 @@ func (wrt whittedRayTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color 
 	color := NewColor(0, 0, 0)
 	material := si.object.GetMaterial()
 	for _, light := range scene.Lights {
-		if pointInShadowWhitted(light, si.Point, si.as) {
+	    lightSegment := light.GetLightSegment(si.Point)
+	    maxDistance := lightSegment.Length()
+		if pointInShadow(si.Point, lightSegment, maxDistance, si.as) {
 			continue
 		}
 		facingRatio := si.normal.Dot(si.incident.Times(-1))
@@ -78,13 +80,11 @@ func (wrt whittedRayTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color 
         case *NormalMappingMaterial:
             // NOTE: normal mapping only wraps diffuse now
             si.normal = mat.NormalFunc(si)
-			lightSegment := light.GetLightSegment(si.Point)
 			lightRatio := si.normal.Dot(lightSegment.Normalize())
 			factors := standardAlbedo * INVPI * light.Intensity(lightSegment.Length()) * lightRatio
 			lightColor := light.Color().Times(factors)
 			objectColor = mat.WrappedMaterial.(*DiffuseMaterial).Color.Product(lightColor)
 		case *DiffuseMaterial:
-			lightSegment := light.GetLightSegment(si.Point)
 			lightRatio := si.normal.Dot(lightSegment.Normalize())
 			factors := standardAlbedo * INVPI * light.Intensity(lightSegment.Length()) * lightRatio
 			lightColor := light.Color().Times(factors)
@@ -102,17 +102,6 @@ func (wrt whittedRayTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color 
 		color = color.Add(objectColor.Times(facingRatio))
 	}
 	return color
-}
-
-// TODO: revise, maybe merge
-func pointInShadowWhitted(light Light, point Vector, as AccelerationStructure) bool {
-	lightSegment := light.GetLightSegment(point)
-	shadowRay := NewRay(point, lightSegment)
-	maxDistance := lightSegment.Length()
-	if _, ok := as.ClosestIntersection(shadowRay, maxDistance); ok {
-		return true
-	}
-	return false
 }
 
 func pointInShadow(point, segment Vector, maxDistance float32, as AccelerationStructure) bool {
@@ -217,7 +206,7 @@ func (pt *pathTracerNEE) GetRayColor(ray Ray, scene *Scene, depth int) Color {
 	}
 
 	// indirect light sampling: random new ray
-	randomDirection := randomInHemisphere(pt.random, si.normal)
+	randomDirection := si.object.GetMaterial().Sample(pt.random, si.normal)
 	newRay := NewRay(si.Point, randomDirection)
 	cos := si.normal.Dot(randomDirection)
 	recursiveColor := pt.GetRayColor(newRay, scene, depth+1)
@@ -226,23 +215,4 @@ func (pt *pathTracerNEE) GetRayColor(ray Ray, scene *Scene, depth int) Color {
 	// probably because light intensity does not make sense yet
 	indirect := recursiveColor.Times(cos * pdf).Product(brdf)
 	return direct.Add(indirect)
-}
-
-// this is actually slower than the very naive method before..
-func randomInHemisphere(random *rand.Rand, normal Vector) Vector {
-	// uniform hemisphere sampling: pbrt 774
-	// samples from hemisphere with z-axis = up direction
-	z := random.Float64()
-	det := 1 - z*z
-	var r float64 = 0.0
-	if det > 0 {
-		r = math.Sqrt(det)
-	}
-	phi := 2 * math.Pi * random.Float64()
-	v := Vector{float32(r * math.Cos(phi)), float32(r * math.Sin(phi)), float32(z)}
-
-	ez := Vector{0, 0, 1}
-	rotationVector := ez.Cross(normal)
-	theta := math.Acos(float64(ez.Dot(normal)))
-	return Rotate(theta, rotationVector).Vector(v)
 }

@@ -1,17 +1,47 @@
 package model
 
+import (
+    "math"
+    "math/rand"
+)
+
 // TODO: Textures. for starters, diffuse material can be a texture always returning same color
 // PBRT calls this a ConstantTexture. Paves the way for generated texture patterns!
 
 type Material interface {
 	GetColor(*SurfaceInteraction) Color
 	IsLight() bool
+    Sample(r *rand.Rand, normal Vector) Vector
 }
 
 type material struct{}
 
 func (material) IsLight() bool {
 	return false
+}
+
+// default sampling for all material right now is the same
+func (material) Sample(r *rand.Rand, normal Vector) Vector {
+    return randomInHemisphere(r, normal)
+}
+
+// this is actually slower than the very naive method before..
+func randomInHemisphere(random *rand.Rand, normal Vector) Vector {
+	// uniform hemisphere sampling: pbrt 774
+	// samples from hemisphere with z-axis = up direction
+	z := random.Float64()
+	det := 1 - z*z
+	var r float64 = 0.0
+	if det > 0 {
+		r = math.Sqrt(det)
+	}
+	phi := 2 * math.Pi * random.Float64()
+	v := Vector{float32(r * math.Cos(phi)), float32(r * math.Sin(phi)), float32(z)}
+
+	ez := Vector{0, 0, 1}
+	rotationVector := ez.Cross(normal)
+	theta := math.Acos(float64(ez.Dot(normal)))
+	return Rotate(theta, rotationVector).Vector(v)
 }
 
 type SurfaceInteraction struct {

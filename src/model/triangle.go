@@ -1,7 +1,6 @@
 package model
 
 import (
-	"math"
 	"math/rand"
 )
 
@@ -93,13 +92,8 @@ func (t Triangle) Sample(random *rand.Rand) Vector {
 	return t.P0.Add(u.Times(a)).Add(v.Times(b))
 }
 
-// Heron's formula
 func triangleSurfaceArea(p0, p1, p2 Vector) float32 {
-	a := p1.Sub(p0).Length()
-	b := p2.Sub(p0).Length()
-	c := p1.Sub(p2).Length()
-	s := (a + b + c) / 2
-	return float32(math.Sqrt(float64(s * (s - a) * (s - b) * (s - c))))
+    return p1.Sub(p0).Cross(p2.Sub(p0)).Length() * 0.5
 }
 
 func (t Triangle) SurfaceArea() float32 {
