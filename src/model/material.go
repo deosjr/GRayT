@@ -5,19 +5,27 @@ import (
     "math/rand"
 )
 
-// TODO: Textures. for starters, diffuse material can be a texture always returning same color
-// PBRT calls this a ConstantTexture. Paves the way for generated texture patterns!
+// TODO: currently src/model/tracer.go has a lot of switch cases for materials.
+// these should be consolidated as material methods in some form again
+// unsupported (properly) in path tracers: reflective material
 
 type Material interface {
-	GetColor(*SurfaceInteraction) Color
 	IsLight() bool
     Sample(r *rand.Rand, normal Vector) Vector
+    // TODO: to be removed
+    GetColor(si *SurfaceInteraction) Color
 }
 
-type material struct{}
+type material struct{
+    texture Texture
+}
 
 func (material) IsLight() bool {
 	return false
+}
+
+func (m material) GetColor(si *SurfaceInteraction) Color {
+    return m.texture.GetColor(si)
 }
 
 // default sampling for all material right now is the same
@@ -42,6 +50,19 @@ func randomInHemisphere(random *rand.Rand, normal Vector) Vector {
 	rotationVector := ez.Cross(normal)
 	theta := math.Acos(float64(ez.Dot(normal)))
 	return Rotate(theta, rotationVector).Vector(v)
+}
+
+// TODO: to be moved to own file at some point
+type Texture interface {
+    GetColor(si *SurfaceInteraction) Color
+}
+
+type ConstantTexture struct {
+    Color Color
+}
+
+func (ct ConstantTexture) GetColor(_ *SurfaceInteraction) Color {
+    return ct.Color
 }
 
 type SurfaceInteraction struct {
@@ -77,24 +98,26 @@ func (si *SurfaceInteraction) GetObject() Object {
 
 type DiffuseMaterial struct {
 	material
-	Color Color
 }
 
-func (m *DiffuseMaterial) GetColor(si *SurfaceInteraction) Color {
-	return m.Color
+func NewDiffuseMaterial(t Texture) *DiffuseMaterial {
+    return &DiffuseMaterial{
+        material: material{
+            texture: t,
+        },
+    }
 }
 
 type RadiantMaterial struct {
 	material
-	Color Color
 }
 
-func (r *RadiantMaterial) GetColor(si *SurfaceInteraction) Color {
-	facingRatio := si.normal.Dot(si.incident.Times(-1))
-	if facingRatio <= 0 {
-		return BLACK
-	}
-	return r.Color.Times(facingRatio)
+func NewRadiantMaterial(t Texture) *RadiantMaterial {
+    return &RadiantMaterial{
+        material: material{
+            texture: t,
+        },
+    }
 }
 
 func (*RadiantMaterial) IsLight() bool {
@@ -104,15 +127,6 @@ func (*RadiantMaterial) IsLight() bool {
 type ReflectiveMaterial struct {
 	material
 	Scene *Scene
-}
-
-func (m *ReflectiveMaterial) GetColor(si *SurfaceInteraction) Color {
-	i := si.incident
-	n := si.object.SurfaceNormal(si.Point)
-	reflection := i.Sub(n.Times(2 * i.Dot(n)))
-	ray := NewRay(si.Point, reflection)
-	// TODO: retain maxdistance for tracing
-	return si.tracer.GetRayColor(ray, m.Scene, si.depth+1) //.Times(1 - standardAlbedo) // simulates nonperfect reflection
 }
 
 type NormalMappingMaterial struct {
@@ -127,7 +141,7 @@ func (m *NormalMappingMaterial) GetColor(si *SurfaceInteraction) Color {
 	return m.WrappedMaterial.GetColor(si)
 }
 
-// temporary material to play around with
+// used in whitted style raytracer to ignore light contribution when debugging
 type PosFuncMat struct {
 	material
 	Func func(*SurfaceInteraction) Color

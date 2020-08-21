@@ -1,5 +1,7 @@
 package model
 
+import "math/rand"
+
 // TODO: world to object coordinates and vice versa
 // I think its only needed when caching common ray-object intersections?
 // But I dont understand transformations well enough yet
@@ -16,6 +18,7 @@ type Object interface {
 	SurfaceNormal(point Vector) Vector
 	GetColor(si *SurfaceInteraction) Color
 	GetMaterial() Material
+    SampleDirection(*rand.Rand, Vector) Vector
 	IsLight() bool
 	Bound(Transform) AABB
 }
@@ -27,6 +30,10 @@ type object struct {
 // to be replaced by more interesting materials info
 func (o object) GetColor(si *SurfaceInteraction) Color {
 	return o.Material.GetColor(si)
+}
+
+func (o object) SampleDirection(r *rand.Rand, normal Vector) Vector {
+	return o.Material.Sample(r, normal)
 }
 
 func (o object) GetMaterial() Material {
@@ -96,6 +103,11 @@ func (co *ComplexObject) GetMaterial() Material {
 	return nil
 }
 
+func (co *ComplexObject) SampleDirection(r *rand.Rand, normal Vector) Vector {
+	panic("Dont call this function!")
+	return Vector{}
+}
+
 func (co *ComplexObject) IsLight() bool {
 	panic("Dont call this function!")
 	return false
@@ -161,6 +173,11 @@ func (so *SharedObject) GetColor(*SurfaceInteraction) Color {
 func (so *SharedObject) GetMaterial() Material {
 	panic("Dont call this function!")
 	return nil
+}
+
+func (so *SharedObject) SampleDirection(r *rand.Rand, normal Vector) Vector {
+	panic("Dont call this function!")
+	return Vector{}
 }
 
 func (so *SharedObject) IsLight() bool {

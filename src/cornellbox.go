@@ -19,7 +19,7 @@ func CornellBox() *m.Scene {
 
 	// use area light for path tracer
 	var intensity float32 = 100.0
-	lightMat := &m.RadiantMaterial{Color: m.NewColor(255, 255, 255).Times(intensity)}
+	lightMat := m.NewRadiantMaterial(m.ConstantTexture{Color: m.NewColor(255, 255, 255).Times(intensity)})
 
 	triangles := []m.Triangle{}
 
@@ -35,9 +35,9 @@ func CornellBox() *m.Scene {
 	triangles = append(triangles, t1, t2)
 	scene.Emitters = []m.Triangle{t1, t2}
 
-	white := &m.DiffuseMaterial{Color: m.NewColor(186, 186, 186)}
-	green := &m.DiffuseMaterial{Color: m.NewColor(31, 115, 38)}
-	red := &m.DiffuseMaterial{Color: m.NewColor(166, 13, 13)}
+	white := m.NewDiffuseMaterial(m.ConstantTexture{Color: m.NewColor(186, 186, 186)})
+	green := m.NewDiffuseMaterial(m.ConstantTexture{Color: m.NewColor(31, 115, 38)})
+	red := m.NewDiffuseMaterial(m.ConstantTexture{Color: m.NewColor(166, 13, 13)})
 
 	floor := m.NewQuadrilateral(
 		m.Vector{552.8, 0.0, 0.0},

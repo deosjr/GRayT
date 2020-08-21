@@ -73,22 +73,20 @@ func (wrt whittedRayTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color 
 			continue
 		}
 
+        // NOTE: light effect is included in each material's 'getcolor' calculation
+        // should be disentangled
+
 		var objectColor Color
 		switch mat := material.(type) {
 		case *RadiantMaterial:
-			objectColor = mat.Color
-        case *NormalMappingMaterial:
-            // NOTE: normal mapping only wraps diffuse now
-            si.normal = mat.NormalFunc(si)
+			objectColor = mat.GetColor(si)
+        // NormalMappingMaterial only works properly when wrapping DiffuseMaterial now
+        case *DiffuseMaterial, *NormalMappingMaterial:
+            objectColor = mat.GetColor(si)
 			lightRatio := si.normal.Dot(lightSegment.Normalize())
 			factors := standardAlbedo * INVPI * light.Intensity(lightSegment.Length()) * lightRatio
 			lightColor := light.Color().Times(factors)
-			objectColor = mat.WrappedMaterial.(*DiffuseMaterial).Color.Product(lightColor)
-		case *DiffuseMaterial:
-			lightRatio := si.normal.Dot(lightSegment.Normalize())
-			factors := standardAlbedo * INVPI * light.Intensity(lightSegment.Length()) * lightRatio
-			lightColor := light.Color().Times(factors)
-			objectColor = mat.Color.Product(lightColor)
+			objectColor = objectColor.Product(lightColor)
 		case *ReflectiveMaterial:
 			i := si.incident
 			n := si.object.SurfaceNormal(si.Point)
@@ -138,7 +136,7 @@ func (pt *pathTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color {
 	si.tracer = pt
 
 	if si.object.IsLight() {
-		return si.object.GetMaterial().(*RadiantMaterial).Color
+		return si.object.GetColor(si)
 	}
 	surfaceDiffuseColor := si.object.GetColor(si)
 	brdf := surfaceDiffuseColor.Times(INVPI)
@@ -182,7 +180,7 @@ func (pt *pathTracerNEE) GetRayColor(ray Ray, scene *Scene, depth int) Color {
 	// direct light sampling counts the rest
 	if si.object.IsLight() {
 		if depth == 0 {
-			return si.object.GetMaterial().(*RadiantMaterial).Color
+			return si.object.GetColor(si)
 		}
 		return BLACK
 	}
@@ -201,12 +199,12 @@ func (pt *pathTracerNEE) GetRayColor(ray Ray, scene *Scene, depth int) Color {
 	if lightFacing > 0 && lightCos > 0 && !pointInShadow(si.Point, l, dist, si.as) {
 		lightPDF := 1.0 / float32(len(scene.Emitters))
 		solidAngle := (lightCos * light.SurfaceArea()) / (dist * dist * lightPDF)
-		lightColor := light.GetMaterial().(*RadiantMaterial).Color
+		lightColor := light.GetColor(si)
 		direct = lightColor.Times(solidAngle).Product(brdf).Times(lightFacing)
 	}
 
 	// indirect light sampling: random new ray
-	randomDirection := si.object.GetMaterial().Sample(pt.random, si.normal)
+	randomDirection := si.object.SampleDirection(pt.random, si.normal)
 	newRay := NewRay(si.Point, randomDirection)
 	cos := si.normal.Dot(randomDirection)
 	recursiveColor := pt.GetRayColor(newRay, scene, depth+1)

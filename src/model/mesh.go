@@ -1,5 +1,7 @@
 package model
 
+import "math/rand"
+
 // TODO: mesh can more optimally be used as SharedObject, since the transform
 // can be precalculated. From PBRT Ch3.6:
 //
@@ -131,6 +133,10 @@ func (t TriangleInMesh) GetColor(si *SurfaceInteraction) Color {
 
 func (t TriangleInMesh) GetMaterial() Material {
     return t.Mesh.GetMaterial()
+}
+
+func (t TriangleInMesh) SampleDirection(r *rand.Rand, normal Vector) Vector {
+    return t.Mesh.SampleDirection(r, normal)
 }
 
 func (t TriangleInMesh) IsLight() bool {
