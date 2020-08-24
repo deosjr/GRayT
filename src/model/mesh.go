@@ -21,6 +21,9 @@ type TriangleMesh struct {
 	vertices map[int64]Vector
     // vertex normals used for interpolated normal mapping
     Normals map[int64]Vector
+    // TODO: 2d vector instead of Vector?
+    // u and v values associated to vertices, if any
+    UV map[int64]Vector
 }
 
 // NOTE: the mesh is the object inheriting material, not the triangle

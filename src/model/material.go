@@ -72,19 +72,25 @@ type SurfaceInteraction struct {
 	normal   Vector
 	object   Object
 	as       AccelerationStructure
-	incident Vector
 	depth    int
 	tracer   Tracer
+
+    // for sharedobjects
+    UntransformedPoint Vector
+    UntransformedNormal Vector
 }
 
 func NewSurfaceInteraction(o Object, d float32, n Vector, r Ray) *SurfaceInteraction {
+    p := PointFromRay(r, d)
 	return &SurfaceInteraction{
 		object:   o,
 		distance: d,
 		normal:   n,
 		ray:      r,
-		Point:    PointFromRay(r, d),
-		incident: r.Direction,
+		Point:    p,
+        // can be overriden by sharedobjects
+        UntransformedPoint: p,
+        UntransformedNormal: n,
 	}
 }
 
@@ -139,6 +145,23 @@ type NormalMappingMaterial struct {
 func (m *NormalMappingMaterial) GetColor(si *SurfaceInteraction) Color {
 	si.normal = m.NormalFunc(si)
 	return m.WrappedMaterial.GetColor(si)
+}
+
+// only works for triangles in mesh
+func InterpolatedNormalMappingMaterial(mat Material) *NormalMappingMaterial {
+    return &NormalMappingMaterial{
+        WrappedMaterial: mat,
+        NormalFunc: func(si *SurfaceInteraction) Vector {
+            tr := si.GetObject().(TriangleInMesh)
+            p := si.UntransformedPoint
+            l0, l1, l2 := tr.Barycentric(p)
+            p0, p1, p2 := tr.PointIndices()
+            nl0 := tr.Mesh.Normals[p0]
+            nl1 := tr.Mesh.Normals[p1]
+            nl2 := tr.Mesh.Normals[p2]
+            return nl0.Times(l0).Add(nl1.Times(l1)).Add(nl2.Times(l2))
+        },
+    }
 }
 
 // used in whitted style raytracer to ignore light contribution when debugging

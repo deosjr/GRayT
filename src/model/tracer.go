@@ -68,7 +68,7 @@ func (wrt whittedRayTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color 
 		if pointInShadow(si.Point, lightSegment, maxDistance, si.as) {
 			continue
 		}
-		facingRatio := si.normal.Dot(si.incident.Times(-1))
+		facingRatio := si.normal.Dot(ray.Direction.Times(-1))
 		if facingRatio <= 0 {
 			continue
 		}
@@ -88,7 +88,7 @@ func (wrt whittedRayTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color 
 			lightColor := light.Color().Times(factors)
 			objectColor = objectColor.Product(lightColor)
 		case *ReflectiveMaterial:
-			i := si.incident
+			i := ray.Direction
 			n := si.object.SurfaceNormal(si.Point)
 			reflection := i.Sub(n.Times(2 * i.Dot(n)))
 			newRay := NewRay(si.Point, reflection)

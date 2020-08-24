@@ -154,9 +154,8 @@ func (so *SharedObject) Intersect(ray Ray) (*SurfaceInteraction, bool) {
 		return nil, false
 	}
 	// transform surface interaction info back to world space
-	si.normal = so.ObjectToWorld.Normal(si.normal)
-	si.Point = PointFromRay(ray, si.distance)
-	si.incident = ray.Direction
+	si.Point = so.ObjectToWorld.Point(si.UntransformedPoint)
+	si.normal = so.ObjectToWorld.Normal(si.UntransformedNormal)
 	return si, true
 }
 
