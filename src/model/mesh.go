@@ -65,7 +65,7 @@ func NewTriangleMesh(vertices []Vector, faces []Face, mat Material) Object {
 
 // input is a list of n+1 x m+1 points describing a rectangular mesh
 // of n x m triangles, fully connected (but not circular)
-func NewGridTriangleMesh(n, m int, vertices []Vector, normals []Vector, mat Material) Object {
+func NewGridTriangleMesh(n, m int, vertices, normals, uvs []Vector, mat Material) Object {
     if len(vertices) != (n+1)*(m+1) {
         panic("incorrect number of vertices to mesh")
     }
@@ -80,10 +80,18 @@ func NewGridTriangleMesh(n, m int, vertices []Vector, normals []Vector, mat Mate
             normalMap[int64(i)] = v
         }
     }
+    var uvMap map[int64]Vector
+    if len(uvs) > 0 {
+        uvMap = map[int64]Vector{}
+        for i, v := range uvs {
+            uvMap[int64(i)] = v
+        }
+    }
 	mesh := &TriangleMesh{
         object:   object{mat},
 		vertices: vertexMap,
         Normals:  normalMap,
+        UV:       uvMap,
 	}
     triangles := []Object{}
     for y:=0; y<m; y++ {

@@ -12,7 +12,6 @@ import (
 type Material interface {
 	IsLight() bool
     Sample(r *rand.Rand, normal Vector) Vector
-    // TODO: to be removed
     GetColor(si *SurfaceInteraction) Color
 }
 
@@ -50,19 +49,6 @@ func randomInHemisphere(random *rand.Rand, normal Vector) Vector {
 	rotationVector := ez.Cross(normal)
 	theta := math.Acos(float64(ez.Dot(normal)))
 	return Rotate(theta, rotationVector).Vector(v)
-}
-
-// TODO: to be moved to own file at some point
-type Texture interface {
-    GetColor(si *SurfaceInteraction) Color
-}
-
-type ConstantTexture struct {
-    Color Color
-}
-
-func (ct ConstantTexture) GetColor(_ *SurfaceInteraction) Color {
-    return ct.Color
 }
 
 type SurfaceInteraction struct {
