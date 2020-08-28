@@ -63,8 +63,8 @@ func (wrt whittedRayTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color 
 	color := NewColor(0, 0, 0)
 	material := si.object.GetMaterial()
 	for _, light := range scene.Lights {
-	    lightSegment := light.GetLightSegment(si.Point)
-	    maxDistance := lightSegment.Length()
+		lightSegment := light.GetLightSegment(si.Point)
+		maxDistance := lightSegment.Length()
 		if pointInShadow(si.Point, lightSegment, maxDistance, si.as) {
 			continue
 		}
@@ -73,16 +73,16 @@ func (wrt whittedRayTracer) GetRayColor(ray Ray, scene *Scene, depth int) Color 
 			continue
 		}
 
-        // NOTE: light effect is included in each material's 'getcolor' calculation
-        // should be disentangled
+		// NOTE: light effect is included in each material's 'getcolor' calculation
+		// should be disentangled
 
 		var objectColor Color
 		switch mat := material.(type) {
 		case *RadiantMaterial:
 			objectColor = mat.GetColor(si)
-        // NormalMappingMaterial only works properly when wrapping DiffuseMaterial now
-        case *DiffuseMaterial, *NormalMappingMaterial:
-            objectColor = mat.GetColor(si)
+		// NormalMappingMaterial only works properly when wrapping DiffuseMaterial now
+		case *DiffuseMaterial, *NormalMappingMaterial:
+			objectColor = mat.GetColor(si)
 			lightRatio := si.normal.Dot(lightSegment.Normalize())
 			factors := standardAlbedo * INVPI * light.Intensity(lightSegment.Length()) * lightRatio
 			lightColor := light.Color().Times(factors)

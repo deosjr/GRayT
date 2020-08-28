@@ -1,8 +1,8 @@
 package model
 
 import (
-    "math"
-    "math/rand"
+	"math"
+	"math/rand"
 )
 
 // TODO: currently src/model/tracer.go has a lot of switch cases for materials.
@@ -11,12 +11,12 @@ import (
 
 type Material interface {
 	IsLight() bool
-    Sample(r *rand.Rand, normal Vector) Vector
-    GetColor(si *SurfaceInteraction) Color
+	Sample(r *rand.Rand, normal Vector) Vector
+	GetColor(si *SurfaceInteraction) Color
 }
 
-type material struct{
-    texture Texture
+type material struct {
+	texture Texture
 }
 
 func (material) IsLight() bool {
@@ -24,12 +24,12 @@ func (material) IsLight() bool {
 }
 
 func (m material) GetColor(si *SurfaceInteraction) Color {
-    return m.texture.GetColor(si)
+	return m.texture.GetColor(si)
 }
 
 // default sampling for all material right now is the same
 func (material) Sample(r *rand.Rand, normal Vector) Vector {
-    return randomInHemisphere(r, normal)
+	return randomInHemisphere(r, normal)
 }
 
 // this is actually slower than the very naive method before..
@@ -61,22 +61,22 @@ type SurfaceInteraction struct {
 	depth    int
 	tracer   Tracer
 
-    // for sharedobjects
-    UntransformedPoint Vector
-    UntransformedNormal Vector
+	// for sharedobjects
+	UntransformedPoint  Vector
+	UntransformedNormal Vector
 }
 
 func NewSurfaceInteraction(o Object, d float32, n Vector, r Ray) *SurfaceInteraction {
-    p := PointFromRay(r, d)
+	p := PointFromRay(r, d)
 	return &SurfaceInteraction{
 		object:   o,
 		distance: d,
 		normal:   n,
 		ray:      r,
 		Point:    p,
-        // can be overriden by sharedobjects
-        UntransformedPoint: p,
-        UntransformedNormal: n,
+		// can be overriden by sharedobjects
+		UntransformedPoint:  p,
+		UntransformedNormal: n,
 	}
 }
 
@@ -93,11 +93,11 @@ type DiffuseMaterial struct {
 }
 
 func NewDiffuseMaterial(t Texture) *DiffuseMaterial {
-    return &DiffuseMaterial{
-        material: material{
-            texture: t,
-        },
-    }
+	return &DiffuseMaterial{
+		material: material{
+			texture: t,
+		},
+	}
 }
 
 type RadiantMaterial struct {
@@ -105,11 +105,11 @@ type RadiantMaterial struct {
 }
 
 func NewRadiantMaterial(t Texture) *RadiantMaterial {
-    return &RadiantMaterial{
-        material: material{
-            texture: t,
-        },
-    }
+	return &RadiantMaterial{
+		material: material{
+			texture: t,
+		},
+	}
 }
 
 func (*RadiantMaterial) IsLight() bool {
@@ -135,19 +135,19 @@ func (m *NormalMappingMaterial) GetColor(si *SurfaceInteraction) Color {
 
 // only works for triangles in mesh
 func InterpolatedNormalMappingMaterial(mat Material) *NormalMappingMaterial {
-    return &NormalMappingMaterial{
-        WrappedMaterial: mat,
-        NormalFunc: func(si *SurfaceInteraction) Vector {
-            tr := si.GetObject().(TriangleInMesh)
-            p := si.UntransformedPoint
-            l0, l1, l2 := tr.Barycentric(p)
-            p0, p1, p2 := tr.PointIndices()
-            nl0 := tr.Mesh.Normals[p0]
-            nl1 := tr.Mesh.Normals[p1]
-            nl2 := tr.Mesh.Normals[p2]
-            return nl0.Times(l0).Add(nl1.Times(l1)).Add(nl2.Times(l2))
-        },
-    }
+	return &NormalMappingMaterial{
+		WrappedMaterial: mat,
+		NormalFunc: func(si *SurfaceInteraction) Vector {
+			tr := si.GetObject().(TriangleInMesh)
+			p := si.UntransformedPoint
+			l0, l1, l2 := tr.Barycentric(p)
+			p0, p1, p2 := tr.PointIndices()
+			nl0 := tr.Mesh.Normals[p0]
+			nl1 := tr.Mesh.Normals[p1]
+			nl2 := tr.Mesh.Normals[p2]
+			return nl0.Times(l0).Add(nl1.Times(l1)).Add(nl2.Times(l2))
+		},
+	}
 }
 
 // used in whitted style raytracer to ignore light contribution when debugging

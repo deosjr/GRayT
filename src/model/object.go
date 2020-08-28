@@ -18,7 +18,7 @@ type Object interface {
 	SurfaceNormal(point Vector) Vector
 	GetColor(si *SurfaceInteraction) Color
 	GetMaterial() Material
-    SampleDirection(*rand.Rand, Vector) Vector
+	SampleDirection(*rand.Rand, Vector) Vector
 	IsLight() bool
 	Bound(Transform) AABB
 }

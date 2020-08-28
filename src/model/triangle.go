@@ -93,26 +93,26 @@ func (t Triangle) Sample(random *rand.Rand) Vector {
 }
 
 func triangleSurfaceArea(p0, p1, p2 Vector) float32 {
-    return p1.Sub(p0).Cross(p2.Sub(p0)).Length() * 0.5
+	return p1.Sub(p0).Cross(p2.Sub(p0)).Length() * 0.5
 }
 
 func (t Triangle) SurfaceArea() float32 {
-    return triangleSurfaceArea(t.P0, t.P1, t.P2)
+	return triangleSurfaceArea(t.P0, t.P1, t.P2)
 }
 
 // for point P outside triangle T, this might not be very meaningful
 // TODO: use (and understand) the edge function to compute this more efficiently
 // PBRT does this _in_ the triangle intersect function!
 func barycentric(p0, p1, p2, p Vector) (float32, float32, float32) {
-    area := triangleSurfaceArea(p0, p1, p2)
-    l0 := triangleSurfaceArea(p1, p2, p) / area
-    l1 := triangleSurfaceArea(p2, p0, p) / area
-    l2 := triangleSurfaceArea(p0, p1, p) / area
-    return l0, l1, l2
+	area := triangleSurfaceArea(p0, p1, p2)
+	l0 := triangleSurfaceArea(p1, p2, p) / area
+	l1 := triangleSurfaceArea(p2, p0, p) / area
+	l2 := triangleSurfaceArea(p0, p1, p) / area
+	return l0, l1, l2
 }
 
 func (t Triangle) Barycentric(p Vector) (float32, float32, float32) {
-    return barycentric(t.P0, t.P1, t.P2, p)
+	return barycentric(t.P0, t.P1, t.P2, p)
 }
 
 func trianglesToSimd(t1, t2, t3, t4 Triangle) ([4]float32, [4]float32, [4]float32, [4]float32, [4]float32, [4]float32, [4]float32, [4]float32, [4]float32) {
