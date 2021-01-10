@@ -1,6 +1,9 @@
 package model
 
-import "math"
+import (
+    "image"
+    "math"
+)
 
 // Axis-aligned bounding box
 type AABB struct {
@@ -205,4 +208,71 @@ func (q Quadrilateral) Tesselate() (Triangle, Triangle) {
 func QuadrilateralToTriangles(p1, p2, p3, p4 Vector, m Material) (Triangle, Triangle) {
 	return NewTriangle(p1, p2, p4, m),
 		NewTriangle(p2, p3, p4, m)
+}
+
+// Similar to cube.tesselate, but returns a triangle mesh with uv mapping
+// img is mapped onto the cube as follows:
+//     |---| 
+//     | 2 |
+// |---|---|---|---|
+// | 1 | 3 | 5 | 6 |
+// |---|---|---|---|
+//     | 4 |
+//     |---|
+// 1 is the front of the cube, facing in +Z direction
+// 2 is right, 3 is bottom, 4 is left, 5 is back, 6 is top
+// each square has topleft at topleft, so oriented the same
+// therefore NOT neatly wrapping the whole cross around the cube!
+// works for arbitrary resolution as long as aspect ratio is 4:3
+func CubeMesh(size float32, img image.Image) Object {
+    /*
+    */
+    f := func(p0,p1,p2,p3 int64) (Face, Face) {
+        return Face{p0, p2, p1}, Face{p1, p2, p3}
+    }
+    // unit cube centered around origin
+    // TODO: should use ScaleUniform but cant get it to work properly yet
+    span := size / 2.0
+    min, max := -span, span
+
+    // see ilkinulas.github.io/development/unity/2016/05/06/uv-mapping.html for details
+	p0 := Vector{max, max, max}
+	p1 := Vector{max, min, max}
+	p2 := Vector{min, max, max}
+	p3 := Vector{min, min, max}
+	p4 := Vector{max, min, min}
+	p5 := Vector{min, min, min}
+	p6 := Vector{max, max, min}
+	p7 := Vector{min, max, min}
+    // duplicate vertices because they can be uv mapped differently
+    vertices := []Vector{p0, p1, p2, p3, p4, p5, p6, p7, p0, p2, p0, p6, p2, p7}
+
+	faces := make([]Face, 12)
+	faces[0], faces[1] = f(0, 1, 2, 3)
+	faces[2], faces[3] = f(10, 11, 1, 4)
+	faces[4], faces[5] = f(1, 4, 3, 5)
+	faces[6], faces[7] = f(3, 5, 12, 13)
+	faces[8], faces[9] = f(4, 6, 5, 7)
+	faces[10], faces[11] = f(6, 8, 7, 9)
+    uvmap := map[int64]Vector{
+        0:  Vector{0, 2.0/3.0, 0},
+        1:  Vector{0.25, 2.0/3.0, 0},
+        2:  Vector{0, 1.0/3.0, 0},
+        3:  Vector{0.25, 1.0/3.0, 0},
+        4:  Vector{0.5, 2.0/3.0, 0},
+        5:  Vector{0.5, 1.0/3.0, 0},
+        6:  Vector{0.75, 2.0/3.0, 0},
+        7:  Vector{0.75, 1.0/3.0, 0},
+        8:  Vector{1, 2.0/3.0, 0},
+        9:  Vector{1, 1.0/3.0, 0},
+        10: Vector{0.25, 1, 0},
+        11: Vector{0.5, 1, 0},
+        12: Vector{0.25, 0, 0},
+        13: Vector{0.5, 0, 0},
+    }
+
+    mat := NewDiffuseMaterial(NewImageTexture(img, TriangleMeshUVFunc))
+    obj := NewTriangleMesh(vertices, faces, mat)
+    obj.(*TriangleMesh).UV = uvmap
+    return obj
 }
